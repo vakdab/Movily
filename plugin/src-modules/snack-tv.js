@@ -1139,6 +1139,13 @@
     r.push(CHP + ' > span{color:#fff;margin:0}');
     r.push(CHP + ' > div{display:inline-block;background:rgba(255,255,255,.18)!important;border-radius:.35em;padding:0 .4em!important;margin:0 0 0 .5em!important;font-size:.8em;color:rgba(235,235,245,.85);max-width:' + tp(320, 120) + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap}');
     r.push(CHP + ' > div.hide{display:none!important}');
+    // episode rows of online plugins: the body may shrink (a long title pushed the progress bar out of the card)
+    r.push(B + ' .explorer.layer--width .explorer__files{box-sizing:border-box;overflow-x:hidden}');
+    r.push(B + ' .explorer.layer--width .online-prestige{max-width:100%;box-sizing:border-box;overflow:hidden}');
+    r.push(B + ' .explorer.layer--width .online-prestige__body{min-width:0;flex:1 1 0%}');
+    r.push(B + ' .explorer.layer--width .online-prestige__head{min-width:0}');
+    r.push(B + ' .explorer.layer--width .online-prestige__title{min-width:0;flex:1 1 auto}');
+    r.push(B + ' .explorer.layer--width .online-prestige__time{flex-shrink:0}');
     r.push(B + ' .explorer.layer--width > .explorer__files{width:auto!important;max-width:none!important;flex:1 1 auto!important;min-width:0!important;margin:0!important}');
     r.push(X + '{display:flex;flex-direction:column;height:100%}');
     r.push(X + '__left{display:block!important;width:auto!important;flex:none;padding:0 ' + M + '}');
