@@ -62,6 +62,12 @@
       'body.stv{--snack-hdr-l:calc(12px + 36px*var(--snack-hs,1) + 10px);--snack-hdr-r:calc(12px + var(--snack-dock-w,96px)*var(--snack-hs,1) + 10px)}',
       'body.stv .navigation-bar{left:var(--snack-hdr-l)!important;right:var(--snack-hdr-r)!important;width:auto!important;top:calc(env(safe-area-inset-top,0px) + 2em)!important;height:0!important;display:flex!important;justify-content:center;align-items:center;overflow:visible}',
       'body.stv .navigation-bar .navigation-bar__body{height:calc(36px*var(--snack-hs,1))!important;min-height:0!important;max-height:none!important;padding:calc(3px*var(--snack-hs,1))!important;box-sizing:border-box!important;display:flex!important;align-items:center!important;position:static!important;left:auto!important;top:auto!important;transform:none!important;max-width:100%;overflow:hidden;flex-shrink:1;min-width:0;margin:0;border-radius:999px}',
+      /* LANDSCAPE: Lampa's frameUpdate() takes the .navigation-bar's width off every page (it expects the bar as a
+         column at the right edge). Our bar spans the header, so pages were left (screen - bar) wide: ~146px on a
+         phone, the episodes list squeezed into the left corner. So: the bar is 0 wide at the screen's centre, and
+         the pill is centred on it, as wide as the strip between the burger and the clock allows. */
+      'body.stv.orientation--landscape .navigation-bar{left:50%!important;right:auto!important;width:0!important;min-width:0!important;display:block!important;padding:0!important}',
+      'body.stv.orientation--landscape .navigation-bar .navigation-bar__body{position:absolute!important;top:calc(-18px*var(--snack-hs,1))!important;left:0!important;transform:translateX(-50%)!important;width:max-content;max-width:calc(100vw - var(--snack-hdr-l) - var(--snack-hdr-r))}',
       'body.stv .navigation-bar .navigation-bar__item{height:calc(28px*var(--snack-hs,1))!important;margin:0 1px!important;box-sizing:border-box!important;padding-top:0!important;padding-bottom:0!important}',
       'body.stv .navigation-bar .navigation-bar__label{font-size:calc(15px*var(--snack-hs,1))!important}',
       'body.stv .navigation-bar .navigation-bar__icon{width:calc(18px*var(--snack-hs,1))!important;height:calc(18px*var(--snack-hs,1))!important}',
