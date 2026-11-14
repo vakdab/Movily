@@ -710,7 +710,7 @@
 ];
 
   var I18N = {
-    title: { uk: '📺 Стрімінги', ru: '📺 Стриминги', en: '📺 Streaming' }
+    title: { uk: 'Стрімінги', ru: 'Стриминги', en: 'Streaming' }
   };
   function lang() {
     var l = String(Lampa.Storage.get('language', 'uk') || 'uk').toLowerCase();
