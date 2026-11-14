@@ -2235,6 +2235,13 @@
     r.push(B + ' .explorer.layer--width .explorer__files-head .torrent-filter{justify-content:center}');
     r.push(B + ' .explorer.layer--width .explorer__files-head .scroll--horizontal .scroll__body{display:flex;justify-content:center;min-width:100%}');
     r.push(B + '.appletv-agnative-topnav .explorer.layer--width .explorer__files-head{padding:calc(env(safe-area-inset-top,0px)*0 + 1.2em) 0 .6em!important}');
+    // chips of online-plugin pages (Source / Filter): label and value in ONE line, like on the torrents page
+    var CHP = B + '.appletv-agnative-topnav .explorer.layer--width .explorer__files-head .torrent-filter .simple-button';
+    r.push(CHP + '{display:inline-flex!important;flex-direction:row!important;align-items:center!important;white-space:nowrap!important;flex-shrink:0!important;border:0!important;height:' + tp(52, 34) + '!important;padding:0 ' + tp(26, 16) + '!important;font-size:' + tp(25, 15) + '!important;font-weight:500!important;margin:0 ' + tp(16, 10) + ' 0 0!important}');
+    r.push(B + '.appletv-agnative-topnav .explorer.layer--width .explorer__files-head .torrent-filter{flex-wrap:nowrap!important;gap:0!important}');
+    r.push(CHP + ' > span{color:#fff;margin:0}');
+    r.push(CHP + ' > div{display:inline-block;background:rgba(255,255,255,.18)!important;border-radius:.35em;padding:0 .4em!important;margin:0 0 0 .5em!important;font-size:.8em;color:rgba(235,235,245,.85);max-width:' + tp(320, 120) + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap}');
+    r.push(CHP + ' > div.hide{display:none!important}');
     r.push(B + ' .explorer.layer--width > .explorer__files{width:auto!important;max-width:none!important;flex:1 1 auto!important;min-width:0!important;margin:0!important}');
     r.push(X + '{display:flex;flex-direction:column;height:100%}');
     r.push(X + '__left{display:block!important;width:auto!important;flex:none;padding:0 ' + M + '}');
