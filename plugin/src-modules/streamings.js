@@ -769,6 +769,7 @@
     Lampa.Activity.push({ url: '', title: s.name, component: 'studios_main', service_id: s.id, page: 1 });
   }
   function addRow() {
+    window.__movily_streamings_title = tr('title');
     if (!Lampa.ContentRows || !Lampa.ContentRows.add) return;
     Lampa.ContentRows.add({
       index: 1,

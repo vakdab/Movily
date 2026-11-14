@@ -1928,9 +1928,19 @@
       'font-size:' + tp(21, 12) + ';font-weight:600;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.6)}');
     r.push(B + ' .stv-cw__bar{flex:0 0 ' + tp(60, 36) + ';height:' + tp(6, 4) + ';border-radius:9px;background:rgba(255,255,255,.3);margin-right:' + tp(10, 7) + ';overflow:hidden}');
     r.push(B + ' .stv-cw__bar > div{height:100%;background:#fff}');
-    r.push(C + '.stv-cw-card .stv-card-logo{bottom:' + tp(46, 28) + ';max-height:34%}');
-    r.push(C + '.stv-cw-card .card__promo-title{bottom:' + tp(44, 26) + '}');
+    r.push(C + '.stv-cw-card .stv-card-logo{bottom:' + tp(52, 32) + ';max-height:38%;max-width:62%}');
+    r.push(C + '.stv-cw-card .card__promo-title{bottom:' + tp(50, 30) + '}');
+    // «Continue»: one logo only (the theme's) - the other layer's overlay (title, year, genres) is off here;
+    // a darker foot so the logo and the progress read on any picture; the progress as its own line
+    r.push(B + ' .stv-cw-card .nfx-card-overlay,' + B + ' .stv-cw-card .card__age,' + B + ' .stv-cw-card .card__type,' + B + ' .stv-cw-card .card__title{display:none!important}');
+    r.push(C + '.stv-cw-card .card__promo{height:78%;background:linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,.35) 45%,rgba(0,0,0,.82) 100%)}');
+    r.push(C + '.stv-cw-card .card__view{box-shadow:0 8px 24px rgba(0,0,0,.45)}');
+    r.push(B + ' .stv-cw-card .stv-cw{left:' + tp(18, 12) + ';right:' + tp(18, 12) + ';bottom:' + tp(14, 10) + ';font-size:' + tp(22, 13) + ';font-weight:700;letter-spacing:.01em}');
+    r.push(B + ' .stv-cw-card .stv-cw__bar{flex:1 1 auto;height:' + tp(6, 4) + ';margin-right:' + tp(14, 10) + ';background:rgba(255,255,255,.28)}');
+    r.push(B + ' .stv-cw-card .stv-cw__bar > div{border-radius:9px;background:#fff}');
+    r.push(B + ' .stv-cw-card .stv-cw > span{flex:0 0 auto;white-space:nowrap;opacity:.95}');
     r.push(B + ' .items-line--type-stv-cw .card--wide{width:' + px(t.cwW) + '}');
+    r.push(PHONE + B + ' .items-line--type-stv-cw .card--wide{width:78vw}}');
     // Shots switched off: the row's empty stand-in
     r.push(B + ' .stv-shots-hidden{display:none!important}');
     return r.join('\n');
@@ -3308,12 +3318,51 @@
     if (cardIO) { cardIO.observe(el); watched.push(el); }
     else el.addEventListener('visible', function once() { el.removeEventListener('visible', once); cardLogo(el); });
   }
+
+  // ---------- «Continue»: a backdrop with no title printed on it ----------
+  // TMDB's default backdrop often carries the show's name in the picture; the logo goes over it and the
+  // title shows twice. A backdrop with no language (iso_639_1 null) is clean: the best rated of those
+  // (one request per title, kept 30 days), else the default one stays.
+  var cleanBd;
+  function cleanBdCache() { return cleanBd || (cleanBd = Cache('stv_cleanbd', 400)); }
+  var cleanBdWait = {};
+  function getCleanBackdrop(m, cb) {
+    var own = m && m.id && (!m.source || m.source === 'tmdb' || m.source === 'cub');
+    if (!own) return cb('');
+    var key = kindOf(m) + m.id, have = cleanBdCache().get(key);
+    if (have !== undefined) return cb(have);
+    if (cleanBdWait[key]) { cleanBdWait[key].push(cb); return; }
+    cleanBdWait[key] = [cb];
+    function finish(p) { cleanBdCache().set(key, p || ''); var w = cleanBdWait[key]; delete cleanBdWait[key]; w.forEach(function (f) { f(p || ''); }); }
+    tmdb(kindOf(m) + '/' + m.id + '/images?include_image_language=null', function (j) {
+      var list = (j && j.backdrops) || [], best = null;
+      list.forEach(function (b) {
+        if (b.iso_639_1 || !b.file_path || b.width < 1280) return;
+        // the best rated; of equal ones the wider picture
+        if (!best || (b.vote_average || 0) > (best.vote_average || 0) + 0.15 || ((b.vote_average || 0) >= (best.vote_average || 0) - 0.15 && b.width > best.width && b.vote_average >= best.vote_average)) best = b;
+      });
+      finish(best ? best.file_path : '');
+    }, function () { finish(''); });
+  }
+  function cleanBackdropCard(el, d, size) {
+    var view = el && el.querySelector('.card__view');
+    if (!view) return;
+    getCleanBackdrop(d, function (p) {
+      if (!p || !inDoc(el)) return;
+      var src = img(p, size), pre = new Image();
+      pre.onload = function () {
+        var im = el.querySelector('.card__img');
+        if (im && im.tagName === 'IMG' && im.getAttribute('src') !== src) { im.src = src; el.classList.add('stv-cw-clean'); }
+      };
+      pre.src = src;
+    });
+  }
   function wideCard(html, d) {
     var el = html && (html.nodeType ? html : html[0]);
     if (!el) return;
     el.stv_data = d;
     watchCard(el);
-    if (d && d.stv_cw) cwFooter(el, d);
+    if (d && d.stv_cw) { cwFooter(el, d); cleanBackdropCard(el, d, tmdbSize('backdrop', T[M].cwW * k)); }
   }
   // "Up Next": progress and S2, E5 (a series) or the time left (a movie)
   function cwFooter(el, d) {
@@ -3356,6 +3405,17 @@
           if (r && r.title && r.title === cwTitle) cw = i;
         });
         if (cw > 0) { var row = rows.splice(cw, 1)[0]; rows.splice(hero >= 0 ? (hero < cw ? hero + 1 : hero) : 0, 0, row); }
+        // «Streamings» (streamings.js) right after «Continue» (or after the banner when nothing is being watched)
+        var st = -1;
+        rows.forEach(function (r, i) { if (r && r.title && r.title === window.__movily_streamings_title) st = i; });
+        if (st >= 0) {
+          var after = -1;
+          rows.forEach(function (r, i) { if (r && r.title && r.title === cwTitle) after = i; });
+          if (after < 0) rows.forEach(function (r, i) { if (r && r.params && r.params.createInstance && r.results && r.results[0] && r.results[0].title === HERO_MARK) after = i; });
+          var srow = rows.splice(st, 1)[0];
+          if (st < after) after--;
+          rows.splice(after + 1, 0, srow);
+        }
       } catch (x) { log(x && x.message); }
     } }, 0);
   }
@@ -12870,6 +12930,7 @@
     Lampa.Activity.push({ url: '', title: s.name, component: 'studios_main', service_id: s.id, page: 1 });
   }
   function addRow() {
+    window.__movily_streamings_title = tr('title');
     if (!Lampa.ContentRows || !Lampa.ContentRows.add) return;
     Lampa.ContentRows.add({
       index: 1,
