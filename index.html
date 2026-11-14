@@ -128,6 +128,8 @@
             if (window.__movily_interface_loaded) return
             window.__movily_interface_loaded = true
             putScript('plugin/dist/moon-interface.js?v=' + cache_version, function () {}, function () {})
+            /* Movily: картинка в картинці (pipfs), плаваюче вікно як на iPhone */
+            putScript('plugin/dist/pipfs.js?v=' + cache_version, function () {}, function () {})
         }
 
         function loadCurrentLampa() {
