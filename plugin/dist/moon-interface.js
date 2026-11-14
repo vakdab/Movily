@@ -8,16 +8,6 @@
   window.__moon_plugin_boot = true;
   function run() {
 
-  var st = document.createElement('style'); st.id = 'moon-source-contrast';
-  st.textContent = [
-    '.torrent-item,.torrent-file,.torrent-serial{background:rgba(78,78,84,.9);color:#fff;border:1px solid rgba(255,255,255,.24)}',
-    'body.glass--style .torrent-serial,body.glass--style .torrent-file,body.glass--style .torrent-item{background:rgba(78,78,84,.94)!important;color:#fff!important;border:1px solid rgba(255,255,255,.28)}',
-    'body.glass--style .torrent-serial.focus,body.glass--style .torrent-file.focus,body.glass--style .torrent-item.focus,.torrent-item.focus,.torrent-file.focus,.torrent-serial.focus{background:rgba(255,255,255,.35)!important}',
-    'body.stv.selectbox--open .selectbox-item{margin:.45em 0;border:1px solid rgba(255,255,255,.24);border-radius:.7em;background:rgba(78,78,84,.9);color:#fff}',
-    'body.stv.selectbox--open .selectbox-item.focus{background:#353535}'
-  ].join('\n');
-  (document.head || document.documentElement).appendChild(st);
-
 /* ===== lampa-mobile-apple ===== */
 /* Lampa Mobile Apple — based on lampa-combined-fix.js commit 7b78923d */
 /* Lampa MX Mobile Fix — touch navigation only; never modifies video playback */
@@ -2235,35 +2225,6 @@
     r.push(B + ' .explorer.layer--width .explorer__files-head .torrent-filter{justify-content:center}');
     r.push(B + ' .explorer.layer--width .explorer__files-head .scroll--horizontal .scroll__body{display:flex;justify-content:center;min-width:100%}');
     r.push(B + '.appletv-agnative-topnav .explorer.layer--width .explorer__files-head{padding:calc(env(safe-area-inset-top,0px)*0 + 1.2em) 0 .6em!important}');
-    // chips of online-plugin pages (Source / Filter): label and value in ONE line, like on the torrents page
-    var CHP = B + '.appletv-agnative-topnav .explorer.layer--width .explorer__files-head .torrent-filter .simple-button';
-    r.push(CHP + '{display:inline-flex!important;flex-direction:row!important;align-items:center!important;white-space:nowrap!important;flex-shrink:0!important;border:0!important;height:' + tp(52, 34) + '!important;padding:0 ' + tp(26, 16) + '!important;font-size:' + tp(25, 15) + '!important;font-weight:500!important;margin:0 ' + tp(16, 10) + ' 0 0!important}');
-    r.push(B + '.appletv-agnative-topnav .explorer.layer--width .explorer__files-head .torrent-filter{flex-wrap:nowrap!important;gap:0!important}');
-    r.push(CHP + ' > span{color:#fff;margin:0}');
-    r.push(CHP + ' > div{display:inline-block;background:rgba(255,255,255,.18)!important;border-radius:.35em;padding:0 .4em!important;margin:0 0 0 .5em!important;font-size:.8em;color:rgba(235,235,245,.85);max-width:' + tp(320, 120) + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap}');
-    r.push(CHP + ' > div.hide{display:none!important}');
-    // the row of 5 (back, list, search, Source, Filter) fits the screen: round icon buttons, search is just the icon,
-    // Source / Filter shrink to their content; the row is centred and never scrolls sideways
-    var CH = B + '.appletv-agnative-topnav .explorer.layer--width .explorer__files-head .torrent-filter .simple-button';
-    r.push(B + '.appletv-agnative-topnav .explorer.layer--width .explorer__files-head .scroll__body{display:flex!important;justify-content:center!important;min-width:100%!important;transform:none!important;padding-left:0!important;padding-right:0!important}');
-    r.push(B + '.appletv-agnative-topnav .explorer.layer--width .explorer__files-head .torrent-filter{justify-content:center!important;flex-wrap:nowrap!important;gap:' + tp(12, 7) + '!important;margin:0!important;width:100%;padding:0 ' + tp(16, 8) + '!important;box-sizing:border-box}');
-    r.push(CH + '{margin:0!important;flex:0 1 auto!important;min-width:0!important;height:' + tp(52, 34) + '!important;padding:0 ' + tp(22, 12) + '!important;font-size:' + tp(25, 14) + '!important;background-color:' + c.G + '!important;border:0!important;transform:none!important}');
-    r.push(CH + '.filter--back,' + CH + '.agnative-explorer-back,' + CH + '.filter--search,' + CH + '.filter--sort,' + CH + '.filter--info{flex:0 0 auto!important;width:' + tp(52, 34) + '!important;padding:0!important;justify-content:center!important;aspect-ratio:1/1;border-radius:50%!important}');
-    r.push(CH + '.filter--search > div,' + CH + '.filter--search > span{display:none!important}');
-    r.push(CH + '.filter--back svg,' + CH + '.agnative-explorer-back svg,' + CH + '.filter--search svg,' + CH + '.filter--sort svg{width:' + tp(26, 16) + '!important;height:' + tp(26, 16) + '!important;margin:0!important}');
-    r.push(CH + '.filter--filter,' + CH + '.filter--sort:not(.filter--search):not(.filter--back){min-width:0}');
-    r.push(CH + ' > div{max-width:' + tp(200, 70) + '!important;min-width:0}');
-    // the rows: no outline, a plain dark fill (the old look had a grey border)
-    var RW = B + '.appletv-agnative-topnav .explorer.layer--width ';
-    r.push(RW + '.online-prestige.selector,' + RW + '.torrent-item.selector,' + RW + '.watched-history.selector,' + RW + '.torrent-serial.selector{border:0!important;box-shadow:none!important;background:rgba(255,255,255,.07)!important;border-radius:' + px(t.rowR) + '!important}');
-    r.push(RW + '.online-prestige.selector.focus,' + RW + '.torrent-item.selector.focus,' + RW + '.watched-history.selector.focus,' + RW + '.torrent-serial.selector.focus{border:0!important;box-shadow:none!important;transform:none!important;background:rgba(255,255,255,.16)!important}');
-    // episode rows of online plugins: the body may shrink (a long title pushed the progress bar out of the card)
-    r.push(B + ' .explorer.layer--width .explorer__files{box-sizing:border-box;overflow-x:hidden}');
-    r.push(B + ' .explorer.layer--width .online-prestige{max-width:100%;box-sizing:border-box;overflow:hidden}');
-    r.push(B + ' .explorer.layer--width .online-prestige__body{min-width:0;flex:1 1 0%}');
-    r.push(B + ' .explorer.layer--width .online-prestige__head{min-width:0}');
-    r.push(B + ' .explorer.layer--width .online-prestige__title{min-width:0;flex:1 1 auto}');
-    r.push(B + ' .explorer.layer--width .online-prestige__time{flex-shrink:0}');
     r.push(B + ' .explorer.layer--width > .explorer__files{width:auto!important;max-width:none!important;flex:1 1 auto!important;min-width:0!important;margin:0!important}');
     r.push(X + '{display:flex;flex-direction:column;height:100%}');
     r.push(X + '__left{display:block!important;width:auto!important;flex:none;padding:0 ' + M + '}');

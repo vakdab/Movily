@@ -6,17 +6,7 @@ OUT=dist/moon-interface.js
 python3 - <<'PY'
 order = ["lampa-mobile-apple","snack-defaults","snack-tv","snack-header","snack-leftdock",
          "snack-settings-merge","snack-settings-hide","showy-online","auto-plugins","streamings","movily-brand"]
-css = """
-  var st = document.createElement('style'); st.id = 'moon-source-contrast';
-  st.textContent = [
-    '.torrent-item,.torrent-file,.torrent-serial{background:rgba(78,78,84,.9);color:#fff;border:1px solid rgba(255,255,255,.24)}',
-    'body.glass--style .torrent-serial,body.glass--style .torrent-file,body.glass--style .torrent-item{background:rgba(78,78,84,.94)!important;color:#fff!important;border:1px solid rgba(255,255,255,.28)}',
-    'body.glass--style .torrent-serial.focus,body.glass--style .torrent-file.focus,body.glass--style .torrent-item.focus,.torrent-item.focus,.torrent-file.focus,.torrent-serial.focus{background:rgba(255,255,255,.35)!important}',
-    'body.stv.selectbox--open .selectbox-item{margin:.45em 0;border:1px solid rgba(255,255,255,.24);border-radius:.7em;background:rgba(78,78,84,.9);color:#fff}',
-    'body.stv.selectbox--open .selectbox-item.focus{background:#353535}'
-  ].join('\\n');
-  (document.head || document.documentElement).appendChild(st);
-"""
+css = ""
 head = """/*!
  * Moon / Snack TV interface for Lampa (single-file plugin).
  * Підключення: Налаштування -> Розширення -> Додати плагін -> URL цього файлу.
