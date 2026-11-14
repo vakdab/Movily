@@ -1139,6 +1139,21 @@
     r.push(CHP + ' > span{color:#fff;margin:0}');
     r.push(CHP + ' > div{display:inline-block;background:rgba(255,255,255,.18)!important;border-radius:.35em;padding:0 .4em!important;margin:0 0 0 .5em!important;font-size:.8em;color:rgba(235,235,245,.85);max-width:' + tp(320, 120) + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap}');
     r.push(CHP + ' > div.hide{display:none!important}');
+    // the row of 5 (back, list, search, Source, Filter) fits the screen: round icon buttons, search is just the icon,
+    // Source / Filter shrink to their content; the row is centred and never scrolls sideways
+    var CH = B + '.appletv-agnative-topnav .explorer.layer--width .explorer__files-head .torrent-filter .simple-button';
+    r.push(B + '.appletv-agnative-topnav .explorer.layer--width .explorer__files-head .scroll__body{display:flex!important;justify-content:center!important;min-width:100%!important;transform:none!important;padding-left:0!important;padding-right:0!important}');
+    r.push(B + '.appletv-agnative-topnav .explorer.layer--width .explorer__files-head .torrent-filter{justify-content:center!important;flex-wrap:nowrap!important;gap:' + tp(12, 7) + '!important;margin:0!important;width:100%;padding:0 ' + tp(16, 8) + '!important;box-sizing:border-box}');
+    r.push(CH + '{margin:0!important;flex:0 1 auto!important;min-width:0!important;height:' + tp(52, 34) + '!important;padding:0 ' + tp(22, 12) + '!important;font-size:' + tp(25, 14) + '!important;background-color:' + c.G + '!important;border:0!important;transform:none!important}');
+    r.push(CH + '.filter--back,' + CH + '.agnative-explorer-back,' + CH + '.filter--search,' + CH + '.filter--sort,' + CH + '.filter--info{flex:0 0 auto!important;width:' + tp(52, 34) + '!important;padding:0!important;justify-content:center!important;aspect-ratio:1/1;border-radius:50%!important}');
+    r.push(CH + '.filter--search > div,' + CH + '.filter--search > span{display:none!important}');
+    r.push(CH + '.filter--back svg,' + CH + '.agnative-explorer-back svg,' + CH + '.filter--search svg,' + CH + '.filter--sort svg{width:' + tp(26, 16) + '!important;height:' + tp(26, 16) + '!important;margin:0!important}');
+    r.push(CH + '.filter--filter,' + CH + '.filter--sort:not(.filter--search):not(.filter--back){min-width:0}');
+    r.push(CH + ' > div{max-width:' + tp(200, 70) + '!important;min-width:0}');
+    // the rows: no outline, a plain dark fill (the old look had a grey border)
+    var RW = B + '.appletv-agnative-topnav .explorer.layer--width ';
+    r.push(RW + '.online-prestige.selector,' + RW + '.torrent-item.selector,' + RW + '.watched-history.selector,' + RW + '.torrent-serial.selector{border:0!important;box-shadow:none!important;background:rgba(255,255,255,.07)!important;border-radius:' + px(t.rowR) + '!important}');
+    r.push(RW + '.online-prestige.selector.focus,' + RW + '.torrent-item.selector.focus,' + RW + '.watched-history.selector.focus,' + RW + '.torrent-serial.selector.focus{border:0!important;box-shadow:none!important;transform:none!important;background:rgba(255,255,255,.16)!important}');
     // episode rows of online plugins: the body may shrink (a long title pushed the progress bar out of the card)
     r.push(B + ' .explorer.layer--width .explorer__files{box-sizing:border-box;overflow-x:hidden}');
     r.push(B + ' .explorer.layer--width .online-prestige{max-width:100%;box-sizing:border-box;overflow:hidden}');
