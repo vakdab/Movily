@@ -25,7 +25,7 @@
 
     /* the Apple TV look */
     stv_on: true,
-    stv_mode: 'auto',
+    stv_mode: 'ipad',
     stv_hide_head: true,
     stv_titles: false,
     stv_tint: true,
@@ -36,7 +36,7 @@
     stv_show_react: true,
     stv_show_tech: false,
     stv_show_play: false,
-    stv_lite: 'auto',
+    stv_lite: 'off',
     stv_img: 'auto',
 
     /* the top bar, cards, logos, text, clock, data */

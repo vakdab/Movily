@@ -24,4 +24,7 @@
   }
 
   css();
+
+  /* Movily is the mobile web interface, never the TV one: the flag Lampa reads for "touch screen" stays on */
+  try { if (window.localStorage) window.localStorage.setItem('is_true_mobile', 'true'); } catch (e) {}
 })();

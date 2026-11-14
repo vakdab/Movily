@@ -42,6 +42,8 @@
         try {
             if (!window.localStorage.getItem('language')) window.localStorage.setItem('language', 'uk');
             if (!window.localStorage.getItem('tmdb_lang')) window.localStorage.setItem('tmdb_lang', 'uk');
+            /* Movily: завжди мобільний веб-інтерфейс, на будь-якому пристрої, без TV-режиму */
+            window.localStorage.setItem('is_true_mobile', 'true');
         } catch (e) {}
     </script>
     <script>

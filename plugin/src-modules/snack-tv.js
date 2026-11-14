@@ -149,8 +149,9 @@
     try { if (Lampa.Platform.desktop()) return 'tv'; } catch (e) {}
     return navigator.maxTouchPoints > 0 && window.innerWidth < 1400 ? 'ipad' : 'tv';
   }
-  function mode() { var m = opt(K.mode); return m === 'ipad' || m === 'tv' ? m : autoMode(); }
-  function lite() { var l = opt(K.lite); return l === 'on' ? true : l === 'off' ? false : mode() === 'tv'; }
+  // Movily: завжди мобільний/веб вигляд (iPad-стиль), без TV-режиму і без спрощеного «lite»
+  function mode() { return 'ipad'; }
+  function lite() { return false; }
 
   // ---------- design tokens (docs/appletv-reference/SPEC.md), px at the reference screen ----------
   // iPad: 1180×820 (Lampa's body font 14.02px there); tvOS: 1920×1080 (22.81px). Lampa sizes all in
@@ -1915,7 +1916,7 @@
       if (c === 38) lastDir = 'up';
       else if (c === 40) lastDir = 'down';
       var t = e.target && e.target.tagName;
-      if (c >= 37 && c <= 40 && !touched && t !== 'INPUT' && t !== 'TEXTAREA' && ++arrows === 3 && opt(K.mode) === 'auto' && M !== 'tv') {
+      if (c >= 37 && c <= 40 && !touched && t !== 'INPUT' && t !== 'TEXTAREA' && ++arrows === 3 && false && M !== 'tv') {
         try { Lampa.Storage.set(K.remote, '1'); } catch (x) {}
         apply();
         // the open page was built for touch: built again for the remote (as after the look is changed in settings)
@@ -3158,7 +3159,6 @@
         apply(); rebuild = true;
         setTimeout(function () { try { Lampa.Settings.update(); } catch (x) {} }, 0);
       } });
-      p('look', K.mode, 'select', { name: tr('mode'), description: tr('mode_d') }, { auto: tr('auto'), ipad: tr('ipad'), tv: tr('tvos') });
       p('look', K.head, 'trigger', { name: tr('h_head'), description: tr('h_head_d') });
       p('look', K.titles, 'trigger', { name: tr('titles'), description: tr('titles_d') });
       p('look', K.tint, 'trigger', { name: tr('tint'), description: tr('tint_d') });
@@ -3173,7 +3173,6 @@
         var d = item.find('.settings-param__descr');
         if (apHasServer()) d.remove(); else d.text(tr('h_play_d'));
       } });
-      p('speed', K.lite, 'select', { name: tr('lite'), description: tr('lite_d') }, three);
       p('speed', K.img, 'select', { name: tr('img_q'), description: tr('img_q_d') }, { auto: tr('auto'), eco: tr('q_eco'), max: tr('q_max') });
       S.add(C, 'about', 1, { param: { name: 'stv_version', type: 'static' }, field: { name: tr('name') + ' ' + VERSION } });
       // who to ask, and that it is free (from the encoded block, like Autopilot's)

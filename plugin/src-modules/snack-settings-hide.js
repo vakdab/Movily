@@ -8,7 +8,7 @@
   /* sections of the main Settings list (data-component) */
   var FOLDERS = ['content_rows', 'parser', 'server'];
   /* the options of the screensaver block (data-name) */
-  var PARAMS = ['screensaver', 'screensaver_type', 'screensaver_time'];
+  var PARAMS = ['screensaver', 'screensaver_type', 'screensaver_time', 'navigation_type'];
 
   function css() {
     if (document.getElementById('snack-hide-css')) return;
