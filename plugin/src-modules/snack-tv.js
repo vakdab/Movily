@@ -1121,6 +1121,15 @@
     var t = c.t, B = c.B, glass = c.glass, tv = c.tv, MOVE = c.MOVE, r = [];
     var P = B + ' .stv-torp', X = P + ' .explorer', M = px(t.margin), FADE = ',background-color .15s,color .15s';
     // one column: the strip, the chips, the list
+    // any page built on Lampa's Explorer (torrents, UAFilms, online plugins) is ONE column, whatever the screen:
+    // Lampa's own two columns (a 27% card + 73% files) only hide under 768px wide, so a phone turned sideways
+    // got the card strip as a column and the episodes squeezed to its right
+    r.push(B + ' .explorer.layer--width{display:flex!important;flex-direction:column!important;height:100%}');
+    r.push(B + ' .explorer.layer--width > .explorer__left{display:block!important;width:auto!important;max-width:none!important;flex:none!important}');
+    r.push(B + ' .explorer.layer--width > .explorer__left > .scroll{height:auto!important;max-height:none!important}');
+    r.push(B + ' .explorer.layer--width > .explorer__left .scroll__content{padding:0!important}');
+    r.push(B + ' .explorer.layer--width .explorer__card{display:none!important}');
+    r.push(B + ' .explorer.layer--width > .explorer__files{width:auto!important;max-width:none!important;flex:1 1 auto!important;min-width:0!important;margin:0!important}');
     r.push(X + '{display:flex;flex-direction:column;height:100%}');
     r.push(X + '__left{display:block!important;width:auto!important;flex:none;padding:0 ' + M + '}');
     r.push(X + '__left > .scroll{height:auto!important}');
