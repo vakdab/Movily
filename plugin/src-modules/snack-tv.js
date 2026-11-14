@@ -839,6 +839,8 @@
     r.push(B + ' .items-line--type-stv-cw .card--wide{width:' + px(t.cwW) + '}');
     r.push(PHONE + B + ' .items-line--type-stv-cw .card--wide{width:78vw}}');
     // Shots switched off: the row's empty stand-in
+    r.push(B + ' .stv-pp{position:absolute;left:' + tp(14, 9) + ';right:' + tp(14, 9) + ';bottom:' + tp(14, 9) + ';height:' + tp(6, 4) + ';border-radius:9px;background:rgba(255,255,255,.3);overflow:hidden;z-index:3}');
+    r.push(B + ' .stv-pp > div{height:100%;border-radius:9px;background:#fff}');
     r.push(B + ' .stv-shots-hidden{display:none!important}');
     return r.join('\n');
   }
@@ -2016,7 +2018,8 @@
   function lineHook(line, scr) {
     var main = scr === 'main', cw = cwRow(line, scr);
     if (!trailersTitle) try { trailersTitle = Lampa.Lang.translate('title_trailers') + ' - ' + Lampa.Lang.translate('title_new'); } catch (e) {}
-    var wide = cw || (main && line.title === trailersTitle);
+    var wide = main && line.title === trailersTitle;   // «Continue» is a normal poster row (cw only marks its place)
+    if (cw) { line.stv_continue = 1; (line.results || []).forEach(function (x) { if (x && typeof x === 'object') x.stv_cwp = 1; }); }
     if (scr === 'actor' && line.title && (line.results || []).length) {
       // the person page (Apple): «Movies», «TV Shows»… without Lampa's counts, the best known first
       line.title = String(line.title).replace(/\s*\(\d+\)\s*$/, '');
@@ -2027,10 +2030,6 @@
     if (!opt(K.shots) && main && shotsRow(line)) {
       line.params = line.params || {};
       line.params.createInstance = function () { return new SkipRow(); };
-    } else if (cw) {
-      line.params = line.params || {};
-      line.params.type = 'stv-cw';
-      (line.results || []).forEach(function (x) { if (x && typeof x === 'object') x.stv_cw = 1; });
     }
   }
   // Lampa's own style for a card (wide for CUB's «В высоком качестве» / trailers, default…) is kept on
@@ -2066,8 +2065,26 @@
     return own;
   }
   function wideEmit(d) { var t = T[M]; return cardEmit(d, tmdbSize('backdrop', (d.stv_cw ? t.cwW : t.cardW) * k), function () { wideCard(this.html, this.data || d); }); }
+  // «Continue»: a normal poster with a thin progress line at its foot (and no label of its own)
+  function posterProgress(el, d) {
+    var view = el && el.querySelector('.card__view');
+    if (!view || view.querySelector('.stv-pp')) return;
+    var pct = 0;
+    try {
+      if (kindOf(d) === 'tv') {
+        var lw = lastWatched(d);
+        if (lw) pct = lw.pct < 90 ? lw.pct : 0;
+      } else pct = movieView(d).percent || 0;
+    } catch (e) {}
+    if (!(pct > 0)) return;
+    var b = document.createElement('div');
+    b.className = 'stv-pp';
+    b.innerHTML = '<div style="width:' + Math.max(6, Math.min(100, pct)) + '%"></div>';
+    view.appendChild(b);
+  }
   function posterEmit(d) {
     var size = tmdbSize('poster', posterCssW());
+    if (d.stv_cwp) return cardEmit(d, size, function () { var inst = this; setTimeout(function () { try { posterProgress(inst.html && (inst.html.nodeType ? inst.html : inst.html[0]), d); } catch (e) {} }, 0); });
     if (!needsLocal(d)) return cardEmit(d, size);
     return cardEmit(d, size, function () { var inst = this; setTimeout(function () { try { localCard(inst, d, size); } catch (e) {} }, 0); });
   }
@@ -2286,35 +2303,53 @@
     f.lastChild.textContent = label;
     view.appendChild(f);
   }
-  // Apple's order on Home: the banner, then "Up Next", then the rest. Done on Lampa's first batch of
-  // rows before they are built (a handler put first), so the remote moves in the shown order.
+  // Apple's order on Home: the banner, then «Continue», then «Streamings», then the rest.
+  // Lampa builds the rows in batches (the first ones at once, the rest as the page scrolls), so the order
+  // is fixed on the page itself after every batch: by the rows' titles, not by their place in a list.
+  function rowTitleOf(el) {
+    var h = el.querySelector('.items-line__title');
+    return h ? String(h.textContent || '').replace(/\s+/g, ' ').trim() : '';
+  }
+  function fixHomeOrder(scrollBody) {
+    try {
+      if (!themeOn() || !scrollBody) return;
+      cwTitles();
+      var lines = [].slice.call(scrollBody.children).filter(function (x) { return x.classList && x.classList.contains('items-line'); });
+      if (!lines.length) return;
+      var sTitle = String(window.__movily_streamings_title || '').trim();
+      var cont = null, stream = null;
+      lines.forEach(function (l) {
+        var t = rowTitleOf(l);
+        if (t && (t === cwTitle || t === cwTitle2)) cont = l;
+        else if (sTitle && t === sTitle) stream = l;
+      });
+      // the first row that is not the banner: the banner is the one with the hero mark
+      var first = scrollBody.firstElementChild, anchor = null;
+      for (var i = 0; i < scrollBody.children.length; i++) {
+        var c = scrollBody.children[i];
+        if (c.classList.contains('stv-hero') || c.querySelector('.stv-hero')) { anchor = c; continue; }
+        break;
+      }
+      var ref = anchor ? anchor.nextSibling : scrollBody.firstChild;
+      if (cont && cont !== ref) { scrollBody.insertBefore(cont, ref); }
+      ref = cont ? cont.nextSibling : ref;
+      if (stream && stream !== ref) { scrollBody.insertBefore(stream, ref); }
+    } catch (x) { log(x && x.message); }
+  }
   function homeOrder(e) {
     if (e.type !== 'init' || e.component !== 'main') return;
     var comp = e.object && e.object.activity && e.object.activity.component;
     if (!comp || typeof comp.use !== 'function') return;
-    comp.use({ onBuild: function (rows) {
-      try {
-        if (!themeOn() || !rows || !rows.length) return;
-        cwTitles();
-        var hero = -1, cw = -1;
-        rows.forEach(function (r, i) {
-          if (r && r.params && r.params.createInstance && r.results && r.results[0] && r.results[0].title === HERO_MARK) hero = i;
-          if (r && r.title && r.title === cwTitle) cw = i;
-        });
-        if (cw > 0) { var row = rows.splice(cw, 1)[0]; rows.splice(hero >= 0 ? (hero < cw ? hero + 1 : hero) : 0, 0, row); }
-        // «Streamings» (streamings.js) right after «Continue» (or after the banner when nothing is being watched)
-        var st = -1;
-        rows.forEach(function (r, i) { if (r && r.title && r.title === window.__movily_streamings_title) st = i; });
-        if (st >= 0) {
-          var after = -1;
-          rows.forEach(function (r, i) { if (r && r.title && r.title === cwTitle) after = i; });
-          if (after < 0) rows.forEach(function (r, i) { if (r && r.params && r.params.createInstance && r.results && r.results[0] && r.results[0].title === HERO_MARK) after = i; });
-          var srow = rows.splice(st, 1)[0];
-          if (st < after) after--;
-          rows.splice(after + 1, 0, srow);
-        }
-      } catch (x) { log(x && x.message); }
-    } }, 0);
+    var go = function () {
+      var root = e.object && e.object.activity && e.object.activity.render && e.object.activity.render(true);
+      var body = root && root.querySelector('.scroll__body');
+      if (body) fixHomeOrder(body);
+    };
+    comp.use({
+      onBuild: function () { setTimeout(go, 0); setTimeout(go, 400); },
+      onPushLoaded: function () { setTimeout(go, 0); },
+      onScroll: function () { setTimeout(go, 0); }
+    }, 0);
   }
 
   // ================= home: the hero banner =================
