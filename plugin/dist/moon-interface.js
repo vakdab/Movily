@@ -2232,6 +2232,8 @@
     r.push(B + ' .explorer.layer--width > .explorer__left > .scroll{height:auto!important;max-height:none!important}');
     r.push(B + ' .explorer.layer--width > .explorer__left .scroll__content{padding:0!important}');
     r.push(B + ' .explorer.layer--width .explorer__card{display:none!important}');
+    r.push(B + ' .explorer.layer--width .explorer__files-head .torrent-filter{justify-content:center}');
+    r.push(B + ' .explorer.layer--width .explorer__files-head .scroll--horizontal .scroll__body{display:flex;justify-content:center;min-width:100%}');
     r.push(B + ' .explorer.layer--width > .explorer__files{width:auto!important;max-width:none!important;flex:1 1 auto!important;min-width:0!important;margin:0!important}');
     r.push(X + '{display:flex;flex-direction:column;height:100%}');
     r.push(X + '__left{display:block!important;width:auto!important;flex:none;padding:0 ' + M + '}');
