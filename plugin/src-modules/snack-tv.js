@@ -1131,6 +1131,7 @@
     r.push(B + ' .explorer.layer--width .explorer__card{display:none!important}');
     r.push(B + ' .explorer.layer--width .explorer__files-head .torrent-filter{justify-content:center}');
     r.push(B + ' .explorer.layer--width .explorer__files-head .scroll--horizontal .scroll__body{display:flex;justify-content:center;min-width:100%}');
+    r.push(B + '.appletv-agnative-topnav .explorer.layer--width .explorer__files-head{padding:calc(env(safe-area-inset-top,0px)*0 + 1.2em) 0 .6em!important}');
     r.push(B + ' .explorer.layer--width > .explorer__files{width:auto!important;max-width:none!important;flex:1 1 auto!important;min-width:0!important;margin:0!important}');
     r.push(X + '{display:flex;flex-direction:column;height:100%}');
     r.push(X + '__left{display:block!important;width:auto!important;flex:none;padding:0 ' + M + '}');
