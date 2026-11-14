@@ -2234,14 +2234,7 @@
     r.push(B + ' .explorer.layer--width .explorer__card{display:none!important}');
     r.push(B + ' .explorer.layer--width .explorer__files-head .torrent-filter{justify-content:center}');
     r.push(B + ' .explorer.layer--width .explorer__files-head .scroll--horizontal .scroll__body{display:flex;justify-content:center;min-width:100%}');
-    r.push(B + '.appletv-agnative-topnav .explorer.layer--width .explorer__files-head{padding:.8em 0 .6em!important}');
-    // the episode / release rows of any Explorer page (online plugins: Collaps, Ashdi...): the theme's glass, no outline,
-    // the title on one line (leftdock's grey bordered cards and the 4.1em gap above the chips are for the old look)
-    var EXR = B + '.appletv-agnative-topnav .explorer.layer--width ';
-    r.push(EXR + '.explorer__files{padding:0 ' + M + '!important;max-width:none!important}');
-    r.push(EXR + '.online-prestige.selector,' + EXR + '.torrent-item.selector,' + EXR + '.watched-history.selector,' + EXR + '.torrent-serial.selector{background:rgba(255,255,255,.07)!important;border:0!important;box-shadow:none!important;border-radius:' + px(t.rowR) + '!important;margin:0 0 ' + tp(14, 10) + '!important}');
-    r.push(EXR + '.online-prestige.selector.focus,' + EXR + '.torrent-item.selector.focus,' + EXR + '.watched-history.selector.focus,' + EXR + '.torrent-serial.selector.focus{background:rgba(255,255,255,.16)!important;box-shadow:none!important;transform:none!important}');
-    r.push(EXR + '.online-prestige__title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:' + tp(28, 18) + '!important;font-weight:500!important}');
+    r.push(B + '.appletv-agnative-topnav .explorer.layer--width .explorer__files-head{padding:calc(env(safe-area-inset-top,0px)*0 + 1.2em) 0 .6em!important}');
     r.push(B + ' .explorer.layer--width > .explorer__files{width:auto!important;max-width:none!important;flex:1 1 auto!important;min-width:0!important;margin:0!important}');
     r.push(X + '{display:flex;flex-direction:column;height:100%}');
     r.push(X + '__left{display:block!important;width:auto!important;flex:none;padding:0 ' + M + '}');
