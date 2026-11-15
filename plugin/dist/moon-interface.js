@@ -13731,7 +13731,11 @@
       '.mvt-box{position:absolute;left:0;top:0;width:100%;height:100%;z-index:-1;overflow:hidden;pointer-events:none;opacity:0;background:#000;',
       'transition:opacity ' + FADE + 'ms ease-in-out;-webkit-mask-image:linear-gradient(to bottom,#000 55%,rgba(0,0,0,0) 100%);mask-image:linear-gradient(to bottom,#000 55%,rgba(0,0,0,0) 100%)}',
       '.mvt-box.loaded{opacity:1}',
-      '.mvt-box video{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover;border:0;pointer-events:none}',
+      '.mvt-box video{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover;border:0;pointer-events:none;',
+      'filter:url(#mvt-sharp) contrast(1.06) saturate(1.08);transform:translateZ(0);will-change:transform;-webkit-backface-visibility:hidden;backface-visibility:hidden}',
+      /* зерно: маскує блоки компресії низької роздільності, зображення сприймається чіткішим */
+      '.mvt-box:after{content:"";position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;opacity:.07;mix-blend-mode:overlay;',
+      'background-image:var(--mvt-grain);background-size:180px 180px}',
       /* фон і постер згасають, поки грає трейлер */
       '.mvt-on .full-start__background,.mvt-on .stv-own-bg{opacity:0!important;transition:opacity ' + FADE + 'ms ease-in-out}',
       '.mvt-on .full-start__poster,.mvt-on .full-start-new__poster{opacity:0;transition:opacity ' + FADE + 'ms ease-in-out}',
@@ -13745,6 +13749,27 @@
       '.mvt-sound.muted .mvt-ic-off{display:block}'
     ].join('');
     (document.head || document.documentElement).appendChild(st);
+  }
+
+  /* ---------- покращення картинки: різкість (unsharp mask) + зерно ---------- */
+  function enhance() {
+    if (document.getElementById('mvt-fx')) return;
+    var holder = document.createElement('div');
+    holder.id = 'mvt-fx';
+    holder.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden';
+    /* feConvolveMatrix: ядро різкості 3x3 (центр 5, сусіди -1), без зміни яскравості (divisor 1) */
+    holder.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0"><defs>' +
+      '<filter id="mvt-sharp" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">' +
+      '<feConvolveMatrix order="3" preserveAlpha="true" kernelMatrix="0 -0.45 0 -0.45 2.8 -0.45 0 -0.45 0"/>' +
+      '</filter></defs></svg>';
+    (document.body || document.documentElement).appendChild(holder);
+    try {
+      var cv = document.createElement('canvas'); cv.width = cv.height = 128;
+      var g = cv.getContext('2d'), im = g.createImageData(128, 128), d = im.data;
+      for (var i = 0; i < d.length; i += 4) { var v = 110 + Math.random() * 145; d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 255; }
+      g.putImageData(im, 0, 0);
+      document.documentElement.style.setProperty('--mvt-grain', 'url(' + cv.toDataURL('image/png') + ')');
+    } catch (e) {}
   }
 
   /* ---------- джерело: бекенд Prisma (luno.watch) ---------- */
@@ -13928,6 +13953,7 @@
 
   function start() {
     css();
+    enhance();
     settings();
     Lampa.Listener.follow('full', function (e) { try { onFull(e); } catch (x) { log(x && x.message); } });
     /* вийшли з картки / відкрили плеєр: зупиняємо; повернулися: нічого не робимо (нова картка запустить свій) */
