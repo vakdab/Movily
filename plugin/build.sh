@@ -5,7 +5,7 @@ cd "$(dirname "$0")"
 OUT=dist/moon-interface.js
 python3 - <<'PY'
 order = ["lampa-mobile-apple","snack-defaults","snack-tv","snack-header","snack-leftdock",
-         "snack-settings-merge","snack-settings-hide","showy-online","auto-plugins","streamings","movily-brand","episode-views"]
+         "snack-settings-merge","snack-settings-hide","showy-online","auto-plugins","streamings","movily-brand","episode-views","movily-smooth"]
 css = ""
 head = """/*!
  * Moon / Snack TV interface for Lampa (single-file plugin).
