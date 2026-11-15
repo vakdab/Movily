@@ -13206,16 +13206,18 @@
     '.mv-view-4 .online-prestige-rate>span{padding:0!important}',
     '.mv-view-4 .online-prestige__timeline,.mv-view-4 .online-prestige__quality{display:none!important}',
 
-    /* 5: grid, 2 columns, title over the picture */
-    '.mv-view-5 .scroll__body>div{display:flex;flex-wrap:wrap;margin:0 -.35em}',
-    '.mv-view-5 .online-prestige{display:block!important;width:calc(50% - .7em)!important;margin:0 .35em .7em!important;padding:0!important;border-radius:1em!important}',
-    '.mv-view-5 .online-prestige__img{width:100%!important;height:0!important;min-height:0!important;padding-bottom:62%}',
-    '.mv-view-5 .online-prestige__episode-number{top:.4em!important;left:.4em!important;right:auto!important;bottom:auto!important;font-size:.8em!important;padding:.1em .5em;border-radius:.4em;background:rgba(0,0,0,.7);display:block!important}',
-    '.mv-view-5 .online-prestige__body{position:absolute;left:0;right:0;bottom:0;padding:1.4em .7em .5em!important;background:linear-gradient(to top,rgba(0,0,0,.85),rgba(0,0,0,0))}',
+    /* 5: grid, 2 columns: the picture fills the whole card, title + time lie on it */
+    '.mv-view-5 .scroll__body{display:flex!important;flex-wrap:wrap;align-items:flex-start;margin:0 -.4em}',
+    '.mv-view-5 .online-prestige{display:block!important;box-sizing:border-box;flex:0 0 calc(50% - .8em)!important;width:calc(50% - .8em)!important;max-width:calc(50% - .8em)!important;margin:0 .4em .8em!important;padding:0!important;border-radius:1em!important;overflow:hidden}',
+    '.mv-view-5 .online-prestige+.online-prestige{margin-top:0!important}',
+    '.mv-view-5 .online-prestige__img{position:relative!important;display:block!important;width:100%!important;height:0!important;min-height:0!important;padding:0 0 62% 0!important;margin:0!important;border-radius:0!important}',
+    '.mv-view-5 .online-prestige__img>img{border-radius:0!important}',
+    '.mv-view-5 .online-prestige__episode-number{top:.45em!important;left:.45em!important;right:auto!important;bottom:auto!important;width:auto!important;height:auto!important;font-size:.8em!important;padding:.1em .55em;border-radius:.45em;background:rgba(0,0,0,.72);display:block!important}',
+    '.mv-view-5 .online-prestige__body{position:absolute!important;left:0;right:0;bottom:0;padding:1.6em .75em .35em!important;background:linear-gradient(to top,rgba(0,0,0,.88) 25%,rgba(0,0,0,0))}',
     '.mv-view-5 .online-prestige__head{display:block!important}',
-    '.mv-view-5 .online-prestige__title{font-size:1em!important;display:block!important;white-space:nowrap}',
-    '.mv-view-5 .online-prestige__time{padding:0!important;font-size:.85em;color:rgba(255,255,255,.7)}',
-    '.mv-view-5 .online-prestige__timeline{margin:.4em 0 0!important}',
+    '.mv-view-5 .online-prestige__title{display:block!important;font-size:1em!important;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+    '.mv-view-5 .online-prestige__time{padding:0!important;font-size:.85em;color:rgba(255,255,255,.72)}',
+    '.mv-view-5 .online-prestige__timeline{margin:.35em 0 0!important}',
     '.mv-view-5 .online-prestige__footer,.mv-view-5 .online-prestige__quality{display:none!important}',
 
     /* 6: banners: the picture is a dimmed background; label + title on the left, time on the right, rating at the bottom */
