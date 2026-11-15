@@ -3987,7 +3987,6 @@
                 processCards(body);
               } catch (err) { }
             }, 500);
-            setTimeout(triggerExtraRowRender, 900);
             schedulePatch();
             try {
               var comp = e.object && e.object.component;
