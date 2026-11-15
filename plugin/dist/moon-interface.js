@@ -13686,10 +13686,10 @@
 
 /* ===== movily-trailers ===== */
 /* Movily: фоновий трейлер на сторінці фільму/серіалу (як у Prisma).
-   Через ~1.5 с після відкриття картки трейлер плавно проявляється поверх фону (постер/бекдроп згасає),
-   зверху лишається градієнт, з'являється кнопка звуку. Вмикається/вимикається в Налаштування > Інтерфейс.
-   Джерело: TMDB /videos (ключ YouTube), пріоритет: мова інтерфейсу, потім en; тип Trailer, далі Teaser.
-   Автономний модуль: працює через події Lampa (full / complite), без змін ядра. */
+   Джерело те саме, що в Prisma: luno.watch/api/tmdb/{movie|tv}/{id}/trailer (гостьова сесія /api/client/session),
+   відповідь: прямий mp4. Відтворення в <video> без Referer (CDN блокує чужі сайти за Referer).
+   Цикл: затримка > трейлер плавно проявляється (постер згасає) > кінець > постер повертається > пауза > знову.
+   Вмикається/вимикається в Налаштування > Інтерфейс. Автономний модуль на подіях Lampa (full / complite). */
 (function () {
   'use strict';
   if (window.__movily_trailers) return;
@@ -13731,7 +13731,7 @@
       '.mvt-box{position:absolute;left:0;top:0;width:100%;height:100%;z-index:-1;overflow:hidden;pointer-events:none;opacity:0;background:#000;',
       'transition:opacity ' + FADE + 'ms ease-in-out;-webkit-mask-image:linear-gradient(to bottom,#000 55%,rgba(0,0,0,0) 100%);mask-image:linear-gradient(to bottom,#000 55%,rgba(0,0,0,0) 100%)}',
       '.mvt-box.loaded{opacity:1}',
-      '.mvt-box iframe{position:absolute;left:50%;top:50%;border:0;pointer-events:none;transform:translate(-50%,-50%)}',
+      '.mvt-box video{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover;border:0;pointer-events:none}',
       /* фон і постер згасають, поки грає трейлер */
       '.mvt-on .full-start__background,.mvt-on .stv-own-bg{opacity:0!important;transition:opacity ' + FADE + 'ms ease-in-out}',
       '.mvt-on .full-start__poster,.mvt-on .full-start-new__poster{opacity:0;transition:opacity ' + FADE + 'ms ease-in-out}',
@@ -13747,94 +13747,80 @@
     (document.head || document.documentElement).appendChild(st);
   }
 
-  /* ---------- вибір відео з TMDB ---------- */
-  function rank(list) {
-    var ui = lang(), want = ui === 'uk' ? ['uk', 'en'] : (ui === 'ru' ? ['ru', 'en'] : ['en']);
-    var seen = {}, out = [];
-    (list || []).forEach(function (v) {
-      if (!v || !v.key || seen[v.key]) return;
-      if (v.site && String(v.site).toLowerCase() !== 'youtube') return;
-      var s = 0;
-      if (v.type === 'Trailer') s += 100; else if (v.type === 'Teaser') s += 40; else return;
-      if (v.official) s += 10;
-      var li = want.indexOf(v.iso_639_1);
-      if (li >= 0) s += 30 - li * 10;
-      s += v.published_at ? Date.parse(v.published_at) / 1e13 : 0;
-      seen[v.key] = 1;
-      out.push({ v: v, s: s });
+  /* ---------- джерело: бекенд Prisma (luno.watch) ---------- */
+  var API = 'https://luno.watch/api/';
+  var sess = null, sessWait = null, urlCache = {};
+
+  function getJSON(url, headers, ok, fail) {
+    var x = new XMLHttpRequest();
+    x.open('GET', url, true);
+    x.timeout = 12000;
+    for (var h in headers) x.setRequestHeader(h, headers[h]);
+    x.onload = function () { try { ok(JSON.parse(x.responseText), x.status); } catch (e) { fail(e); } };
+    x.onerror = x.ontimeout = function () { fail(new Error('net')); };
+    x.send();
+  }
+  function session(cb) {
+    if (sess && sess.exp > Date.now() + 60000) return cb(sess.token);
+    if (sessWait) return sessWait.push(cb);
+    sessWait = [cb];
+    function done() { var q = sessWait; sessWait = null; q.forEach(function (f) { f(sess ? sess.token : null); }); }
+    getJSON(API + 'client/session', {}, function (j) {
+      if (j && j.guest_token) sess = { token: j.guest_token, exp: Date.now() + (parseInt(j.ttl, 10) || 3600) * 1000 };
+      done();
+    }, done);
+  }
+  function trailerUrl(movie, cb) {
+    var type = (movie.name || movie.first_air_date || movie.number_of_seasons) ? 'tv' : 'movie';
+    var key = type + '/' + movie.id, c = urlCache[key];
+    if (c && Date.now() - c.t < 10 * 60000) return cb(c.url);
+    session(function (tok) {
+      if (!tok) return cb(null);
+      getJSON(API + 'tmdb/' + key + '/trailer', { 'x-client-session': tok }, function (j) {
+        if (j && j.success && j.url && !j.hls) { urlCache[key] = { url: j.url, t: Date.now() }; cb(j.url); }
+        else cb(null);
+      }, function () { cb(null); });
     });
-    out.sort(function (x, y) { return y.s - x.s; });
-    return out.map(function (x) { return x.v; });
   }
 
-  function fetchVideos(movie, done) {
-    var type = movie.name || movie.first_air_date ? 'tv' : 'movie';
-    var lng = ({ uk: 'uk-UA', ru: 'ru-RU' })[lang()] || 'en-US';
-    var base = 'https://api.themoviedb.org/3/';
-    var net = new Lampa.Reguest(), out = [], left = 2;
-    function fin() { if (--left === 0) { try { net.clear(); } catch (e) {} done(out); } }
-    function req(language) {
-      var url = Lampa.TMDB.api(type + '/' + movie.id + '/videos?api_key=' + Lampa.TMDB.key() + '&language=' + language);
-      net.silent(url, function (j) { out = out.concat((j && j.results) || []); fin(); }, function () { fin(); });
-    }
-    req(lng); req('en-US');
-  }
-
-  /* ---------- плеєр (YouTube iframe, без елементів керування) ---------- */
-  var cur = null;
+  /* ---------- плеєр (<video>, без елементів керування) ---------- */
+  var cur = null, seq = 0;
+  var PAUSE_BETWEEN = 4000;   // скільки показуємо постер між повторами
 
   function stop(now) {
     if (!cur) return;
     var c = cur; cur = null;
-    clearTimeout(c.timer);
-    try { window.removeEventListener('message', c.onMsg); if (c.fit) window.removeEventListener('resize', c.fit); } catch (e) {}
+    clearTimeout(c.timer); clearTimeout(c.loop);
     try {
       if (c.box && c.box.parentNode) {
-        if (now) c.box.parentNode.removeChild(c.box);
-        else { c.box.classList.remove('loaded'); setTimeout(function () { if (c.box.parentNode) c.box.parentNode.removeChild(c.box); }, FADE); }
+        var rm = function () {
+          try { c.video.pause(); c.video.removeAttribute('src'); c.video.load(); } catch (e) {}
+          if (c.box.parentNode) c.box.parentNode.removeChild(c.box);
+        };
+        if (now) rm(); else { c.box.classList.remove('loaded'); setTimeout(rm, FADE); }
       }
     } catch (e) {}
     try { if (c.btn && c.btn.parentNode) c.btn.parentNode.removeChild(c.btn); } catch (e) {}
     try { c.render.removeClass('mvt-on'); } catch (e) {}
   }
 
-  function cmd(c, fn, args) {
-    try { c.frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: fn, args: args || [] }), '*'); } catch (e) {}
-  }
-
-  function play(render, queue, holder, bgEl) {
+  function play(render, url, holder, bgEl) {
     stop(true);
-    var vid = queue[0];
     var box = document.createElement('div');
     box.className = 'mvt-box';
-    var frame = document.createElement('iframe');
-    var withSound = opt(K.sound) === true;
-    var id = 'mvt' + Date.now();
-    var qs = 'autoplay=1&mute=1&controls=0&disablekb=1&fs=0&rel=0&modestbranding=1&iv_load_policy=3&playsinline=1&loop=1&playlist=' + vid.key +
-      '&enablejsapi=1&origin=' + encodeURIComponent(location.origin) + '&widgetid=1';
-    frame.src = 'https://www.youtube.com/embed/' + vid.key + '?' + qs;
-    frame.referrerPolicy = 'strict-origin-when-cross-origin';
-    frame.allow = 'autoplay; encrypted-media';
-    frame.setAttribute('tabindex', '-1');
-    frame.setAttribute('aria-hidden', 'true');
-    box.appendChild(frame);
+    var video = document.createElement('video');
+    video.muted = true; video.defaultMuted = true;
+    video.playsInline = true;
+    video.setAttribute('playsinline', ''); video.setAttribute('webkit-playsinline', '');
+    video.setAttribute('referrerpolicy', 'no-referrer');
+    video.setAttribute('disablepictureinpicture', '');
+    video.preload = 'auto';
+    video.controls = false;
+    box.appendChild(video);
     holder.insertBefore(box, bgEl ? bgEl.nextSibling : holder.firstChild);
 
-    function fit() {
-      var w = box.clientWidth || (holder && holder.clientWidth) || window.innerWidth || 1;
-      var h = box.clientHeight || (holder && holder.clientHeight) || window.innerHeight || 1;
-      var r = 16 / 9, W, H;
-      if (w / h > r) { W = w; H = w / r; } else { H = h; W = h * r; }
-      W *= 1.08; H *= 1.08;   /* трохи більше, щоб сховати чорні поля й заголовок YouTube */
-      frame.style.width = Math.ceil(W) + 'px';
-      frame.style.height = Math.ceil(H) + 'px';
-    }
-    fit();
-    setTimeout(fit, 300); setTimeout(fit, 1200);
+    var c = cur = { box: box, video: video, render: render, muted: opt(K.sound) !== true, started: false, btn: null, timer: 0, loop: 0 };
 
-    var c = cur = { box: box, frame: frame, render: render, muted: !withSound, id: id, started: false, btn: null, timer: 0 };
-
-    /* кнопка звуку */
     var btn = document.createElement('div');
     btn.className = 'mvt-sound muted';
     btn.innerHTML = '<svg class="mvt-ic-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>' +
@@ -13842,10 +13828,10 @@
     btn.title = tr('mute');
     var onTap = function (ev) {
       if (ev) { ev.preventDefault && ev.preventDefault(); ev.stopPropagation && ev.stopPropagation(); }
-      if (!cur || cur !== c) return;
+      if (cur !== c) return;
       c.muted = !c.muted;
-      cmd(c, c.muted ? 'mute' : 'unMute');
-      if (!c.muted) cmd(c, 'setVolume', [60]);
+      video.muted = c.muted;
+      if (!c.muted) { try { video.volume = 0.6; } catch (e) {} }
       btn.classList.toggle('muted', c.muted);
     };
     btn.addEventListener('click', onTap);
@@ -13855,47 +13841,44 @@
     anchor.appendChild(btn);
     c.btn = btn;
 
-    /* повідомлення від YouTube: коли реально грає, показуємо */
-    c.onMsg = function (ev) {
-      if (!cur || cur !== c || ev.source !== frame.contentWindow) return;
-      var d = ev.data;
-      if (typeof d === 'string') { try { d = JSON.parse(d); } catch (e) { return; } }
-      if (!d) return;
-      if (d.event === 'onError') {
-        log('помилка YouTube ' + d.info + ', наступне відео');
-        var rest = queue.slice(1);
-        if (rest.length) play(render, rest, holder, bgEl); else stop();
-        return;
-      }
-      if (d.event === 'onReady' || d.event === 'initialDelivery') {
-        cmd(c, 'playVideo');
-      }
-      var st = d.event === 'onStateChange' ? d.info : (d.info && typeof d.info.playerState === 'number' ? d.info.playerState : undefined);
-      if (st === 1 && !c.started) {
-        c.started = true;
-        clearTimeout(c.timer);
-        box.classList.add('loaded');
-        render.addClass('mvt-on');
-        btn.classList.add('show');
-        if (!c.muted) { cmd(c, 'unMute'); cmd(c, 'setVolume', [60]); btn.classList.remove('muted'); }
-      }
-      if (st === 0) { try { cmd(c, 'seekTo', [0, true]); cmd(c, 'playVideo'); } catch (e) {} }
-    };
-    window.addEventListener('message', c.onMsg);
-    frame.addEventListener('load', function () {
-      try { frame.contentWindow.postMessage(JSON.stringify({ event: 'listening', id: 1, channel: 'widget' }), '*'); } catch (e) {}
-      ['onReady', 'onStateChange', 'onError'].forEach(function (n) {
-        try { frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'addEventListener', args: [n], id: 1, channel: 'widget' }), '*'); } catch (e) {}
-      });
-      setTimeout(function () { if (cur === c) cmd(c, 'playVideo'); }, 400);
+    function showTrailer() {
+      if (cur !== c) return;
+      c.started = true;
+      clearTimeout(c.timer);
+      box.classList.add('loaded');
+      render.addClass('mvt-on');
+      btn.classList.add('show');
+      if (!c.muted) { video.muted = false; try { video.volume = 0.6; } catch (e) {} btn.classList.remove('muted'); }
+    }
+    function hideTrailer() {            // постер повертається
+      box.classList.remove('loaded');
+      render.removeClass('mvt-on');
+      btn.classList.remove('show');
+    }
+    function replay() {                 // пауза з постером, потім трейлер знову
+      if (cur !== c) return;
+      hideTrailer();
+      c.loop = setTimeout(function () {
+        if (cur !== c || !opt(K.on)) return;
+        try { video.currentTime = 0; } catch (e) {}
+        var p = video.play(); if (p && p.catch) p.catch(function () {});
+      }, PAUSE_BETWEEN);
+    }
+
+    video.addEventListener('playing', showTrailer);
+    video.addEventListener('ended', replay);
+    video.addEventListener('error', function () {
+      if (cur !== c) return;
+      log('помилка відео ' + (video.error && video.error.code));
+      if (!c.started) stop();
     });
-    c.timer = setTimeout(function () { if (cur === c && !c.started) { log('не стартував'); var rest2 = queue.slice(1); if (rest2.length) play(render, rest2, holder, bgEl); else stop(); } }, 12000);
-    c.fit = fit;
-    window.addEventListener('resize', fit);
+    c.timer = setTimeout(function () { if (cur === c && !c.started) { log('не стартував'); stop(); } }, 15000);
+
+    video.src = url;
+    var pr = video.play(); if (pr && pr.catch) pr.catch(function () {});
   }
 
   /* ---------- картка фільму ---------- */
-  var seq = 0;
   function onFull(e) {
     /* нова картка: попередній трейлер завжди зупиняємо (навіть коли функцію вимкнено) */
     if (e.type === 'start' || e.type === 'complite') { seq++; stop(true); }
@@ -13905,31 +13888,28 @@
     var render = e.object.activity.render();
     var token = ++seq;
     var delay = parseInt(opt(K.delay), 10) || 1500;
+    var t0 = Date.now();
 
-    /* 1) відео, які Lampa вже отримала (e.data.videos), 2) додатковий запит до TMDB */
-    function launch(list) {
-      if (token !== seq || !opt(K.on)) return;
-      var q = rank(list).slice(0, 4);
-      if (!q.length) { log('трейлера немає'); return; }
-      if (!document.body.contains(render[0])) return;
-      var bg = render.find('.full-start__background').first();
-      var holder = bg.length ? bg[0].parentNode : (render.find('.full-start-new').first().closest('.scroll').parent()[0] || render[0]);
-      if (!holder) return;
-      if (window.getComputedStyle(holder).position === 'static') holder.style.position = 'relative';
-      play(render, q, holder, bg.length ? bg[0] : null);
-    }
-    setTimeout(function () {
-      if (token !== seq || !opt(K.on)) return;
-      var active = null; try { active = Lampa.Activity.active(); } catch (x) {}
-      if (active && active.activity && active.activity.render()[0] !== render[0]) return;   /* уже пішли з картки */
-      var have = e.data && e.data.videos && e.data.videos.results;
-      if (have && have.length && rank(have).length) return launch(have);
-      fetchVideos(movie, launch);
-    }, delay);
+    /* запит до бекенду йде паралельно із затримкою; показуємо не раніше затримки */
+    trailerUrl(movie, function (url) {
+      var wait = Math.max(0, delay - (Date.now() - t0));
+      setTimeout(function () {
+        if (token !== seq || !opt(K.on)) return;
+        if (!url) { log('трейлера немає'); return; }
+        var active = null; try { active = Lampa.Activity.active(); } catch (x) {}
+        if (active && active.activity && active.activity.render()[0] !== render[0]) return;   /* уже пішли з картки */
+        if (!document.body.contains(render[0])) return;
+        var bg = render.find('.full-start__background').first();
+        var holder = bg.length ? bg[0].parentNode : (render.find('.full-start-new').first().closest('.scroll').parent()[0] || render[0]);
+        if (!holder) return;
+        if (window.getComputedStyle(holder).position === 'static') holder.style.position = 'relative';
+        play(render, url, holder, bg.length ? bg[0] : null);
+      }, wait);
+    });
   }
 
-  function pause() { if (cur) cmd(cur, 'pauseVideo'); }
-  function resume() { if (cur && cur.started) cmd(cur, 'playVideo'); }
+  function pause() { if (cur) { try { cur.video.pause(); } catch (e) {} } }
+  function resume() { if (cur && cur.started) { try { var p = cur.video.play(); if (p && p.catch) p.catch(function () {}); } catch (e) {} } }
 
   /* ---------- налаштування (Інтерфейс) ---------- */
   function settings() {
