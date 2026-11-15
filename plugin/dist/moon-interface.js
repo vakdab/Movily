@@ -3022,7 +3022,7 @@
   // the remote: the last up / down and a key counter (empty rows pass the focus on in that direction)
   var lastDir = 'down', keyCount = 0;
   var stateTimer = 0;
-  function pageStateLater() { clearTimeout(stateTimer); stateTimer = setTimeout(pageState, 420); }
+  function pageStateLater() { clearTimeout(stateTimer); stateTimer = setTimeout(pageState, 120); }
   function trackKeys() {
     // a remote: three arrow presses with no touch before them (and not typing): the TV look in «auto», kept for
     // this device; a touch takes it back (an iPad with a keyboard does not stay a TV)
@@ -4634,41 +4634,97 @@
       var title = right.querySelector('.full-start-new__title');
       var react = right.querySelector('.full-start-new__reactions');
       if (!title) continue;
-      /* logo above, the text title under it */
+
       var logo = title.querySelector('.stv-logo');
+      var text = title.querySelector('.snack-title-text');
+      var kids = react ? react.children : [];
+      var signature = [
+        logo ? 'logo' : 'text',
+        text ? text.textContent : '',
+        react ? String(kids.length) : 'none',
+        title.nextElementSibling === react ? 'moved' : 'unmoved'
+      ].join('|');
+      if (right.getAttribute('data-stv-card-layout') === signature) continue;
+
+      /* Make the title layout idempotently. Never append to cssText on every pass. */
       if (logo && title.classList.contains('stv-has-logo')) {
-        var txt = null;
-        for (var n = title.firstChild; n; n = n.nextSibling) { if (n.nodeType === 3 && n.nodeValue.trim()) { txt = n; break; } }
-        if (txt && !title.querySelector('.snack-title-text')) {
-          var sp = document.createElement('div');
-          sp.className = 'snack-title-text';
-          sp.textContent = txt.nodeValue.trim();
-          title.removeChild(txt);
-          title.appendChild(sp);
+        if (!text) {
+          var node = null;
+          for (var n = title.firstChild; n; n = n.nextSibling) {
+            if (n.nodeType === 3 && n.nodeValue.trim()) { node = n; break; }
+          }
+          if (node) {
+            text = document.createElement('div');
+            text.className = 'snack-title-text';
+            text.textContent = node.nodeValue.trim();
+            title.removeChild(node);
+            title.appendChild(text);
+          }
         }
-        var st = title.querySelector('.snack-title-text');
-        if (st) { st.style.cssText = 'order:2;font-size:clamp(16px,4.6vw,22px);line-height:1.2;color:#fff;font-weight:800;text-align:center;margin-top:8px'; logo.style.order = '1'; }
-        title.style.cssText += ';display:flex;flex-direction:column;align-items:center;font-size:0';
+        title.style.display = 'flex';
+        title.style.flexDirection = 'column';
+        title.style.alignItems = 'center';
+        title.style.fontSize = '0';
+        logo.style.order = '1';
+        if (text) {
+          text.style.order = '2';
+          text.style.fontSize = 'clamp(16px,4.6vw,22px)';
+          text.style.lineHeight = '1.2';
+          text.style.color = '#fff';
+          text.style.fontWeight = '800';
+          text.style.textAlign = 'center';
+          text.style.marginTop = '8px';
+        }
       }
-      if (!react) continue;
-      /* the reactions go right after the title block, in one row */
-      if (title.nextElementSibling !== react) right.insertBefore(react, title.nextSibling);
-      react.style.cssText = 'display:flex;flex-wrap:nowrap;justify-content:center;align-items:center;gap:6px;margin:6px 0 12px;min-height:0;width:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none';
-      var kids = react.children;
-      for (var k = 0; k < kids.length; k++) kids[k].style.cssText = 'flex:0 0 auto;padding:0;margin:0';
+      if (react) {
+        if (title.nextElementSibling !== react) right.insertBefore(react, title.nextSibling);
+        react.style.display = 'flex';
+        react.style.flexWrap = 'nowrap';
+        react.style.justifyContent = 'center';
+        react.style.alignItems = 'center';
+        react.style.gap = '6px';
+        react.style.margin = '6px 0 12px';
+        react.style.minHeight = '0';
+        react.style.width = '100%';
+        react.style.overflowX = 'auto';
+        react.style.overflowY = 'hidden';
+        react.style.webkitOverflowScrolling = 'touch';
+        react.style.scrollbarWidth = 'none';
+        for (var k = 0; k < kids.length; k++) {
+          kids[k].style.flex = '0 0 auto';
+          kids[k].style.padding = '0';
+          kids[k].style.margin = '0';
+        }
+      }
+      /* Re-read the position/count after the write and remember this exact layout. */
+      right.setAttribute('data-stv-card-layout', [
+        title.querySelector('.stv-logo') ? 'logo' : 'text',
+        title.querySelector('.snack-title-text') ? title.querySelector('.snack-title-text').textContent : '',
+        react ? String(react.children.length) : 'none',
+        react && title.nextElementSibling === react ? 'moved' : 'unmoved'
+      ].join('|'));
     }
   }
 
   function start() {
     ensure();
     fixCard();
-    setInterval(function () { ensure(); fixCard(); }, 1000);
-    setInterval(ensure, 5000);
+    /* Do not poll the whole interface. New cards and navigation mutations are enough. */
     if (window.MutationObserver) {
       var t;
-      new MutationObserver(function () { clearTimeout(t); t = setTimeout(function () { ensure(); fixCard(); }, 150); })
-        .observe(document.body, { childList: true, attributes: true, attributeFilter: ['class'] });
+      new MutationObserver(function (mutations) {
+        var relevant = false;
+        for (var i = 0; i < mutations.length; i++) {
+          if (mutations[i].type === 'childList' && mutations[i].addedNodes.length) { relevant = true; break; }
+        }
+        if (!relevant) return;
+        clearTimeout(t);
+        t = setTimeout(function () { ensure(); fixCard(); }, 120);
+      }).observe(document.body, { childList: true, subtree: true });
     }
+    if (window.Lampa && Lampa.Listener) Lampa.Listener.follow('activity', function (e) {
+      if (e.type === 'start' || e.type === 'archive') setTimeout(function () { ensure(); fixCard(); }, 0);
+    });
     if (window.Lampa && Lampa.Listener) Lampa.Listener.follow('app', function (e) { if (e.type === 'ready') ensure(); });
   }
 

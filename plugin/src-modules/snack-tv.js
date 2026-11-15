@@ -1929,7 +1929,7 @@
   // the remote: the last up / down and a key counter (empty rows pass the focus on in that direction)
   var lastDir = 'down', keyCount = 0;
   var stateTimer = 0;
-  function pageStateLater() { clearTimeout(stateTimer); stateTimer = setTimeout(pageState, 420); }
+  function pageStateLater() { clearTimeout(stateTimer); stateTimer = setTimeout(pageState, 120); }
   function trackKeys() {
     // a remote: three arrow presses with no touch before them (and not typing): the TV look in «auto», kept for
     // this device; a touch takes it back (an iPad with a keyboard does not stay a TV)
