@@ -1,108 +1,155 @@
-/* Movily smooth: плавні переходи між сторінками і менше смикання при швидкому користуванні.
-   1) Перехід між сторінками: замість двох накладених fade (.activity + .activity__body, через що екран
-      на мить ставав порожнім) нова сторінка з'являється одним коротким fade + легким зсувом (лише
-      opacity/transform, тобто на GPU), стара сторінка гасне під нею.
-   2) Під час переходу тимчасово вимикається backdrop-filter (найдорожчий ефект на телефоні), потім повертається.
-   3) Швидкі кліки не накопичують анімацій: клас переходу знімається по таймеру, що скидається.
-   Нічого не змінює в логіці Lampa: лише CSS і клас body.movily-transition. */
+/* Movily smooth navigation.
+   Short, GPU-friendly page transitions. Blur is applied only to the page being moved,
+   never to the whole interface, so fast navigation stays stable on phones. */
 (function () {
   'use strict';
   if (window.__movily_smooth) return;
   window.__movily_smooth = true;
 
   var ID = 'movily-smooth-css';
-  var CLS = 'movily-transition';
-  var DURATION = 240;           // ms, довжина fade нової сторінки
+  var MOTION = 'movily-motion';
+  var ENTER = 'movily-page-enter';
+  var EXIT = 'movily-page-exit';
+  var HOLD = 'movily-page-hold';
+  var DURATION = 320;
   var EASE = 'cubic-bezier(.22,.61,.36,1)';
+  var previous = null;
+  var activeObserver = null;
+  var cleanupTimer = 0;
+  var finishTimer = 0;
 
-  function css() {
+  function addCss() {
     if (document.getElementById(ID)) return;
-    var st = document.createElement('style');
-    st.id = ID;
-    st.textContent = [
-      /* одна анімація замість двох: прибираємо fade тіла, fade робить сама .activity */
+    var style = document.createElement('style');
+    style.id = ID;
+    style.textContent = [
+      /* Lampa's body fade creates a second animation and a dark flash. */
       'body .activity__body{transition:none!important;animation:none!important}',
       'body .activity--load .activity__body{opacity:0}',
-      'body .activity{transition:opacity ' + DURATION + 'ms ' + EASE + ';will-change:auto}',
-      /* стара сторінка гасне швидше, ніж з'являється нова, щоб не було «порожнього» кадру */
-      'body .activity:not(.activity--active){transition-duration:' + Math.round(DURATION * 0.6) + 'ms;pointer-events:none}',
-      /* поки нова сторінка вантажить дані (activity--load), попередня лишається на екрані, а не гасне в порожнечу */
-      'body .activity.movily-prev{opacity:1;z-index:0;transition:none}',
-      'body .activity.movily-prev.movily-prev-out{opacity:0;transition:opacity ' + Math.round(DURATION * 0.8) + 'ms ' + EASE + '}',
-      /* нова сторінка: легкий зсув знизу, лише transform */
-      'body.' + CLS + ' .activity--active{animation:movily-activity-in ' + DURATION + 'ms ' + EASE + ' both}',
-      '@keyframes movily-activity-in{from{transform:translate3d(0,10px,0)}to{transform:translate3d(0,0,0)}}',
-      /* найдорожче для GPU: скло. На час переходу вимикаємо, потім повертається само */
-      'body.' + CLS + ' *,body.' + CLS + ' *::before,body.' + CLS + ' *::after{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}',
-      /* поважаємо системне «зменшити рух» */
-      '@media (prefers-reduced-motion:reduce){body .activity{transition:none!important}body.' + CLS + ' .activity--active{animation:none!important}}'
+      'body .activity{transition:none!important;will-change:auto}',
+      'body .activity:not(.activity--active){pointer-events:none}',
+      'body.' + MOTION + ' .activity.' + HOLD + '{z-index:1!important;opacity:1!important;filter:none!important;transform:none!important;will-change:auto}',
+
+      /* Incoming page: subtle lift, scale and motion blur. */
+      'body.' + MOTION + ' .activity.' + ENTER + '{z-index:2!important;opacity:1!important;animation:movily-page-in ' + DURATION + 'ms ' + EASE + ' both;will-change:transform,opacity,filter}',
+      'body.' + MOTION + ' .activity.' + ENTER + '.activity--load{opacity:0!important;animation:none;will-change:auto}',
+      '@keyframes movily-page-in{0%{opacity:0;transform:translate3d(0,18px,0) scale(.985);filter:blur(8px)}48%{opacity:.88;filter:blur(2.5px)}100%{opacity:1;transform:translate3d(0,0,0) scale(1);filter:blur(0)}}',
+
+      /* Outgoing page: stays visible until the incoming page is ready. */
+      'body.' + MOTION + ' .activity.' + EXIT + '{z-index:1!important;opacity:1!important;animation:movily-page-out ' + Math.round(DURATION * .8) + 'ms ' + EASE + ' forwards;will-change:transform,opacity,filter;pointer-events:none}',
+      '@keyframes movily-page-out{0%{opacity:1;transform:translate3d(0,0,0) scale(1);filter:blur(0)}100%{opacity:0;transform:translate3d(0,-8px,0) scale(1.01);filter:blur(4px)}}',
+
+      /* Blur is restricted to the two moving activity layers, not every glass element. */
+      'body.' + MOTION + ' .activity.' + ENTER + ' *,body.' + MOTION + ' .activity.' + EXIT + ' *{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}',
+      '@media (prefers-reduced-motion:reduce){body .activity.' + ENTER + ',body .activity.' + EXIT + '{animation:none!important;filter:none!important;transform:none!important;transition:none!important}body .activity.' + ENTER + '.activity--load{opacity:0!important}}'
     ].join('\n');
-    (document.head || document.documentElement).appendChild(st);
+    (document.head || document.documentElement).appendChild(style);
   }
 
-  var prevEl = null, releaseTimer = 0, loadObs = null;
-
-  function release() {
-    clearTimeout(releaseTimer);
-    if (loadObs) { loadObs.disconnect(); loadObs = null; }
-    var el = prevEl; prevEl = null;
-    if (!el) return;
-    el.classList.add('movily-prev-out');
-    setTimeout(function () { el.classList.remove('movily-prev', 'movily-prev-out'); }, Math.round(DURATION * 0.8) + 40);
+  function clearPageClasses(el) {
+    if (!el || !el.classList) return;
+    el.classList.remove(ENTER, EXIT, HOLD);
   }
 
-  /* викликається ДО Lampa.Activity.push/backward: запам'ятовуємо сторінку, що зараз на екрані */
-  function holdPrevious() {
-    var cur = document.querySelector('.activity.activity--active');
-    if (!cur || cur.classList.contains('activity--load')) return;
-    if (prevEl && prevEl !== cur) { prevEl.classList.remove('movily-prev', 'movily-prev-out'); }
-    prevEl = cur;
-    cur.classList.remove('movily-prev-out');
-    cur.classList.add('movily-prev');
-    clearTimeout(releaseTimer);
-    releaseTimer = setTimeout(release, 4000);           /* страховка: не тримати стару сторінку вічно */
-    if (loadObs) loadObs.disconnect();
-    /* чекаємо, поки нова активна сторінка перестане бути в стані завантаження */
+  function stopMotion() {
+    clearTimeout(cleanupTimer);
+    clearTimeout(finishTimer);
+    if (activeObserver) { activeObserver.disconnect(); activeObserver = null; }
+    if (previous) clearPageClasses(previous);
     var slides = document.querySelector('.activitys__slides');
-    if (!slides || !window.MutationObserver) { setTimeout(release, 400); return; }
-    var check = function () {
-      var act = slides.querySelector('.activity--active');
-      if (act && act !== prevEl && !act.classList.contains('activity--load')) release();
-    };
-    loadObs = new MutationObserver(check);
-    loadObs.observe(slides, { attributes: true, attributeFilter: ['class'], subtree: true });
-    setTimeout(check, 0);
+    if (slides) Array.prototype.forEach.call(slides.children, clearPageClasses);
+    previous = null;
+    if (document.body) document.body.classList.remove(MOTION);
   }
 
-  var timer = 0;
-  function begin() {
-    var b = document.body;
-    if (!b) return;
-    if (!b.classList.contains(CLS)) b.classList.add(CLS);
-    clearTimeout(timer);
-    timer = setTimeout(function () { b.classList.remove(CLS); }, DURATION + 120);
+  function finish(next) {
+    if (!next || next.classList.contains('activity--load')) return false;
+    if (previous && previous !== next) {
+      previous.classList.remove(HOLD, EXIT);
+      previous.classList.add(EXIT);
+    }
+    next.classList.add(ENTER);
+    clearTimeout(cleanupTimer);
+    cleanupTimer = setTimeout(function () {
+      if (previous) clearPageClasses(previous);
+      clearPageClasses(next);
+      if (document.body) document.body.classList.remove(MOTION);
+      previous = null;
+    }, DURATION + 180);
+    return true;
+  }
+
+  function animate(next, old) {
+    if (!document.body || !next) return;
+    clearTimeout(finishTimer);
+    if (activeObserver) { activeObserver.disconnect(); activeObserver = null; }
+    document.body.classList.add(MOTION);
+    if (previous && previous !== old) clearPageClasses(previous);
+    previous = old && old !== next ? old : null;
+    if (previous) {
+      previous.classList.remove(ENTER);
+      /* It remains visible while the next activity is loading. */
+      previous.classList.remove(EXIT);
+      previous.classList.add(HOLD);
+    }
+
+    if (!next.classList.contains('activity--load')) {
+      finish(next);
+      return;
+    }
+
+    /* Wait for data, then crossfade. This removes the empty/dark flash on slow sources. */
+    var slides = document.querySelector('.activitys__slides');
+    if (slides && window.MutationObserver) {
+      activeObserver = new MutationObserver(function () {
+        var current = slides.querySelector('.activity--active');
+        if (current && !current.classList.contains('activity--load')) {
+          activeObserver.disconnect();
+          activeObserver = null;
+          finish(current);
+        }
+      });
+      activeObserver.observe(slides, { attributes: true, attributeFilter: ['class'], subtree: true });
+    }
+    finishTimer = setTimeout(function () {
+      var current = document.querySelector('.activity--active');
+      if (current) finish(current);
+    }, 4000);
   }
 
   function hook() {
     try {
-      if (!window.Lampa || !Lampa.Listener) return false;
-      /* будь-який старт/повернення активності = перехід */
-      Lampa.Listener.follow('activity', function (e) {
-        if (e && (e.type === 'start' || e.type === 'archive' || e.type === 'create' || e.type === 'destroy')) begin();
+      if (!window.Lampa || !Lampa.Listener || !Lampa.Activity) return false;
+      Lampa.Listener.follow('activity', function (event) {
+        if (!event || (event.type !== 'start' && event.type !== 'destroy')) return;
+        var next = document.querySelector('.activity--active');
+        if (next) animate(next, previous);
       });
-      var A = Lampa.Activity;
-      ['push', 'backward', 'replace'].forEach(function (name) {
-        var orig = A && A[name];
-        if (typeof orig !== 'function' || orig.__movily_smooth) return;
-        A[name] = function () { if (name !== 'backward') holdPrevious(); begin(); return orig.apply(this, arguments); };
-        A[name].__movily_smooth = true;
+
+      var activity = Lampa.Activity;
+      ['push', 'replace', 'backward'].forEach(function (name) {
+        var original = activity[name];
+        if (typeof original !== 'function' || original.__movilySmooth) return;
+        activity[name] = function () {
+          var old = document.querySelector('.activity--active');
+          var result = original.apply(this, arguments);
+          var next = document.querySelector('.activity--active');
+          if (next) animate(next, old);
+          return result;
+        };
+        activity[name].__movilySmooth = true;
       });
       return true;
-    } catch (e) { return false; }
+    } catch (error) {
+      return false;
+    }
   }
 
-  css();
+  addCss();
   if (!hook()) {
-    var tries = 0, t = setInterval(function () { if (hook() || ++tries > 40) clearInterval(t); }, 250);
+    var tries = 0;
+    var timer = setInterval(function () {
+      if (hook() || ++tries > 40) clearInterval(timer);
+    }, 250);
   }
 })();
