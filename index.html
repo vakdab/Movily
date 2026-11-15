@@ -29,11 +29,14 @@
 
     <link rel="stylesheet" href="css/app.css?v=4.56">
 </head>
-<body style="background: #1d1f20;">
+<body class="movily-booting" style="background: #1d1f20;">
     <style>
         /* Movily: без екрану завантаження (картинка .welcome і текст кроків) */
         .welcome, .lp-step, .lp-status { display: none !important; }
         .lp-step, .lp-status { visibility: hidden !important; }
+        /* Не показувати проміжний DOM із недовантаженими постерами під час reload. */
+        body.movily-booting #app { opacity: 0; pointer-events: none; }
+        body:not(.movily-booting) #app { opacity: 1; transition: opacity .12s ease-out; }
     </style>
     <script>
         /* Movily: без вибору мови, інтерфейс одразу українською */

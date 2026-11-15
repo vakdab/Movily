@@ -16,4 +16,25 @@
     '@media (max-width:480px){body.stv .full-start-new__right{margin-top:clamp(-120px,-20vh,-80px)!important}}'
   ].join('');
   (document.head || document.documentElement).appendChild(style);
+
+  // On a hard reload Lampa creates the Activity in stages. Keep the partial
+  // card tree hidden until the first page is actually ready, otherwise Safari
+  // briefly paints poster placeholders before the final layout arrives.
+  function revealWhenReady() {
+    if (!document.body || !document.body.classList.contains('movily-booting')) return;
+    var ready = document.querySelector('.activity--active:not(.activity--load)');
+    if (!ready) return;
+    var poster = ready.querySelector('.full-start__background, .full-start-new__img, .card__img');
+    if (poster && poster.tagName === 'IMG' && !poster.complete) return;
+    document.body.classList.remove('movily-booting');
+  }
+
+  var tries = 0;
+  var bootTimer = setInterval(function () {
+    revealWhenReady();
+    if (!document.body || !document.body.classList.contains('movily-booting') || ++tries > 100) {
+      clearInterval(bootTimer);
+      if (document.body) document.body.classList.remove('movily-booting');
+    }
+  }, 100);
 })();
