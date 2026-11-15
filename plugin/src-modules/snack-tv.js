@@ -3320,7 +3320,12 @@
     Lampa.Listener.follow('activity', function (e) {
       try {
         
-        if (e.type === 'init') building = e.object && e.object.component ? e.object : { component: e.component || '' };
+        if (e.type === 'init') {
+          building = e.object && e.object.component ? e.object : { component: e.component || '' };
+          // Set the floating-header layout while the new Activity is still hidden.
+          // Doing this at `start` makes the already visible page jump after loading.
+          floatHead();
+        }
         // the torrents page: its slide marked (the look of Explorer + Filter only there, not on the online
         // plugins' pages that use them too)
         if (e.type === 'init' && e.component === 'torrents' && e.object && e.object.activity) e.object.activity.render().addClass('stv-torp');
@@ -3329,7 +3334,7 @@
         if (e.type === 'start' || e.type === 'archive' || e.type === 'destroy') building = null;
         if (e.type === 'destroy') pruneWatched(e.object && e.object.activity && e.object.activity.render ? e.object.activity.render(true) : null);
         homeOrder(e);
-        if (e.type === 'start' || e.type === 'archive') floatHead();
+        if (e.type === 'archive') floatHead();
         if (e.type === 'start' || e.type === 'archive') pageStateLater();
         if (e.type === 'start' && e.component === 'actor' && themeOn()) themePerson(e.object);
       } catch (x) {}
