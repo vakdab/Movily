@@ -11211,6 +11211,10 @@
 
     function switchCardToBackdrop(cardEl) {
       if (cardEl.getAttribute('data-nfx-switched')) return;
+      // On phones Lampa's poster is already the final card image. Replacing it
+      // later with a backdrop/clean poster causes a second image decode and a
+      // visible repaint of every row after the page appears ready.
+      if (isMobile()) return;
       if (isSursButtonCard(cardEl)) {
         cardEl.setAttribute('data-nfx-switched', 'surs');
         return;
@@ -13678,30 +13682,6 @@
     try { if (window.Lampa && Lampa.Activity && Lampa.Listener && init()) clearInterval(t); } catch (e) {}
     if (++tries > 60) clearInterval(t);
   }, 100);
-})();
-
-
-/* ===== layout-stability ===== */
-/* Layout stability: reserve geometry before async data and images arrive. */
-(function () {
-  'use strict';
-  if (window.__movily_layout_stability) return;
-  window.__movily_layout_stability = true;
-
-  var style = document.createElement('style');
-  style.id = 'movily-layout-stability';
-  style.textContent = [
-    'html{overflow-y:scroll;overflow-x:hidden}',
-    'body{overflow-x:hidden}',
-    'body.stv .activitys,body.stv .activity,body.stv .activity__body,body.stv .full-start-new,body.stv .full-start-new__body,body.stv .full-start-new__right,body.stv .items-line{transition:none!important}',
-    'body.stv .full-start-new__body{min-height:clamp(520px,72vh,820px)}',
-    'body.stv .full-start-new__title.stv-logo-pending,body.stv .full-start-new__title.stv-has-logo{contain:layout}',
-    'body.stv .card__view{contain:layout;overflow:hidden}',
-    '@media (pointer:coarse) and (max-width:600px){body.stv .stv-hero__slide:not(.on){display:none!important}body.stv .stv-hero__slide{transition:none!important}body.stv .settings__content,body.stv .navigation-bar,body.stv .head{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}}',
-    '@media (max-width:480px){body.stv .full-start-new__right{margin-top:clamp(-120px,-20vh,-80px)!important}}'
-  ].join('');
-  (document.head || document.documentElement).appendChild(style);
-
 })();
 
 

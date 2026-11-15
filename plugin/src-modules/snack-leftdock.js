@@ -6457,6 +6457,10 @@
 
     function switchCardToBackdrop(cardEl) {
       if (cardEl.getAttribute('data-nfx-switched')) return;
+      // On phones Lampa's poster is already the final card image. Replacing it
+      // later with a backdrop/clean poster causes a second image decode and a
+      // visible repaint of every row after the page appears ready.
+      if (isMobile()) return;
       if (isSursButtonCard(cardEl)) {
         cardEl.setAttribute('data-nfx-switched', 'surs');
         return;
