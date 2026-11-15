@@ -13251,6 +13251,7 @@
     head.parentNode.insertBefore(bar, head.nextSibling);
     var cur = get();
     apply(root, cur);
+    bar.style.display = head.classList.contains('hide') ? 'none' : '';
     bar.addEventListener('click', function (e) {
       var b = e.target;
       while (b && b !== bar && !(b.classList && b.classList.contains('mv-views__btn'))) b = b.parentNode;
@@ -13274,10 +13275,17 @@
     var roots = document.querySelectorAll('.explorer');
     for (var i = 0; i < roots.length; i++) {
       var r = roots[i];
-      if (r.querySelector('.' + BAR)) {
+      var have = r.querySelector('.' + BAR);
+      if (have) {
         // rows arrive later: keep the mode on the freshly built list
         var body = r.querySelector('.explorer__files-body');
         if (body && !body.classList.contains('mv-vw')) apply(r, get());
+        // Lampa hides / shows the head (chips) itself: the toolbar follows it, and stays right after it
+        var hd = r.querySelector('.explorer__files-head');
+        if (hd) {
+          have.style.display = hd.classList.contains('hide') ? 'none' : '';
+          if (hd.nextSibling !== have) hd.parentNode.insertBefore(have, hd.nextSibling);
+        }
       } else build(r);
     }
   }
