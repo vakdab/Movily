@@ -13697,6 +13697,7 @@
     'body.stv .full-start-new__body{min-height:clamp(520px,72vh,820px)}',
     'body.stv .full-start-new__title.stv-logo-pending,body.stv .full-start-new__title.stv-has-logo{contain:layout}',
     'body.stv .card__view{contain:layout;overflow:hidden}',
+    '@media (pointer:coarse) and (max-width:600px){body.stv .stv-hero__slide:not(.on){display:none!important}body.stv .stv-hero__slide{transition:none!important}body.stv .settings__content,body.stv .navigation-bar,body.stv .head{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}}',
     '@media (max-width:480px){body.stv .full-start-new__right{margin-top:clamp(-120px,-20vh,-80px)!important}}'
   ].join('');
   (document.head || document.documentElement).appendChild(style);
