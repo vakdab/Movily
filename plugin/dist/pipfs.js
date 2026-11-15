@@ -637,18 +637,23 @@
 		var w = pipContainer.offsetWidth, h = pipContainer.offsetHeight;
 		var ins = pipSafeInsets();
 		var left = PIP_MARGIN, right = window.innerWidth - w - PIP_MARGIN;
+		var centre = Math.round((window.innerWidth - w) / 2);
 		var top = ins.top, bottom = window.innerHeight - h - ins.bottom;
+		// corner = [t|b] + [l|c|r]
+		var col = corner.charAt(1);
 		return {
-			x: corner.indexOf("l") >= 0 ? left : right,
-			y: corner.indexOf("t") >= 0 ? top : bottom
+			x: col === "l" ? left : col === "c" ? centre : right,
+			y: corner.charAt(0) === "t" ? top : bottom
 		};
 	}
 
 	function pipNearestCorner(cx, cy) {
-		return (cy < window.innerHeight / 2 ? "t" : "b") + (cx < window.innerWidth / 2 ? "l" : "r");
+		var third = window.innerWidth / 3;
+		var col = cx < third ? "l" : cx > third * 2 ? "r" : "c";
+		return (cy < window.innerHeight / 2 ? "t" : "b") + col;
 	}
 
-	var pipCorner = "br";
+	var pipCorner = "tc";
 
 	function pipSnapTo(corner, animate) {
 		pipCorner = corner;
@@ -805,6 +810,7 @@
 			'<div class="pipw-bar">' +
 			'<div class="pipw-btn pipw-close" title="Закрити"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" fill="none"/></svg></div>' +
 			'<div class="pipw-btn pipw-full" title="Повернути на повний екран"><svg viewBox="0 0 24 24"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></div>' +
+			'<div class="pipw-btn pipw-sys" title="Показати поверх екрана телефона"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5" stroke="currentColor" stroke-width="2" fill="none"/><rect x="12" y="11" width="7" height="5" rx="1.2" fill="currentColor"/></svg></div>' +
 			'</div>' +
 			'<div class="pipw-center"><div class="pipw-btn pipw-play"><svg class="i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" fill="none"/></svg><svg class="i-play" viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z" fill="currentColor"/></svg></div></div>' +
 			'<div class="pipw-grip" title="Розмір"></div>';
@@ -824,6 +830,7 @@
 		}
 		act(".pipw-full", function () { exitPiP(); });
 		act(".pipw-close", function () { pipClosePlayback(); });
+		act(".pipw-sys", function () { sysPipEnter(); });
 		act(".pipw-play", function () { pipTogglePlay(); pipShowControls(); });
 
 		// resize grip (bottom-right corner handle)
@@ -849,6 +856,69 @@
 			if (pipActive) { pipSetWidth(pipContainer.offsetWidth, false); pipSnapTo(pipCorner, false); }
 		});
 	}
+
+
+	// ===== System Picture-in-Picture (the video floats over the phone's home screen / other apps) =====
+	// iOS: webkitSetPresentationMode('picture-in-picture'); others: requestPictureInPicture().
+	// iOS allows it only from a user gesture or when the page goes to the background with a playing video.
+	var sysPipOn = false;
+
+	function sysPipSupported(v) {
+		if (!v) return false;
+		try {
+			if (typeof v.webkitSupportsPresentationMode === "function" && v.webkitSupportsPresentationMode("picture-in-picture")) return true;
+			if (document.pictureInPictureEnabled && !v.disablePictureInPicture && typeof v.requestPictureInPicture === "function") return true;
+		} catch (e) {}
+		return false;
+	}
+
+	function sysPipEnter() {
+		var v = originalVideo;
+		if (!sysPipSupported(v) || sysPipOn) return;
+		try {
+			v.removeAttribute("disablePictureInPicture");
+			v.disablePictureInPicture = false;
+			if (typeof v.webkitSetPresentationMode === "function" && v.webkitSupportsPresentationMode && v.webkitSupportsPresentationMode("picture-in-picture")) {
+				if (v.webkitPresentationMode !== "picture-in-picture") v.webkitSetPresentationMode("picture-in-picture");
+			} else if (v.requestPictureInPicture && document.pictureInPictureElement !== v) {
+				v.requestPictureInPicture().catch(function () {});
+			}
+		} catch (e) { console.warn("[pip] system PiP failed", e); }
+	}
+
+	function sysPipLeave() {
+		var v = originalVideo;
+		try {
+			if (v && typeof v.webkitSetPresentationMode === "function" && v.webkitPresentationMode === "picture-in-picture") v.webkitSetPresentationMode("inline");
+			else if (document.pictureInPictureElement && document.exitPictureInPicture) document.exitPictureInPicture().catch(function () {});
+		} catch (e) {}
+	}
+
+	function sysPipBind(v) {
+		if (!v || v.__mvSysPip) return;
+		v.__mvSysPip = true;
+		// iOS
+		v.addEventListener("webkitpresentationmodechanged", function () {
+			sysPipOn = v.webkitPresentationMode === "picture-in-picture";
+			document.body.classList.toggle("lampa-syspip", sysPipOn);
+		});
+		// others
+		v.addEventListener("enterpictureinpicture", function () { sysPipOn = true; document.body.classList.add("lampa-syspip"); });
+		v.addEventListener("leavepictureinpicture", function () { sysPipOn = false; document.body.classList.remove("lampa-syspip"); });
+		// the browser may start it itself when the page goes to the background
+		try { v.autoPictureInPicture = true; v.setAttribute("autopictureinpicture", ""); } catch (e) {}
+	}
+
+	// leaving the app (home gesture, app switch, lock): keep a playing video floating over the home screen
+	document.addEventListener("visibilitychange", function () {
+		if (!originalVideo) return;
+		if (document.hidden) {
+			if (!originalVideo.paused && !originalVideo.ended) sysPipEnter();
+		}
+	});
+	window.addEventListener("pagehide", function () {
+		if (originalVideo && !originalVideo.paused && !originalVideo.ended) sysPipEnter();
+	});
 
 	// close PiP and stop playback entirely
 	function pipClosePlayback() {
@@ -1253,6 +1323,7 @@
 
 		originalVideo.style.cssText =
 			"width:100%!important;height:100%!important;object-fit:contain!important;position:static!important;transform:none!important;";
+		sysPipBind(originalVideo);
 
 		// Субтитри НЕ переносяться по DOM (щоб не ламати клік-логіку плеєра), namaoftelegr
 		// а їхній текст дзеркалиться в окремий елемент усередині pip-контейнера.
@@ -1460,6 +1531,7 @@
 			"#lampa-pip-container.controls .pipw-bar, #lampa-pip-container.controls .pipw-center, #lampa-pip-container.controls .pipw-grip { opacity: 1; }",
 			"#lampa-pip-container.controls .pipw-btn, #lampa-pip-container.controls .pipw-grip { pointer-events: auto; }",
 			"#lampa-pip-container.controls::after { content:''; position:absolute; inset:0; background: rgba(0,0,0,.32); pointer-events:none; z-index:6; }",
+			"body.lampa-syspip #lampa-pip-container .lampa-pip-video-wrap { visibility:hidden; }",
 			"#lampa-pip-container .pipw-bar { position:absolute; top:6px; left:6px; right:6px; display:flex; justify-content:space-between; z-index:8; }",
 			"#lampa-pip-container .pipw-center { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; z-index:8; pointer-events:none; }",
 			"#lampa-pip-container .pipw-btn { pointer-events:none; width:30px; height:30px; border-radius:50%; background: rgba(40,40,40,.72); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; }",
