@@ -1423,14 +1423,28 @@
   // before it is put on the page (the banner from cached data) must pass wanted, or it keeps its text
   function logoInto(box, m, size, cls, mark, wanted) {
     cls = cls || 'stv-logo';
+    // Reserve the final logo/title geometry before the remote logo arrives.
+    // Without this class the title is first rendered as a large text block and
+    // then changes to the compact logo layout, shifting the whole page.
+    box.classList.add('stv-logo-pending');
     getLogo(m, function (p) {
       // (two asks in flight for one box — a slide shown, left and shown again — one picture)
-      if (!p || (wanted ? !wanted() : !inDoc(box)) || box.querySelector('img.' + cls)) return;
+      if (!p || (wanted ? !wanted() : !inDoc(box)) || box.querySelector('img.' + cls)) {
+        box.classList.remove('stv-logo-pending');
+        return;
+      }
       var im = new Image();
       im.className = cls;
       im.alt = '';
-      im.onload = function () { (mark || box).classList.add('stv-has-logo'); };
-      im.onerror = function () { if (im.parentNode) im.parentNode.removeChild(im); };
+      im.onload = function () {
+        var target = mark || box;
+        target.classList.add('stv-has-logo');
+        target.classList.remove('stv-logo-pending');
+      };
+      im.onerror = function () {
+        box.classList.remove('stv-logo-pending');
+        if (im.parentNode) im.parentNode.removeChild(im);
+      };
       im.src = img(p, size);
       box.appendChild(im);
     });
@@ -4493,7 +4507,7 @@
       /* the header\'s own right-hand items stay out of the way */
       'body.stv .head__actions,body.stv .head__action{display:none!important}',
       /* full card order: logo, then the text title under it, then the reactions in ONE row, then the rest */
-      'body.stv .full-start-new__title.stv-has-logo{font-size:clamp(16px,4.6vw,22px)!important;line-height:1.2!important;color:#fff!important;font-weight:800!important;text-align:center;display:flex!important;flex-direction:column-reverse;align-items:center;gap:8px}',
+      'body.stv .full-start-new__title.stv-has-logo,body.stv .full-start-new__title.stv-logo-pending{font-size:clamp(16px,4.6vw,22px)!important;line-height:1.2!important;color:#fff!important;font-weight:800!important;text-align:center;display:flex!important;flex-direction:column-reverse;align-items:center;gap:8px;min-height:clamp(92px,14vw,150px)!important;box-sizing:border-box}',
       'body.stv .full-start-new__title.stv-has-logo .stv-logo{margin:0 auto!important;object-position:center bottom!important}',
       /* the reactions come right after the title block (under logo + text), never above it */
       'body.stv .full-start-new__right{display:flex!important;flex-direction:column}',
@@ -13664,6 +13678,28 @@
     try { if (window.Lampa && Lampa.Activity && Lampa.Listener && init()) clearInterval(t); } catch (e) {}
     if (++tries > 60) clearInterval(t);
   }, 100);
+})();
+
+
+/* ===== layout-stability ===== */
+/* Layout stability: reserve geometry before async data and images arrive. */
+(function () {
+  'use strict';
+  if (window.__movily_layout_stability) return;
+  window.__movily_layout_stability = true;
+
+  var style = document.createElement('style');
+  style.id = 'movily-layout-stability';
+  style.textContent = [
+    'html{overflow-y:scroll;overflow-x:hidden}',
+    'body{overflow-x:hidden}',
+    'body.stv .activitys,body.stv .activity,body.stv .activity__body,body.stv .full-start-new,body.stv .full-start-new__body,body.stv .full-start-new__right,body.stv .items-line{transition:none!important}',
+    'body.stv .full-start-new__body{min-height:clamp(520px,72vh,820px)}',
+    'body.stv .full-start-new__title.stv-logo-pending,body.stv .full-start-new__title.stv-has-logo{contain:layout}',
+    'body.stv .card__view{contain:layout;overflow:hidden}',
+    '@media (max-width:480px){body.stv .full-start-new__right{margin-top:clamp(-120px,-20vh,-80px)!important}}'
+  ].join('');
+  (document.head || document.documentElement).appendChild(style);
 })();
 
 

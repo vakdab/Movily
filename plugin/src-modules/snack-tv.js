@@ -330,14 +330,28 @@
   // before it is put on the page (the banner from cached data) must pass wanted, or it keeps its text
   function logoInto(box, m, size, cls, mark, wanted) {
     cls = cls || 'stv-logo';
+    // Reserve the final logo/title geometry before the remote logo arrives.
+    // Without this class the title is first rendered as a large text block and
+    // then changes to the compact logo layout, shifting the whole page.
+    box.classList.add('stv-logo-pending');
     getLogo(m, function (p) {
       // (two asks in flight for one box — a slide shown, left and shown again — one picture)
-      if (!p || (wanted ? !wanted() : !inDoc(box)) || box.querySelector('img.' + cls)) return;
+      if (!p || (wanted ? !wanted() : !inDoc(box)) || box.querySelector('img.' + cls)) {
+        box.classList.remove('stv-logo-pending');
+        return;
+      }
       var im = new Image();
       im.className = cls;
       im.alt = '';
-      im.onload = function () { (mark || box).classList.add('stv-has-logo'); };
-      im.onerror = function () { if (im.parentNode) im.parentNode.removeChild(im); };
+      im.onload = function () {
+        var target = mark || box;
+        target.classList.add('stv-has-logo');
+        target.classList.remove('stv-logo-pending');
+      };
+      im.onerror = function () {
+        box.classList.remove('stv-logo-pending');
+        if (im.parentNode) im.parentNode.removeChild(im);
+      };
       im.src = img(p, size);
       box.appendChild(im);
     });
