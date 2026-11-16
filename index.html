@@ -164,6 +164,23 @@
         })();
     </script>
 
+    <script id="movily-dbg">
+        /* ТИМЧАСОВА діагностика: ?dbg=1 показує, які зовнішні скрипти додаються на сторінку */
+        (function () {
+            if (location.search.indexOf('dbg=1') < 0) return;
+            var seen = [];
+            var box = document.createElement('pre');
+            box.style.cssText = 'position:fixed;left:0;right:0;bottom:0;max-height:45vh;overflow:auto;margin:0;padding:8px;background:#000;color:#0f0;font:11px/1.3 monospace;z-index:2147483647;white-space:pre-wrap';
+            function show() { box.textContent = seen.join('\n'); }
+            document.addEventListener('DOMContentLoaded', function () { document.body.appendChild(box); show(); });
+            var orig = Element.prototype.appendChild;
+            var add = function (n) { try { if (n && n.tagName === 'SCRIPT' && n.src) { seen.push(n.src); show(); } } catch (e) {} return orig.apply(this, arguments); };
+            Element.prototype.appendChild = add;
+            var ib = Element.prototype.insertBefore;
+            Element.prototype.insertBefore = function (n) { try { if (n && n.tagName === 'SCRIPT' && n.src) { seen.push(n.src); show(); } } catch (e) {} return ib.apply(this, arguments); };
+            setInterval(function () { try { var p = localStorage.getItem('plugins'); if (seen.indexOf('LS plugins: ' + p) < 0) { seen.push('LS plugins: ' + p); show(); } } catch (e) {} }, 1500);
+        })();
+    </script>
     <script src="./webos/webOSTV.js"></script>
     <script src="./vender/jquery/jquery.js"></script>
     <script src="./vender/notify/notify.js"></script>
