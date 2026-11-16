@@ -237,6 +237,9 @@
             putScript('plugin/dist/moon-interface.js?v=' + cache_version, function () {}, function () {})
             /* Movily: картинка в картинці (pipfs), плаваюче вікно як на iPhone */
             putScript('plugin/dist/pipfs.js?v=' + cache_version, function () {}, function () {})
+            /* Movily: джерела (кнопки в ряду картки замість «Дивитись»): UAFresh і L-vid */
+            putScript('https://uakino.ofreshofresh.workers.dev/uakino.js', function () {}, function () {})
+            putScript('https://beta.l-vid.online/on.js', function () {}, function () {})
         }
 
         function loadCurrentLampa() {

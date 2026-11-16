@@ -1654,6 +1654,7 @@
     r.push(BTN + '{display:flex;flex-wrap:nowrap;align-items:flex-start;margin:0;padding-bottom:' + px(8) + '}');
     // what the row leaves out is in «⋯» (see markButtons)
     r.push(BTN + ' > .full-start__button.stv-more{display:none!important}');
+    r.push(BTN + ' > .full-start__button.button--play{display:none!important}');
     r.push(BTN + ' > .full-start__button{position:relative;width:' + px(t.round) + ';height:' + px(t.round) + ';min-width:0;padding:0;margin:0 ' + tp(22, 28) + ' ' + tp(10, 6) + ' 0;' +
       'border-radius:50%;justify-content:center;font-size:' + px(t.btnFont) + ';color:#fff;' + glass +
       MOVE + ',background-color .15s,color .15s}');
@@ -1718,9 +1719,9 @@
       F + ' .full-start-new__title .stv-logo{max-width:78vw;object-position:center bottom;margin:0 auto}' +
       F + ' .stv-meta{order:2;justify-content:center}' +
       // the white button across, the round ones in one even row under it
-      F + ' .full-start-new__buttons{order:3;flex-wrap:wrap!important;justify-content:space-evenly;width:100%}' +
+      F + ' .full-start-new__buttons{order:3;flex-wrap:wrap!important;justify-content:center;gap:' + px(12) + ';width:100%}' +
       F + ' .full-start-new__buttons > .full-start__button.stv-primary{flex:1 0 100%;max-width:100%;margin:' + px(6) + ' 0 ' + px(16) + '!important}' +
-      F + ' .full-start-new__buttons > .full-start__button:not(.stv-primary){margin:0 0 ' + px(18) + '!important}' +
+      F + ' .full-start-new__buttons > .full-start__button:not(.stv-primary){margin:0 0 ' + px(12) + '!important}' +
       F + ' .stv-desc{order:4;text-align:left;max-width:100%;margin-top:' + px(4) + '}' +
       F + ' .full-start-new__title,' + F + ' .stv-meta,' + F + ' .stv-desc{text-shadow:0 1px 10px rgba(0,0,0,.45)}' +
       '}');
@@ -2442,13 +2443,14 @@
     document.body.classList.toggle('stv-noplay', noPlay());
     var box = render.find('.full-start-new__buttons').first();
     if (!box.length) return;
+    liftSources(render, box);
     var all = box.children('.full-start__button');
     all.removeClass('stv-primary stv-more');
     // the remote skips what «⋯» holds (Lampa focuses the first .selector, hidden or not)
     all.each(function () { if (this.stv_unsel) { this.stv_unsel = false; this.classList.add('selector'); } });
     var main = box.children('.button--alc-auto:not(.hide)').first();
     if (!main.length) main = box.children('.button--priority:not(.hide)').first();
-    if (!main.length) main = box.children('.button--play:not(.hide)').first();
+    // Movily: Lampa's «Watch» capsule is not used, the sources are in the round row (liftSources)
     main.addClass('stv-primary');
     var sp = main.children('span')[0];
     if (sp && /S\d+E\d+/.test(sp.textContent)) sp.textContent = se(sp.textContent);
@@ -2457,9 +2459,9 @@
     if (main.length) row.push(main[0]);
     // Lampa's own Play beside Autopilot's: in «⋯» only while Autopilot has a server and the viewer did
     // not ask for it (the setting); otherwise in the row (the way into the other online plugins)
-    if (!noPlay()) add('.button--play');
     ROW.forEach(add);
     if (!add('.button--snack-sub')) add('.button--subscribe');
+    box.children('.mv-src').not('.hide').each(function () { if (row.indexOf(this) < 0) row.push(this); });
     var more = moreButton(box);
     row.push(more[0]);
     all = box.children('.full-start__button');
@@ -2474,6 +2476,22 @@
     if (M !== 'tv') row.forEach(function (x) { if (x !== main[0]) tipFor(x); });
     // the moves above are ours: not a reason for the observer (themeFull) to run this again
     if (box[0].stv_obs) box[0].stv_obs.takeRecords();
+  }
+  // Movily: no «Watch» capsule. The sources (online plugins: UAFresh, L-vid ...) sit in Lampa's hidden
+  // .buttons--container; we move them into the round row (the buttons themselves, so their handlers stay)
+  var SRC_SKIP = /\b(view--torrent|view--trailer|button--priority)\b/;
+  function liftSources(render, box) {
+    var cont = render.find('.buttons--container').first();
+    if (!cont.length) return;
+    cont.children('.full-start__button').each(function () {
+      if (SRC_SKIP.test(this.className) || this.classList.contains('mv-src')) return;
+      this.classList.add('mv-src');
+      if (!this.classList.contains('selector')) this.classList.add('selector');
+      var more = box.children('.button--options').first();
+      if (more.length) more.before(this); else box.append(this);
+    });
+    // Lampa hides/shows «Watch» by the count of sources; we never show it
+    box.children('.button--play').addClass('hide');
   }
   // a button's name: its label, else the hidden ones' known names
   function buttonName(el) {
@@ -2614,6 +2632,16 @@
         due = setTimeout(function () { due = 0; try { if (themeOn() && inDoc(bx)) markButtons(render); } catch (x) {} }, 30);
       });
       bx.stv_obs.observe(bx, { childList: true });
+    }
+    // sources (online plugins) arrive in Lampa's hidden .buttons--container, sometimes after the card is drawn
+    var sc = render.find('.buttons--container')[0];
+    if (sc && !sc.mv_obs && window.MutationObserver) {
+      var due2 = 0;
+      sc.mv_obs = new MutationObserver(function () {
+        if (due2) return;
+        due2 = setTimeout(function () { due2 = 0; try { if (themeOn() && inDoc(sc)) markButtons(render); } catch (x) {} }, 30);
+      });
+      sc.mv_obs.observe(sc, { childList: true });
     }
     // the page colour from the backdrop
     tintOf(movie.backdrop_path, function (col) {
