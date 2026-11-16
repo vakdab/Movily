@@ -48,8 +48,19 @@
             if (!window.localStorage.getItem('tmdb_lang')) window.localStorage.setItem('tmdb_lang', 'uk');
             /* Movily: завжди мобільний веб-інтерфейс, на будь-якому пристрої, без TV-режиму */
             window.localStorage.setItem('is_true_mobile', 'true');
-            /* Movily: прибрати вже збережені плагіни, щоб вони не підтягувались автоматично */
-            window.localStorage.setItem('plugins', '[]');
+            /* Movily: прибрати плагіни, які раніше додавались автоматично (UAFree, UAFilms, NB557, L-vid, Showy); вручну додані не чіпаємо */
+            (function () {
+                var AUTO = ['uafree.mooo.com', 'films.aartzz.pp.ua', 'nb557.github.io/plugins/free.js', 'beta.l-vid.online', 'showy.pro/online.js', 'wtch.ch'];
+                var list = JSON.parse(window.localStorage.getItem('plugins') || '[]');
+                if (Array.isArray(list)) {
+                    var out = list.filter(function (p) {
+                        var u = String(typeof p === 'string' ? p : (p && p.url) || '').toLowerCase();
+                        return !AUTO.some(function (a) { return u.indexOf(a) >= 0; });
+                    });
+                    if (out.length !== list.length) window.localStorage.setItem('plugins', JSON.stringify(out));
+                }
+                window.localStorage.removeItem('moon_auto_plugins_added');
+            })();
         } catch (e) {}
     </script>
     <script>
