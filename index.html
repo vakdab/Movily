@@ -39,11 +39,17 @@
         /* Movily: без вибору мови, інтерфейс одразу українською */
         window.lampa_settings = window.lampa_settings || {};
         window.lampa_settings.lang_use = false;
+        /* Movily: без автоматичних і вбудованих плагінів: Lampa не вантажить розширення з акаунта та пам'яті, магазин і розділ «Розширення» вимкнені.
+           Інтерфейс (moon-interface.js) і PiP (pipfs.js) підключаються напряму нижче, на це не впливає. */
+        window.lampa_settings.plugins_use = false;
+        window.lampa_settings.plugins_store = false;
         try {
             if (!window.localStorage.getItem('language')) window.localStorage.setItem('language', 'uk');
             if (!window.localStorage.getItem('tmdb_lang')) window.localStorage.setItem('tmdb_lang', 'uk');
             /* Movily: завжди мобільний веб-інтерфейс, на будь-якому пристрої, без TV-режиму */
             window.localStorage.setItem('is_true_mobile', 'true');
+            /* Movily: прибрати вже збережені плагіни, щоб вони не підтягувались автоматично */
+            window.localStorage.setItem('plugins', '[]');
         } catch (e) {}
     </script>
     <script>
