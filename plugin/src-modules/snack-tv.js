@@ -1311,7 +1311,28 @@
     var key = on ? [M, L, k, window.innerHeight, BASE].join('|') : '';
     if (key !== styleKey) { styleKey = key; styleEl.textContent = on ? css() : ''; }
     if (!on) document.body.classList.remove('stv-float-head'); else floatHead();
+    fixOptions(on);
     try { if (Lampa.Layer && Lampa.Layer.update) Lampa.Layer.update(); } catch (e) {}
+  }
+  // Movily: the options must win over the other modules' !important rules (the header module forces the
+  // reactions on, the dock module hides every .card__title). One last <style>, always the last in <head>
+  function fixOptions(on) {
+    var el = document.getElementById('movily-options-css');
+    if (!el) { el = document.createElement('style'); el.id = 'movily-options-css'; }
+    if (el.parentNode !== document.head || document.head.lastElementChild !== el) document.head.appendChild(el);
+    if (!on) { el.textContent = ''; return; }
+    var B = 'body.stv', r = [];
+    // «Show reactions» off: no reactions row on the card
+    r.push(B + '.stv-react .full-start-new__reactions,' + B + '.stv-react .full-start-new .button--reaction{display:none!important}');
+    // «Titles under posters» on: the title under every poster (rows and grids), the row has room for it
+    var T2 = B + '.stv-titles .card:not(.card--wide):not(.card--collection)';
+    r.push(B + '.stv-titles.stv .card:not(.card--wide) .card__title{display:block!important;position:absolute!important;left:0;right:0;top:100%;margin-top:6px;opacity:1!important;visibility:visible!important;' +
+      'font-size:12px;font-weight:600;line-height:1.25;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-height:none;-webkit-line-clamp:unset;color:#fff}');
+    r.push(T2 + '{margin-bottom:26px}');
+    r.push(B + '.stv-titles .items-line .scroll--horizontal,' + B + '.stv-titles .items-line .scroll--horizontal .scroll__content,' + B + '.stv-titles .items-line .scroll--horizontal .scroll__body{overflow:visible}');
+    r.push(B + '.stv-titles .category-full .card:not(.card--wide),' + B + '.stv-titles .mapping--grid > .card:not(.card--wide){padding-bottom:30px!important}');
+    r.push(B + '.stv-titles .category-full .card:not(.card--wide) .card__title,' + B + '.stv-titles .mapping--grid > .card:not(.card--wide) .card__title{top:auto!important;bottom:6px}');
+    el.textContent = r.join('\n');
   }
   function themeOn() { return document.body.classList.contains('stv'); }
   function guard(fn) { return function (e) { try { if (themeOn()) fn(e); } catch (x) { log(x && x.message); } }; }
