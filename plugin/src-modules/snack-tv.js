@@ -1364,11 +1364,14 @@
     var row = [];
     var add = function (sel) { var x = box.children(sel).not('.hide').not(main)[0]; if (x && row.indexOf(x) < 0) row.push(x); return !!x; };
     if (main.length) row.push(main[0]);
+    // Movily: the sources come first, then the rest (favourites, bell ...), «⋯» last
+    box.children('.mv-src').not('.hide').each(function () { if (row.indexOf(this) < 0) row.push(this); });
+    // the bell is always in the row: Lampa unhides it only when CUB answers, sometimes late or never
+    box.children('.button--subscribe').removeClass('hide');
     // Lampa's own Play beside Autopilot's: in «⋯» only while Autopilot has a server and the viewer did
     // not ask for it (the setting); otherwise in the row (the way into the other online plugins)
     ROW.forEach(add);
     if (!add('.button--snack-sub')) add('.button--subscribe');
-    box.children('.mv-src').not('.hide').each(function () { if (row.indexOf(this) < 0) row.push(this); });
     var more = moreButton(box);
     row.push(more[0]);
     all = box.children('.full-start__button');
@@ -1538,7 +1541,7 @@
         if (due) return;
         due = setTimeout(function () { due = 0; try { if (themeOn() && inDoc(bx)) markButtons(render); } catch (x) {} }, 30);
       });
-      bx.stv_obs.observe(bx, { childList: true });
+      bx.stv_obs.observe(bx, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
     }
     // sources (online plugins) arrive in Lampa's hidden .buttons--container, sometimes after the card is drawn
     var sc = render.find('.buttons--container')[0];
