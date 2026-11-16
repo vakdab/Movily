@@ -1824,7 +1824,7 @@
     }
 
     function heroTrailerEnabled() {
-      return getHeroTrailerMode() !== 'posters';
+      return false;   // Movily: трейлери в банері (IMDb) вимкнено, трейлери беруться лише з The Trailer Database
     }
 
     function getHeroTrailerQuality() {
