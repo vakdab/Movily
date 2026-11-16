@@ -53,7 +53,7 @@
             window.localStorage.setItem('is_true_mobile', 'true');
             /* Movily: прибрати плагіни, які раніше додавались автоматично (UAFree, UAFilms, NB557, L-vid, Showy); вручну додані не чіпаємо */
             (function () {
-                var AUTO = ['uafree.mooo.com', 'films.aartzz.pp.ua', 'nb557.github.io/plugins/free.js', 'beta.l-vid.online', 'showy.pro/online.js', 'wtch.ch'];
+                var AUTO = ['uafree.mooo.com', 'films.aartzz.pp.ua', 'nb557.github.io/plugins/free.js', 'showy.pro/online.js', 'wtch.ch'];
                 var list = JSON.parse(window.localStorage.getItem('plugins') || '[]');
                 if (Array.isArray(list)) {
                     var out = list.filter(function (p) {
@@ -238,8 +238,8 @@
             /* Movily: картинка в картинці (pipfs), плаваюче вікно як на iPhone */
             putScript('plugin/dist/pipfs.js?v=' + cache_version, function () {}, function () {})
             /* Movily: джерела (кнопки в ряду картки замість «Дивитись»): UAFresh і L-vid */
-            putScript('https://uakino.ofreshofresh.workers.dev/uakino.js', function () {}, function () {})
-            putScript('https://beta.l-vid.online/on.js', function () {}, function () {})
+            putScript('https://uakino.ofreshofresh.workers.dev/uakino.js?v=' + cache_version, function () {}, function () {})
+            putScript('https://beta.l-vid.online/on.js?v=' + cache_version, function () {}, function () {})
         }
 
         function loadCurrentLampa() {
