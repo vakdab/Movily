@@ -102,6 +102,40 @@
     return t.card ? { card: t.card, season: t.season, episode: t.episode } : null;
   }
 
+
+  // ---------- real length of the episode (SenPlayer does not report it) ----------
+  // 1) what Lampa already knows (timeline), 2) the card's runtime, 3) TMDB length of this very episode (async, fills the pending record)
+  function activeCard(data) {
+    try { return (data.card && typeof data.card === 'object') ? data.card : (L().Activity && L().Activity.active && L().Activity.active() && L().Activity.active().card); } catch (e) { return null; }
+  }
+  function guessDuration(data, lk) {
+    try {
+      var card = activeCard(data);
+      var rt = card && (card.runtime || (card.episode_run_time && card.episode_run_time[0]) || (card.last_episode_to_air && card.last_episode_to_air.runtime));
+      if (rt > 0) return Math.round(rt * 60);
+    } catch (e) {}
+    return 0;
+  }
+  function resolveDuration(data, lk, rec) {
+    try {
+      var card = activeCard(data);
+      var id = card && card.id;
+      if (!id || !card.name && !card.original_name) return;                  // movies: card runtime is enough
+      var se = lk && lk.season !== undefined ? lk.season : data.season, ep = lk && lk.episode !== undefined ? lk.episode : data.episode;
+      if (se === undefined || ep === undefined) return;
+      if (['cub', 'tmdb'].indexOf(card.source || 'tmdb') === -1) id = card.tmdb_id;
+      if (typeof id !== 'number' || !L().Api || !L().Api.sources || !L().Api.sources.tmdb) return;
+      L().Api.sources.tmdb.get('tv/' + id + '/season/' + se, {}, function (j) {
+        try {
+          var e2 = (j.episodes || []).filter(function (x) { return x.episode_number == ep; })[0];
+          if (!e2 || !(e2.runtime > 0)) return;
+          var cur = ls(KEY_PENDING);
+          if (cur && cur.at === rec.at) { cur.duration = e2.runtime * 60; ls(KEY_PENDING, cur); }
+        } catch (x) {}
+      }, function () {});
+    } catch (e) {}
+  }
+
   function remember(data, pos) {
     var t = data.timeline || {};
     var lk = linkOf(data) || {};
@@ -111,7 +145,9 @@
       at: Date.now(), title: String(data.title || '').replace(/<[^>]*>/g, ''), hash: hash,
       duration: t.duration || 0, startedAt: pos || 0, card: card, season: lk.season, episode: lk.episode
     };
+    if (!rec.duration) rec.duration = guessDuration(data, lk);
     ls(KEY_PENDING, rec);
+    resolveDuration(data, lk, rec);
     // diagnostics: what we are going to write to, visible in Settings > Interface > SenPlayer
     var log = ls(KEY_LOG) || [];
     log.unshift({ at: new Date().toISOString(), kind: 'start', params: { hash: hash, hasTimeline: !!data.timeline, card: card, duration: rec.duration, pos: pos }, title: rec.title });
@@ -172,6 +208,20 @@
     return out;
   }
 
+
+  // Lampa updates the lines itself (Timeline.update), but cards drawn by online plugins may be detached from the active layer:
+  // make sure every line with this hash is visible and has the right width, like the built-in player does while it plays
+  function paintLine(hash, percent) {
+    try {
+      var lines = document.querySelectorAll('.time-line[data-hash="' + hash + '"]');
+      for (var i = 0; i < lines.length; i++) {
+        lines[i].classList.toggle('hide', !percent);
+        var d = lines[i].firstElementChild;
+        if (d) d.style.width = percent + '%';
+      }
+    } catch (e) {}
+  }
+
   function writeTimecode(pend, seconds, duration) {
     try {
       if (!pend || !pend.hash) { toast(tr('Не вдалося зберегти: немає ідентифікатора серії', 'Not saved: no episode id')); return false; }
@@ -183,6 +233,7 @@
       var rec = { hash: pend.hash, percent: percent, time: Math.round(seconds), duration: Math.round(dur) };
       if (pend.card) { rec.card = pend.card; if (pend.season !== undefined) rec.season = pend.season; if (pend.episode !== undefined) rec.episode = pend.episode; }
       if (L().Timeline && typeof L().Timeline.update === 'function') L().Timeline.update(rec);
+      paintLine(pend.hash, percent);
       return true;
     } catch (e) { return false; }
   }
@@ -315,6 +366,24 @@
     ls(KEY_PENDING, null);
   }
 
+
+  // No position came back: put the line where the time spent in the player says it should be (like the built-in player's line),
+  // instead of asking every time. Settings > Interface > SenPlayer lets the user switch it off and choose manually.
+  function autoEstimate() {
+    try {
+      if (L().Storage.get('movily_sp_auto', 'true') === 'false') return false;
+      var pend = ls(KEY_PENDING);
+      if (!pend || !pend.hash) return false;
+      var spent = (Date.now() - pend.at) / 1000;
+      if (spent < 60) return false;                                  // the player was barely opened: ask instead of guessing
+      var est = Math.max(0, spent + (pend.startedAt || 0));
+      var dur = pend.duration || 0;
+      if (dur && est > dur) est = dur;
+      if (writeTimecode(pend, est, dur)) { ls(KEY_PENDING, null); toast(tr('Лінію переглянутого збережено: ', 'Progress saved: ') + fmt(est)); return true; }
+    } catch (e) {}
+    return false;
+  }
+
   // the page comes back to the front (the user left SenPlayer without a callback): ask once
   var asked = false;
   function onVisible() {
@@ -325,7 +394,11 @@
     setTimeout(function () { asked = false; }, 3000);
     if (!L() || !L().Select) return;
     // first the relay (the real position from SenPlayer); the manual choice only if nothing arrived
-    pull(function (ok) { if (!ok && ls(KEY_PENDING)) setTimeout(askManual, 200); });
+    pull(function (ok) {
+      if (ok || !ls(KEY_PENDING)) return;
+      if (autoEstimate()) return;
+      setTimeout(askManual, 200);
+    });
   }
 
   // ---------- settings ----------
@@ -333,6 +406,11 @@
     try {
       var S = L().SettingsApi;
       if (!S || !S.addParam) return;
+      S.addParam({
+        component: 'interface',
+        param: { name: 'movily_sp_auto', type: 'select', values: { 'true': tr('Так, автоматично', 'Yes, automatically'), 'false': tr('Ні, питати вручну', 'No, ask me') }, 'default': 'true' },
+        field: { name: tr('SenPlayer: лінія перегляду', 'SenPlayer: progress line'), description: tr('Якщо плеєр не повернув позицію, ставити лінію за часом у плеєрі', 'If the player returns no position, set the line by time spent in the player') }
+      });
       S.addParam({
         component: 'interface',
         param: { name: 'movily_sp_show', type: 'static' },
