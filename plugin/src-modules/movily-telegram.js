@@ -3,7 +3,7 @@
    1. Telegram SDK: ready, expand, без закриття свайпом, кольори шапки/фону під Movily.
    2. Відео: у вебв'ю Telegram відео має грати прямо на сторінці (playsinline), а не в системному плеєрі;
       зовнішні плеєри (iOS/Android) там не відкриваються, тому плеєр завжди вбудований («inner»).
-   3. Повний екран: через Telegram requestFullscreen (Bot API 8.0+), поза ним звичайний повний екран;
+   3. Повний екран: через Telegram requestFullscreen (Bot API 8.0+), орієнтація не блокується (відео іде і вертикально, і горизонтально);
       на час відео Telegram не згортає застосунок свайпом, а екран не гасне.
    4. Кнопка «Назад» Telegram: закриває плеєр / повертає на крок назад, на головній закриває застосунок.
    5. Безпечні відступи (вирізи екрана) передаються в CSS змінними --tg-safe-*. */
@@ -82,7 +82,8 @@
   function enterFull() {
     if (!W) return;
     if (ver('8.0') && typeof W.requestFullscreen === 'function' && !W.isFullscreen) call('requestFullscreen');
-    call('lockOrientation');   // Bot API 8.0: the video is landscape; harmless where unsupported
+    // no lockOrientation: it freezes the CURRENT orientation (portrait), the phone must be free to rotate
+    call('unlockOrientation');
     tgFull = true;
   }
   function leaveFull() {
