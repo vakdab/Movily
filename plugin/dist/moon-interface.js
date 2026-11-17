@@ -13916,227 +13916,8 @@
 })();
 
 
-/* ===== movily-telegram ===== */
-/* Movily: Telegram Mini App.
-   Працює тільки всередині Telegram, поза ним нічого не робить.
-   1. Telegram SDK: ready, expand, без закриття свайпом, кольори шапки/фону під Movily.
-   2. Відео: у вебв'ю Telegram відео має грати прямо на сторінці (playsinline), а не в системному плеєрі;
-      зовнішні плеєри (iOS/Android) там не відкриваються, тому плеєр завжди вбудований («inner»).
-   3. Повний екран: через Telegram requestFullscreen (Bot API 8.0+), орієнтація не блокується (відео іде і вертикально, і горизонтально);
-      на час відео Telegram не згортає застосунок свайпом, а екран не гасне.
-   4. Кнопка «Назад» Telegram: закриває плеєр / повертає на крок назад, на головній закриває застосунок.
-   5. Безпечні відступи (вирізи екрана) передаються в CSS змінними --tg-safe-*. */
-(function () {
-  'use strict';
-  if (window.__movily_telegram) return;
-  window.__movily_telegram = true;
-
-  function inTelegram() {
-    try {
-      if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) return true;
-      var h = String(location.hash || '') + String(location.search || '');
-      if (/tgWebApp(Data|Version|Platform)/i.test(h)) return true;
-      if (window.TelegramWebviewProxy) return true;
-    } catch (e) {}
-    return false;
-  }
-  if (!inTelegram()) return;
-
-  var W = null;
-  function ver(v) { try { return W && typeof W.isVersionAtLeast === 'function' ? W.isVersionAtLeast(v) : false; } catch (e) { return false; } }
-  function call(name) { try { if (W && typeof W[name] === 'function') return W[name].apply(W, Array.prototype.slice.call(arguments, 1)); } catch (e) {} }
-
-  document.documentElement.classList.add('movily-tg');
-  if (document.body) document.body.classList.add('movily-tg'); else document.addEventListener('DOMContentLoaded', function () { document.body.classList.add('movily-tg'); });
-
-  // ---------- 2. video: inline, never the system player ----------
-  function fixVideo(v) {
-    if (!v || v.__mv_tg) return;
-    v.__mv_tg = true;
-    try {
-      v.setAttribute('playsinline', '');
-      v.setAttribute('webkit-playsinline', '');
-      v.playsInline = true;
-      v.setAttribute('x-webkit-airplay', 'allow');
-      v.setAttribute('disablepictureinpicture', '');   // Telegram's webview has no PiP; the page has its own
-      v.removeAttribute('controls');
-    } catch (e) {}
-  }
-  function scanVideos(root) {
-    try { (root || document).querySelectorAll('video').forEach(fixVideo); } catch (e) {}
-  }
-  // every <video> the page creates gets the attributes before it starts playing
-  try {
-    var origCreate = document.createElement;
-    document.createElement = function (tag) {
-      var el = origCreate.apply(document, arguments);
-      try { if (String(tag).toLowerCase() === 'video') fixVideo(el); } catch (e) {}
-      return el;
-    };
-  } catch (e) {}
-  try {
-    new MutationObserver(function (list) {
-      list.forEach(function (m) {
-        m.addedNodes && m.addedNodes.forEach(function (n) {
-          if (n.nodeType !== 1) return;
-          if (n.tagName === 'VIDEO') fixVideo(n); else if (n.querySelector) scanVideos(n);
-        });
-      });
-    }).observe(document.documentElement, { childList: true, subtree: true });
-  } catch (e) {}
-
-  // the external players (iOS apps, Android intents) cannot be opened from the webview: always the inner one
-  // Exception: «Player in Telegram = SenPlayer» (movily_tg_player), the viewer's choice, handled by movily-senplayer.js
-  function forceInnerPlayer() {
-    try {
-      if (!window.Lampa || !Lampa.Storage) return;
-      if (Lampa.Storage.get('movily_tg_player', 'inner') === 'senplayer') {
-        // SenPlayer is opened by movily-senplayer.js; the setting of Lampa itself must be SenPlayer too
-        ['player', 'player_torrent'].forEach(function (k) { if (Lampa.Storage.get(k, 'inner') !== 'senplayer') Lampa.Storage.set(k, 'senplayer'); });
-        return;
-      }
-      ['player', 'player_iptv', 'player_torrent'].forEach(function (k) {
-        var cur = Lampa.Storage.get(k, 'inner');
-        if (cur && cur !== 'inner') Lampa.Storage.set(k, 'inner');
-      });
-    } catch (e) {}
-  }
-
-  // ---------- 3. fullscreen through Telegram ----------
-  var tgFull = false;
-  function enterFull() {
-    if (!W) return;
-    if (ver('8.0') && typeof W.requestFullscreen === 'function' && !W.isFullscreen) call('requestFullscreen');
-    // no lockOrientation: it freezes the CURRENT orientation (portrait), the phone must be free to rotate
-    call('unlockOrientation');
-    tgFull = true;
-  }
-  function leaveFull() {
-    if (!W || !tgFull) return;
-    tgFull = false;
-    if (ver('8.0') && W.isFullscreen) call('exitFullscreen');
-    call('unlockOrientation');
-  }
-
-  // ---------- keep the screen awake and the swipe-to-close off while a video plays ----------
-  var wake = null;
-  function keepAwake(on) {
-    try {
-      if (on && navigator.wakeLock && !wake) navigator.wakeLock.request('screen').then(function (l) { wake = l; l.addEventListener('release', function () { wake = null; }); }, function () {});
-      if (!on && wake) { wake.release(); wake = null; }
-    } catch (e) {}
-  }
-
-  function playerOpen() { return !!document.querySelector('body.player--open, .player.visible, .player:not(.hide)') && !!document.querySelector('.player-video__video, .player video'); }
-  var wasOpen = false;
-  function watchPlayer() {
-    var open = false;
-    try { open = !!(window.Lampa && Lampa.Player && Lampa.Player.opened && Lampa.Player.opened()); } catch (e) {}
-    if (!open) open = playerOpen();
-    if (open === wasOpen) return;
-    wasOpen = open;
-    if (open) { enterFull(); keepAwake(true); document.body.classList.add('movily-tg-playing'); }
-    else { leaveFull(); keepAwake(false); document.body.classList.remove('movily-tg-playing'); }
-    backButton();
-  }
-
-  // ---------- 4. the Telegram «Back» button ----------
-  var backBound = false, bbShown = null;
-  function onBack() {
-    try {
-      if (window.Lampa && Lampa.Controller && typeof Lampa.Controller.back === 'function') { Lampa.Controller.back(); return; }
-    } catch (e) {}
-    call('close');
-  }
-  function backButton() {
-    var bb = W && W.BackButton;
-    if (!bb || !ver('6.1')) return;
-    try {
-      if (!backBound) { bb.onClick(onBack); backBound = true; }
-      var deep = false;
-      try { deep = wasOpen || (window.Lampa && Lampa.Activity && Lampa.Activity.active && Lampa.Activity.active().component !== 'main'); } catch (e) {}
-      if (deep === bbShown) return;
-      bbShown = deep;
-      if (deep) bb.show(); else bb.hide();
-    } catch (e) {}
-  }
-
-  // ---------- 5. safe areas ----------
-  function insets() {
-    if (!W) return;
-    try {
-      var s = W.safeAreaInset || {}, c = W.contentSafeAreaInset || {}, r = document.documentElement.style;
-      r.setProperty('--tg-safe-top', (s.top || 0) + 'px');
-      r.setProperty('--tg-safe-bottom', (s.bottom || 0) + 'px');
-      r.setProperty('--tg-content-top', (c.top || 0) + 'px');
-    } catch (e) {}
-  }
-  function paint() {
-    // the colours are the page's own (black), the header/background of Telegram follow it
-    try { call('setHeaderColor', '#000000'); call('setBackgroundColor', '#000000'); call('setBottomBarColor', '#000000'); } catch (e) {}
-  }
-
-  function calm() {
-    if (!W) return;
-    call('ready'); call('expand'); call('disableVerticalSwipes'); call('enableClosingConfirmation');
-    paint(); insets();
-  }
-
-  function css() {
-    if (document.getElementById('movily-tg-css')) return;
-    var st = document.createElement('style');
-    st.id = 'movily-tg-css';
-    st.textContent = [
-      /* Telegram's own top bar (fullscreen mode) sits over the page: leave room for it */
-      'html.movily-tg body{padding-top:var(--tg-content-top,0)!important}',
-      'html.movily-tg body.movily-tg-playing{padding-top:0!important}',
-      'html.movily-tg{overscroll-behavior:none}',
-      /* the player fills the screen, nothing selectable or draggable under the finger */
-      'html.movily-tg .player-video__video{object-fit:contain}',
-      'html.movily-tg .player{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}'
-    ].join('\n');
-    (document.head || document.documentElement).appendChild(st);
-  }
-
-  function loadSdk(done) {
-    if (window.Telegram && Telegram.WebApp) return done();
-    var s = document.createElement('script');
-    s.src = 'https://telegram.org/js/telegram-web-app.js';
-    s.async = true;
-    s.onload = done;
-    s.onerror = function () {};
-    (document.head || document.documentElement).appendChild(s);
-  }
-
-  function start() {
-    css();
-    scanVideos();
-    loadSdk(function () {
-      W = window.Telegram && Telegram.WebApp;
-      if (!W) return;
-      calm();
-      setTimeout(calm, 500); setTimeout(calm, 2000);
-      ['activated', 'viewportChanged', 'safeAreaChanged', 'contentSafeAreaChanged', 'fullscreenChanged', 'fullscreenFailed'].forEach(function (ev) {
-        try { W.onEvent(ev, function () { insets(); if (ev === 'activated') calm(); }); } catch (e) {}
-      });
-      // Telegram left fullscreen by itself (swipe, its own button): the page player follows
-      try { W.onEvent('fullscreenChanged', function () { if (!W.isFullscreen && wasOpen) tgFull = false; }); } catch (e) {}
-      backButton();
-      // the player and the page depth are watched; a light poll is enough (no DOM work when nothing changed)
-      setInterval(function () { forceInnerPlayer(); watchPlayer(); backButton(); }, 700);
-      try {
-        if (window.Lampa && Lampa.Listener) Lampa.Listener.follow('activity', function () { setTimeout(backButton, 50); });
-      } catch (e) {}
-    });
-  }
-
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
-  else start();
-})();
-
-
 /* ===== movily-senplayer ===== */
-/* Movily: зовнішній плеєр SenPlayer (iOS/iPadOS/macOS, не Telegram) + таймкоди.
+/* Movily: зовнішній плеєр SenPlayer (iOS/iPadOS/macOS) + таймкоди.
    1. «Конектор»: коли Lampa запускає відео, а плеєр у налаштуваннях SenPlayer, відкриваємо
       senplayer://x-callback-url/play?url=...&position=<сек> з колбеками x-success / x-cancel / x-error,
       які ведуть назад на цей сайт (https), а не на lampa://, якого у веб-версії немає.
@@ -14145,7 +13926,7 @@
       (Налаштування > Інтерфейс > SenPlayer > «Що повернув SenPlayer»).
    3. Запасний ручний запис: коли користувач повертається на сторінку, а позиція не прийшла, показується
       вибір «Скільки переглянуто?» (25 / 50 / 75 / 90 % / до кінця / пропустити), і таймкод пишеться в Lampa.
-   Поза iOS/macOS або в Telegram модуль нічого не робить. */
+   Поза iOS/macOS модуль нічого не робить. */
 (function () {
   'use strict';
   if (window.__movily_senplayer) return;
@@ -14156,9 +13937,6 @@
   var POS_KEYS = ['position', 'time', 'currentTime', 'currenttime', 'lastPosition', 'last_position', 'playbackTime', 'progress', 'seconds', 'start', 'startTime'];
   var DUR_KEYS = ['duration', 'total', 'length'];
 
-  function inTelegram() {
-    try { return document.documentElement.classList.contains('movily-tg') || !!(window.Telegram && Telegram.WebApp && Telegram.WebApp.initData); } catch (e) { return false; }
-  }
   function isApple() {
     try { return /iPhone|iPad|iPod|Macintosh/i.test(navigator.userAgent) && (/Mobile|iPad|iPhone/.test(navigator.userAgent) || navigator.maxTouchPoints > 1); } catch (e) { return false; }
   }
@@ -14208,70 +13986,19 @@
     });
   }
 
-  // inside Telegram the choice is its own setting (the default is the built-in player)
-  function tgSen() { try { return L().Storage.get('movily_tg_player', 'inner') === 'senplayer'; } catch (e) { return false; } }
-
   function onCreate(e) {
     try {
-      var tg = inTelegram();
       if (!isApple()) return;
-      if (tg ? !tgSen() : false) return;
       var data = e && e.data;
-      if (!data || !data.url) return;
-      if (!tg && !usesSen(data)) return;
+      if (!data || !data.url || !usesSen(data)) return;
       if (/youtube\.com|youtu\.be/.test(data.url)) return;      // trailers stay in Lampa's own player
       if (data.launch_player === 'lampa' || data.launch_player === 'inner') return;
       var pos = startPosition(data);
       e.abort();                                                // Lampa's own launch (no callback, no position) is not used
       remember(data, pos);
       try { L().Player.listener.send('external', data); } catch (x) {}
-      var url = senUrl(data, pos);
-      if (tg) openFromTelegram(url, data); else window.location.assign(url);
+      window.location.assign(senUrl(data, pos));
     } catch (x) {}
-  }
-
-  // Telegram's webview: try the scheme right away (the tap that started the video is still the gesture), and if
-  // the page stays in front (the scheme was not opened) offer the manual ways: a real link tap, Telegram's openLink,
-  // or the built-in player
-  function openFromTelegram(url, data) {
-    var left = false;
-    function gone() { left = true; }
-    document.addEventListener('visibilitychange', gone, { once: true });
-    window.addEventListener('pagehide', gone, { once: true });
-    try { window.location.href = url; } catch (x) {}
-    setTimeout(function () {
-      document.removeEventListener('visibilitychange', gone);
-      if (left || document.visibilityState === 'hidden') return;
-      offerWays(url, data);
-    }, 1600);
-  }
-
-  function offerWays(url, data) {
-    try {
-      var S = L().Select, C = L().Controller, enabled = C.enabled && C.enabled();
-      var back = function () { try { if (enabled && enabled.name) C.toggle(enabled.name); } catch (e) {} };
-      S.show({
-        title: tr('Не вдалося відкрити SenPlayer автоматично', 'Could not open SenPlayer automatically'),
-        items: [
-          { title: tr('Відкрити в SenPlayer', 'Open in SenPlayer'), w: 'link' },
-          { title: tr('Відкрити через Telegram', 'Open via Telegram'), w: 'tg' },
-          { title: tr('Дивитись тут (вбудований плеєр)', 'Watch here (built-in player)'), w: 'inner' }
-        ],
-        onSelect: function (it) {
-          back();
-          if (it.w === 'link') {
-            var a = document.createElement('a'); a.href = url; a.style.cssText = 'position:fixed;left:-9999px'; document.body.appendChild(a); a.click();
-            setTimeout(function () { try { a.remove(); } catch (e) {} }, 500);
-          } else if (it.w === 'tg') {
-            try { Telegram.WebApp.openLink(url); } catch (e) { try { window.open(url, '_blank'); } catch (x) {} }
-          } else {
-            ls(KEY_PENDING, null);
-            try { data.launch_player = 'inner'; L().Player.play(data); } catch (e) {}
-          }
-        },
-        onBack: function () { back(); ls(KEY_PENDING, null); }
-      });
-    } catch (e) {}
   }
 
   // ---------- 2. the return ----------
@@ -14301,15 +14028,33 @@
     ls(KEY_LOG, log.slice(0, 15));
   }
 
+  // The return opens this site in a NEW tab (iOS opens the x-success link that way). index.html does not load Lampa
+  // there: it hands the data to the tab that started the video (BroadcastChannel / storage event) and shows «Done».
+  // This side listens. If no other tab was open, index.html continues to the app with ?spr=... (see readReturn).
+  var CH = 'movily_sp_channel';
   var returned = null;   // {kind, params} read from the URL at start
+  function listen() {
+    var seen = {};
+    function take(r) {
+      if (!r || !r.kind || seen[r.id]) return;
+      seen[r.id] = 1;
+      returned = r;
+      handleReturn();
+    }
+    try { var bc = new BroadcastChannel(CH); bc.onmessage = function (m) { take(m.data); }; } catch (e) {}
+    window.addEventListener('storage', function (ev) {
+      if (ev.key !== CH || !ev.newValue) return;
+      try { take(JSON.parse(ev.newValue)); } catch (e) {}
+    });
+  }
   function readReturn() {
     try {
       var sp = new URLSearchParams(location.search);
-      if (!sp.has('sp')) return;
-      var params = {}, kind = sp.get('sp');
-      sp.forEach(function (v, k) { if (k !== 'sp') params[k] = v; });
-      returned = { kind: kind, params: params };
-      history.replaceState(null, '', location.pathname + location.hash);   // the address stays clean (no ?sp=)
+      if (sp.has('spr')) {                        // arrived from the return page: no other tab took it
+        returned = JSON.parse(sp.get('spr'));
+        history.replaceState(null, '', location.pathname + location.hash);
+        return;
+      }
     } catch (e) {}
   }
 
@@ -14317,6 +14062,7 @@
     var pend = ls(KEY_PENDING);
     if (!returned) return false;
     var r = returned; returned = null;
+    try { var ack = new BroadcastChannel(CH + '_ack'); ack.postMessage(r.id); ack.close(); } catch (e) {}
     var secs = pick(r.params, POS_KEYS), dur = pick(r.params, DUR_KEYS);
     var wrote = false;
     if (secs !== null && secs >= 0 && pend) {
@@ -14327,7 +14073,7 @@
     }
     logReturn(r.kind, r.params, pend, wrote);
     if (r.kind === 'error') toast(tr('SenPlayer не зміг відтворити відео', 'SenPlayer could not play the video'));
-    return wrote || r.kind === 'cancel' && false;
+    return wrote;
   }
 
   // ---------- 3. the manual fallback ----------
@@ -14374,12 +14120,6 @@
     try {
       var S = L().SettingsApi;
       if (!S || !S.addParam) return;
-      if (isApple()) S.addParam({
-        component: 'interface',
-        param: { name: 'movily_tg_player', type: 'select', values: { inner: tr('Вбудований', 'Built-in'), senplayer: 'SenPlayer' }, 'default': 'inner' },
-        field: { name: tr('Плеєр у Telegram', 'Player in Telegram'), description: tr('Яким плеєром відкривати відео в міні-застосунку Telegram', 'Which player opens videos inside the Telegram mini app') },
-        onChange: function () { try { if (window.Lampa && Lampa.Settings) Lampa.Settings.update(); } catch (e) {} }
-      });
       S.addParam({
         component: 'interface',
         param: { name: 'movily_sp_show', type: 'static' },
@@ -14398,10 +14138,10 @@
   }
 
   // ---------- the default player ----------
-  // once per device, only where SenPlayer can open (Apple, outside Telegram) and only if the viewer has not chosen a player
+  // once per device, only where SenPlayer can open (Apple) and only if the viewer has not chosen a player
   function defaultPlayer() {
     try {
-      if (inTelegram() || !isApple()) return;
+      if (!isApple()) return;
       if (localStorage.getItem('movily_sp_default_done')) return;
       localStorage.setItem('movily_sp_default_done', '1');
       ['player', 'player_torrent'].forEach(function (k) {
@@ -14414,6 +14154,7 @@
   function start() {
     defaultPlayer();
     readReturn();
+    listen();
     try { L().Player.listener.follow('create', onCreate); } catch (e) {}
     settings();
     setTimeout(function () { handleReturn(); }, 600);
