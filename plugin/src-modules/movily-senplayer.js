@@ -59,12 +59,33 @@
     return 'senplayer://x-callback-url/play?' + q;
   }
 
+  // Lampa's own hash of an episode / movie: season + (":" if >10) + episode + original title (same as Lampa builds it)
+  function fallbackHash(data) {
+    try {
+      var card = data.card || (L().Activity && L().Activity.active && L().Activity.active().card) || null;
+      var title = card && (card.original_title || card.original_name);
+      if (!title || !L().Utils || !L().Utils.hash) return null;
+      var se = data.season !== undefined ? data.season : (data.timeline && data.timeline.season);
+      var ep = data.episode !== undefined ? data.episode : (data.timeline && data.timeline.episode);
+      var serial = !!(card.original_name || card.number_of_seasons);
+      if (serial && (se === undefined || ep === undefined)) return null;
+      return L().Utils.hash(serial ? [se, se > 10 ? ':' : '', ep, title].join('') : [title].join(''));
+    } catch (e) { return null; }
+  }
+
   function remember(data, pos) {
     var t = data.timeline || {};
-    ls(KEY_PENDING, {
-      at: Date.now(), title: String(data.title || '').replace(/<[^>]*>/g, ''), hash: t.hash || null,
-      duration: t.duration || 0, startedAt: pos || 0, card: t.card || null, season: t.season, episode: t.episode
-    });
+    var card = t.card || (data.card && (data.card.id || data.card)) || null;
+    var hash = t.hash || fallbackHash(data);
+    var rec = {
+      at: Date.now(), title: String(data.title || '').replace(/<[^>]*>/g, ''), hash: hash,
+      duration: t.duration || 0, startedAt: pos || 0, card: card, season: t.season, episode: t.episode
+    };
+    ls(KEY_PENDING, rec);
+    // diagnostics: what we are going to write to, visible in Settings > Interface > SenPlayer
+    var log = ls(KEY_LOG) || [];
+    log.unshift({ at: new Date().toISOString(), kind: 'start', params: { hash: hash, hasTimeline: !!data.timeline, card: card, duration: rec.duration, pos: pos }, title: rec.title });
+    ls(KEY_LOG, log.slice(0, 15));
   }
 
   function onCreate(e) {
@@ -114,7 +135,7 @@
 
   function writeTimecode(pend, seconds, duration) {
     try {
-      if (!pend || !pend.hash) return false;
+      if (!pend || !pend.hash) { toast(tr('Не вдалося зберегти: немає ідентифікатора серії', 'Not saved: no episode id')); return false; }
       var dur = duration || pend.duration || 0;
       var percent = dur > 0 ? Math.max(0, Math.min(100, Math.round(seconds / dur * 100))) : 0;
       var rec = { hash: pend.hash, percent: percent, time: Math.round(seconds), duration: Math.round(dur) };
@@ -192,15 +213,14 @@
 
   function askManual() {
     var pend = ls(KEY_PENDING);
-    if (!pend || !pend.hash || Date.now() - pend.at > 8 * 3600 * 1000) return;
-    if (!pend.duration) return;                  // without the length a percent means nothing; the next play will carry it
+    if (!pend || Date.now() - pend.at > 8 * 3600 * 1000) return;
     var C = L().Controller, S = L().Select;
     if (!S || !C) return;
     var enabled = C.enabled && C.enabled();
-    var pcts = [25, 50, 75, 90, 100];
+    var pcts = pend.duration ? [25, 50, 75, 90, 100] : [];
     // estimate: where it started + how long the page was in the background (capped at 6 h and at the length)
     var est = Math.max(0, (Date.now() - pend.at) / 1000 + (pend.startedAt || 0));
-    if (est > pend.duration) est = pend.duration;
+    if (pend.duration && est > pend.duration) est = pend.duration;
     var items = [];
     if (est > 30 && !(pend.leftAt && pend.leftAt <= pend.at)) items.push({ title: tr('Рекомендовано: ', 'Suggested: ') + fmt(est) + tr('  (за часом у плеєрі)', '  (by time in player)'), s: est });
     items = items.concat(pcts.map(function (p) { return { title: p === 100 ? tr('Переглянуто до кінця', 'Watched to the end') : p + '%  (' + fmt(pend.duration * p / 100) + ')', p: p }; }));
