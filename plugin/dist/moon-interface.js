@@ -13593,55 +13593,6 @@
 })();
 
 
-/* ===== movily-telegram ===== */
-/* Movily: сумісність із Telegram Mini App WebView.
-   Telegram може блокувати location.assign() для custom URL schemes (senplayer://, infuse:// тощо).
-   Для Mini App відкриваємо такі посилання через тимчасовий target=_blank anchor, що передає їх ОС.
-   HTTPS-посилання відкриваємо через Telegram.WebApp.openLink, якщо API доступне. */
-(function () {
-  'use strict';
-  if (window.__movily_telegram_bridge) return;
-  window.__movily_telegram_bridge = true;
-  function webApp() {
-    try { return window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null; } catch (e) { return null; }
-  }
-  function inTelegram() {
-    var w = webApp();
-    if (w) return true;
-    try { return /Telegram/i.test(navigator.userAgent || '') || /tgWebApp/i.test(location.hash + location.search); } catch (e) { return false; }
-  }
-  function open(url) {
-    if (!url) return false;
-    var w = webApp();
-    try {
-      if (w && /^https?:/i.test(url) && typeof w.openLink === 'function') {
-        w.openLink(url);
-        return true;
-      }
-    } catch (e) {}
-    if (!inTelegram()) {
-      try { window.location.assign(url); return true; } catch (e) { return false; }
-    }
-    try {
-      var a = document.createElement('a');
-      a.href = url;
-      a.target = '_blank';
-      a.rel = 'noopener noreferrer';
-      a.style.display = 'none';
-      (document.body || document.documentElement).appendChild(a);
-      a.click();
-      setTimeout(function () { try { a.remove(); } catch (e) {} }, 1000);
-      return true;
-    } catch (e) {
-      try { window.location.href = url; return true; } catch (x) { return false; }
-    }
-  }
-  window.Movily = window.Movily || {};
-  window.Movily.isTelegram = inTelegram;
-  window.Movily.openExternal = open;
-})();
-
-
 /* ===== movily-trailers ===== */
 /* Movily: фоновий трейлер на сторінці фільму/серіалу.
    Джерело: The Trailer Database (trailerdb.org), SQL-API https://trailerdb.mhadifilms.workers.dev/query.
@@ -13666,15 +13617,15 @@
     uk: { grp: 'Трейлери', on: 'Трейлер у картці фільму', on_d: 'На сторінці фільму трейлер сам запускається фоном. Джерело: The Trailer Database.',
           sound: 'Звук трейлера', sound_d: 'Вмикати звук одразу. Якщо браузер не дозволяє, трейлер стартує без звуку.',
           delay: 'Затримка трейлера', d1: '1 секунда', d15: '1,5 секунди', d3: '3 секунди', d5: '5 секунд',
-          mute: 'Звук', unmute: 'Вимкнути звук', play: 'Запустити трейлер' },
+          mute: 'Звук', unmute: 'Вимкнути звук' },
     ru: { grp: 'Трейлеры', on: 'Трейлер в карточке фильма', on_d: 'На странице фильма трейлер сам запускается фоном. Источник: The Trailer Database.',
           sound: 'Звук трейлера', sound_d: 'Включать звук сразу. Если браузер не разрешает, трейлер стартует без звука.',
           delay: 'Задержка трейлера', d1: '1 секунда', d15: '1,5 секунды', d3: '3 секунды', d5: '5 секунд',
-          mute: 'Звук', unmute: 'Выключить звук', play: 'Запустить трейлер' },
+          mute: 'Звук', unmute: 'Выключить звук' },
     en: { grp: 'Trailers', on: 'Trailer in the movie card', on_d: 'On a movie page the trailer starts by itself in the background. Source: The Trailer Database.',
           sound: 'Trailer sound', sound_d: 'Start with sound. If the browser blocks it, the trailer starts muted.',
           delay: 'Trailer delay', d1: '1 second', d15: '1.5 seconds', d3: '3 seconds', d5: '5 seconds',
-          mute: 'Sound', unmute: 'Mute', play: 'Play trailer' }
+          mute: 'Sound', unmute: 'Mute' }
   };
   function lang() { var l = 'uk'; try { l = String(Lampa.Storage.get('language', 'uk') || 'uk'); } catch (e) {} return STR[l] ? l : (l === 'be' ? 'ru' : 'en'); }
   function tr(k) { return (STR[lang()] || STR.en)[k] || STR.en[k] || k; }
@@ -13707,9 +13658,7 @@
       '.mvt-sound svg{width:55%;height:55%}',
       '.mvt-sound .mvt-ic-off{display:none}',
       '.mvt-sound.muted .mvt-ic-on{display:none}',
-      '.mvt-sound.muted .mvt-ic-off{display:block}',
-      '.mvt-play{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:31;display:none;padding:.7em 1em;border:0;border-radius:999px;background:rgba(30,30,34,.78);color:#fff;font:600 15px -apple-system,BlinkMacSystemFont,sans-serif;cursor:pointer;pointer-events:auto}',
-      '.mvt-play.show{display:block}'
+      '.mvt-sound.muted .mvt-ic-off{display:block}'
     ].join('');
     (document.head || document.documentElement).appendChild(st);
   }
@@ -13828,7 +13777,6 @@
       }
     } catch (e) {}
     try { if (c.btn && c.btn.parentNode) c.btn.parentNode.removeChild(c.btn); } catch (e) {}
-    try { if (c.playBtn && c.playBtn.parentNode) c.playBtn.parentNode.removeChild(c.playBtn); } catch (e) {}
     try { c.render.removeClass('mvt-on'); } catch (e) {}
   }
 
@@ -13850,7 +13798,7 @@
     box.appendChild(frame);
     holder.insertBefore(box, bgEl ? bgEl.nextSibling : holder.firstChild);
 
-    var c = cur = { box: box, frame: frame, render: render, muted: opt(K.sound) !== true, started: false, btn: null, playBtn: null, timer: 0, loop: 0, onMsg: null };
+    var c = cur = { box: box, frame: frame, render: render, muted: opt(K.sound) !== true, started: false, btn: null, timer: 0, loop: 0, onMsg: null };
 
     var btn = document.createElement('div');
     btn.className = 'mvt-sound muted';
@@ -13870,19 +13818,6 @@
     if (window.getComputedStyle(anchor).position === 'static') anchor.style.position = 'relative';
     anchor.appendChild(btn);
     c.btn = btn;
-    var playBtn = document.createElement('button');
-    playBtn.type = 'button';
-    playBtn.className = 'mvt-play';
-    playBtn.textContent = tr('play');
-    playBtn.addEventListener('click', function (ev) {
-      if (ev) { ev.preventDefault && ev.preventDefault(); ev.stopPropagation && ev.stopPropagation(); }
-      if (cur !== c) return;
-      playBtn.classList.remove('show');
-      cmd(c, 'playVideo');
-    });
-    holder.appendChild(playBtn);
-    c.playBtn = playBtn;
-    setTimeout(function () { if (cur === c && !c.started) playBtn.classList.add('show'); }, 1800);
 
     function showTrailer() {
       if (cur !== c) return;
@@ -13941,7 +13876,7 @@
       try { frame.contentWindow.postMessage(JSON.stringify({ event: 'listening', id: 1, channel: 'widget' }), '*'); } catch (e) {}
       cmd(c, 'addEventListener', ['onStateChange']);
     });
-    c.timer = setTimeout(function () { if (cur === c && !c.started) { playBtn.classList.add('show'); log('autoplay заблокований, очікуємо натискання'); } }, 12000);
+    c.timer = setTimeout(function () { if (cur === c && !c.started) { log('не стартував'); next(); } }, 12000);
 
     frame.src = 'https://www.youtube-nocookie.com/embed/' + encodeURIComponent(ytId) +
       '?autoplay=1&mute=1&controls=0&disablekb=1&fs=0&iv_load_policy=3&rel=0&modestbranding=1&playsinline=1&enablejsapi=1' +
@@ -14190,9 +14125,7 @@
       e.abort();                                                // Lampa's own launch (no callback, no position) is not used
       remember(data, pos);
       try { L().Player.listener.send('external', data); } catch (x) {}
-      var url = senUrl(data, pos);
-      if (window.Movily && typeof window.Movily.openExternal === 'function') window.Movily.openExternal(url);
-      else window.location.assign(url);
+      window.location.assign(senUrl(data, pos));
     } catch (x) {}
   }
 

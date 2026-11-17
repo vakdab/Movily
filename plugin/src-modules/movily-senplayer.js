@@ -165,9 +165,7 @@
       e.abort();                                                // Lampa's own launch (no callback, no position) is not used
       remember(data, pos);
       try { L().Player.listener.send('external', data); } catch (x) {}
-      var url = senUrl(data, pos);
-      if (window.Movily && typeof window.Movily.openExternal === 'function') window.Movily.openExternal(url);
-      else window.location.assign(url);
+      window.location.assign(senUrl(data, pos));
     } catch (x) {}
   }
 
