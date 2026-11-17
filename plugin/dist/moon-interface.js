@@ -14006,13 +14006,29 @@
     } catch (e) { return null; }
   }
 
+  // card key + season + episode in the format Lampa stores them (Timeline.link), so the progress line finds the record
+  function linkOf(data) {
+    var t = data.timeline || {};
+    try {
+      var card = (data.card && typeof data.card === 'object') ? data.card : (L().Activity && L().Activity.active && L().Activity.active() && L().Activity.active().card);
+      if (card && L().Timeline && L().Timeline.link) {
+        var se = data.season !== undefined ? data.season : (t.season !== undefined ? t.season : data.season_number);
+        var ep = data.episode !== undefined ? data.episode : (t.episode !== undefined ? t.episode : data.episode_number);
+        var lk = L().Timeline.link(card, se, ep);
+        if (lk && lk.card) return lk;
+      }
+    } catch (e) {}
+    return t.card ? { card: t.card, season: t.season, episode: t.episode } : null;
+  }
+
   function remember(data, pos) {
     var t = data.timeline || {};
-    var card = t.card || (data.card && (data.card.id || data.card)) || null;
+    var lk = linkOf(data) || {};
+    var card = lk.card || null;
     var hash = t.hash || fallbackHash(data);
     var rec = {
       at: Date.now(), title: String(data.title || '').replace(/<[^>]*>/g, ''), hash: hash,
-      duration: t.duration || 0, startedAt: pos || 0, card: card, season: t.season, episode: t.episode
+      duration: t.duration || 0, startedAt: pos || 0, card: card, season: lk.season, episode: lk.episode
     };
     ls(KEY_PENDING, rec);
     // diagnostics: what we are going to write to, visible in Settings > Interface > SenPlayer
@@ -14079,6 +14095,9 @@
     try {
       if (!pend || !pend.hash) { toast(tr('Не вдалося зберегти: немає ідентифікатора серії', 'Not saved: no episode id')); return false; }
       var dur = duration || pend.duration || 0;
+      // SenPlayer does not report the length. Without it the line stays hidden (percent 0), so assume a typical episode
+      // (at least 24 min and a little beyond the position); the real length replaces it on the next play
+      if (!dur) dur = Math.max(1440, Math.ceil((seconds + 300) / 60) * 60);
       var percent = dur > 0 ? Math.max(0, Math.min(100, Math.round(seconds / dur * 100))) : 0;
       var rec = { hash: pend.hash, percent: percent, time: Math.round(seconds), duration: Math.round(dur) };
       if (pend.card) { rec.card = pend.card; if (pend.season !== undefined) rec.season = pend.season; if (pend.episode !== undefined) rec.episode = pend.episode; }
