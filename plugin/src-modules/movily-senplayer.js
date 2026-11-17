@@ -83,12 +83,33 @@
   }
 
   // ---------- 2. the return ----------
-  function num(v) { var n = parseFloat(String(v).replace(',', '.')); return isNaN(n) ? null : n; }
+  function num(v) {
+    var str = String(v).trim();
+    if (/^\d+:\d{1,2}(:\d{1,2})?(\.\d+)?$/.test(str)) {          // hh:mm:ss or mm:ss
+      var a = str.split(':').map(parseFloat), r = 0;
+      for (var i = 0; i < a.length; i++) r = r * 60 + a[i];
+      return isNaN(r) ? null : r;
+    }
+    var n = parseFloat(str.replace(',', '.'));
+    return isNaN(n) ? null : n;
+  }
   function pick(params, keys) {
     for (var i = 0; i < keys.length; i++) {
       for (var k in params) if (k.toLowerCase() === keys[i].toLowerCase()) { var n = num(params[k]); if (n !== null) return n; }
     }
     return null;
+  }
+  // everything SenPlayer could put in the return link: query, hash, nested "?a=b" inside a value
+  function flatten(params) {
+    var out = {};
+    function add(k, v) { if (!(k in out)) out[k] = v; }
+    for (var k in params) {
+      var v = String(params[k]);
+      add(k, v);
+      var m = v.match(/[?#&]([^=&]+=[^#]*)$/);
+      if (m) { try { new URLSearchParams(m[1]).forEach(function (vv, kk) { add(kk, vv); }); } catch (e) {} }
+    }
+    return out;
   }
 
   function writeTimecode(pend, seconds, duration) {
@@ -144,11 +165,19 @@
     if (!returned) return false;
     var r = returned; returned = null;
     try { var ack = new BroadcastChannel(CH + '_ack'); ack.postMessage(r.id); ack.close(); } catch (e) {}
-    var secs = pick(r.params, POS_KEYS), dur = pick(r.params, DUR_KEYS);
-    var wrote = false;
+    var P = flatten(r.params || {});
+    var secs = pick(P, POS_KEYS), dur = pick(P, DUR_KEYS);
+    var pct = pick(P, ['percent', 'percentage']);
+    var wrote = false, fullDur = dur || (pend && pend.duration) || 0;
+    if (dur && dur > 100000) dur = dur / 1000;                      // duration in ms
+    if (secs !== null && pend) {
+      if (fullDur && secs > fullDur * 1.5 && secs > 10000) secs = secs / 1000;   // position in ms
+      else if (!fullDur && secs > 86400) secs = secs / 1000;
+      if (secs <= 1 && fullDur) secs = secs * fullDur;                            // fraction
+    } else if (pct !== null && pend && fullDur) {
+      secs = fullDur * (pct > 1 ? pct / 100 : pct);
+    }
     if (secs !== null && secs >= 0 && pend) {
-      // some players report a fraction or a percent: 0..1 is treated as a fraction of the duration when the length is known
-      if (secs <= 1 && (dur || pend.duration)) secs = secs * (dur || pend.duration);
       wrote = writeTimecode(pend, secs, dur);
       if (wrote) { ls(KEY_PENDING, null); toast(tr('Таймкод збережено: ', 'Saved: ') + fmt(secs)); }
     }
@@ -169,18 +198,36 @@
     if (!S || !C) return;
     var enabled = C.enabled && C.enabled();
     var pcts = [25, 50, 75, 90, 100];
-    var items = pcts.map(function (p) { return { title: p === 100 ? tr('Переглянуто до кінця', 'Watched to the end') : p + '%  (' + fmt(pend.duration * p / 100) + ')', p: p }; });
+    // estimate: where it started + how long the page was in the background (capped at 6 h and at the length)
+    var est = Math.max(0, (Date.now() - pend.at) / 1000 + (pend.startedAt || 0));
+    if (est > pend.duration) est = pend.duration;
+    var items = [];
+    if (est > 30 && !(pend.leftAt && pend.leftAt <= pend.at)) items.push({ title: tr('Рекомендовано: ', 'Suggested: ') + fmt(est) + tr('  (за часом у плеєрі)', '  (by time in player)'), s: est });
+    items = items.concat(pcts.map(function (p) { return { title: p === 100 ? tr('Переглянуто до кінця', 'Watched to the end') : p + '%  (' + fmt(pend.duration * p / 100) + ')', p: p }; }));
+    items.push({ title: tr('Ввести час вручну (хв:сек)', 'Enter time manually (mm:ss)'), p: -2 });
     items.push({ title: tr('Не зберігати', 'Do not save'), p: -1 });
     S.show({
       title: tr('Скільки переглянуто?', 'How much did you watch?') + (pend.title ? ' · ' + pend.title : ''),
       items: items,
       onSelect: function (it) {
         try { if (enabled && enabled.name) C.toggle(enabled.name); } catch (e) {}
+        if (it.s) { writeTimecode(pend, it.s, pend.duration); toast(tr('Таймкод збережено: ', 'Saved: ') + fmt(it.s)); ls(KEY_PENDING, null); return; }
+        if (it.p === -2) { askExact(pend); return; }
         if (it.p > 0) { writeTimecode(pend, pend.duration * it.p / 100, pend.duration); toast(tr('Таймкод збережено', 'Saved')); }
         ls(KEY_PENDING, null);
       },
       onBack: function () { try { if (enabled && enabled.name) C.toggle(enabled.name); } catch (e) {} ls(KEY_PENDING, null); }
     });
+  }
+
+  function askExact(pend) {
+    var v = window.prompt(tr('На якому місці зупинились? (наприклад 23:40 або 1:05:10)', 'Where did you stop? (e.g. 23:40 or 1:05:10)'), '');
+    var n = v ? num(v) : null;
+    if (n !== null && n >= 0) {
+      if (pend.duration && n > pend.duration) n = pend.duration;
+      writeTimecode(pend, n, pend.duration); toast(tr('Таймкод збережено: ', 'Saved: ') + fmt(n));
+    }
+    ls(KEY_PENDING, null);
   }
 
   // the page comes back to the front (the user left SenPlayer without a callback): ask once
