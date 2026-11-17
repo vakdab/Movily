@@ -67,9 +67,15 @@
   } catch (e) {}
 
   // the external players (iOS apps, Android intents) cannot be opened from the webview: always the inner one
+  // Exception: «Player in Telegram = SenPlayer» (movily_tg_player), the viewer's choice, handled by movily-senplayer.js
   function forceInnerPlayer() {
     try {
       if (!window.Lampa || !Lampa.Storage) return;
+      if (Lampa.Storage.get('movily_tg_player', 'inner') === 'senplayer') {
+        // SenPlayer is opened by movily-senplayer.js; the setting of Lampa itself must be SenPlayer too
+        ['player', 'player_torrent'].forEach(function (k) { if (Lampa.Storage.get(k, 'inner') !== 'senplayer') Lampa.Storage.set(k, 'senplayer'); });
+        return;
+      }
       ['player', 'player_iptv', 'player_torrent'].forEach(function (k) {
         var cur = Lampa.Storage.get(k, 'inner');
         if (cur && cur !== 'inner') Lampa.Storage.set(k, 'inner');

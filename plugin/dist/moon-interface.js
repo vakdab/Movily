@@ -13986,9 +13986,15 @@
   } catch (e) {}
 
   // the external players (iOS apps, Android intents) cannot be opened from the webview: always the inner one
+  // Exception: «Player in Telegram = SenPlayer» (movily_tg_player), the viewer's choice, handled by movily-senplayer.js
   function forceInnerPlayer() {
     try {
       if (!window.Lampa || !Lampa.Storage) return;
+      if (Lampa.Storage.get('movily_tg_player', 'inner') === 'senplayer') {
+        // SenPlayer is opened by movily-senplayer.js; the setting of Lampa itself must be SenPlayer too
+        ['player', 'player_torrent'].forEach(function (k) { if (Lampa.Storage.get(k, 'inner') !== 'senplayer') Lampa.Storage.set(k, 'senplayer'); });
+        return;
+      }
       ['player', 'player_iptv', 'player_torrent'].forEach(function (k) {
         var cur = Lampa.Storage.get(k, 'inner');
         if (cur && cur !== 'inner') Lampa.Storage.set(k, 'inner');
@@ -14202,19 +14208,70 @@
     });
   }
 
+  // inside Telegram the choice is its own setting (the default is the built-in player)
+  function tgSen() { try { return L().Storage.get('movily_tg_player', 'inner') === 'senplayer'; } catch (e) { return false; } }
+
   function onCreate(e) {
     try {
-      if (inTelegram() || !isApple()) return;
+      var tg = inTelegram();
+      if (!isApple()) return;
+      if (tg ? !tgSen() : false) return;
       var data = e && e.data;
-      if (!data || !data.url || !usesSen(data)) return;
+      if (!data || !data.url) return;
+      if (!tg && !usesSen(data)) return;
       if (/youtube\.com|youtu\.be/.test(data.url)) return;      // trailers stay in Lampa's own player
       if (data.launch_player === 'lampa' || data.launch_player === 'inner') return;
       var pos = startPosition(data);
       e.abort();                                                // Lampa's own launch (no callback, no position) is not used
       remember(data, pos);
       try { L().Player.listener.send('external', data); } catch (x) {}
-      window.location.assign(senUrl(data, pos));
+      var url = senUrl(data, pos);
+      if (tg) openFromTelegram(url, data); else window.location.assign(url);
     } catch (x) {}
+  }
+
+  // Telegram's webview: try the scheme right away (the tap that started the video is still the gesture), and if
+  // the page stays in front (the scheme was not opened) offer the manual ways: a real link tap, Telegram's openLink,
+  // or the built-in player
+  function openFromTelegram(url, data) {
+    var left = false;
+    function gone() { left = true; }
+    document.addEventListener('visibilitychange', gone, { once: true });
+    window.addEventListener('pagehide', gone, { once: true });
+    try { window.location.href = url; } catch (x) {}
+    setTimeout(function () {
+      document.removeEventListener('visibilitychange', gone);
+      if (left || document.visibilityState === 'hidden') return;
+      offerWays(url, data);
+    }, 1600);
+  }
+
+  function offerWays(url, data) {
+    try {
+      var S = L().Select, C = L().Controller, enabled = C.enabled && C.enabled();
+      var back = function () { try { if (enabled && enabled.name) C.toggle(enabled.name); } catch (e) {} };
+      S.show({
+        title: tr('Не вдалося відкрити SenPlayer автоматично', 'Could not open SenPlayer automatically'),
+        items: [
+          { title: tr('Відкрити в SenPlayer', 'Open in SenPlayer'), w: 'link' },
+          { title: tr('Відкрити через Telegram', 'Open via Telegram'), w: 'tg' },
+          { title: tr('Дивитись тут (вбудований плеєр)', 'Watch here (built-in player)'), w: 'inner' }
+        ],
+        onSelect: function (it) {
+          back();
+          if (it.w === 'link') {
+            var a = document.createElement('a'); a.href = url; a.style.cssText = 'position:fixed;left:-9999px'; document.body.appendChild(a); a.click();
+            setTimeout(function () { try { a.remove(); } catch (e) {} }, 500);
+          } else if (it.w === 'tg') {
+            try { Telegram.WebApp.openLink(url); } catch (e) { try { window.open(url, '_blank'); } catch (x) {} }
+          } else {
+            ls(KEY_PENDING, null);
+            try { data.launch_player = 'inner'; L().Player.play(data); } catch (e) {}
+          }
+        },
+        onBack: function () { back(); ls(KEY_PENDING, null); }
+      });
+    } catch (e) {}
   }
 
   // ---------- 2. the return ----------
@@ -14317,6 +14374,12 @@
     try {
       var S = L().SettingsApi;
       if (!S || !S.addParam) return;
+      if (isApple()) S.addParam({
+        component: 'interface',
+        param: { name: 'movily_tg_player', type: 'select', values: { inner: tr('Вбудований', 'Built-in'), senplayer: 'SenPlayer' }, 'default': 'inner' },
+        field: { name: tr('Плеєр у Telegram', 'Player in Telegram'), description: tr('Яким плеєром відкривати відео в міні-застосунку Telegram', 'Which player opens videos inside the Telegram mini app') },
+        onChange: function () { try { if (window.Lampa && Lampa.Settings) Lampa.Settings.update(); } catch (e) {} }
+      });
       S.addParam({
         component: 'interface',
         param: { name: 'movily_sp_show', type: 'static' },
