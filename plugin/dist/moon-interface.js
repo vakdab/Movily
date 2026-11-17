@@ -14046,7 +14046,7 @@
       if (typeof id !== 'number' || !L().Api || !L().Api.sources || !L().Api.sources.tmdb) return;
       L().Api.sources.tmdb.get('tv/' + id + '/season/' + se, {}, function (j) {
         try {
-          var e2 = (j.episodes || []).filter(function (x) { return x.episode_number == ep; })[0];
+          var e2 = (j.episodes_original || j.episodes || []).filter(function (x) { return x.episode_number == ep; })[0];
           if (!e2 || !(e2.runtime > 0)) return;
           var cur = ls(KEY_PENDING);
           if (cur && cur.at === rec.at) { cur.duration = e2.runtime * 60; ls(KEY_PENDING, cur); }
@@ -14433,7 +14433,9 @@
     function fin(ok) { c.state = ok ? 'ok' : 'fail'; var w = c.wait; c.wait = []; w.forEach(function (f) { f(ok ? c.eps : null); }); }
     try {
       L().Api.sources.tmdb.get('tv/' + id + '/season/' + season, {}, function (j) {
-        (j.episodes || []).forEach(function (e) { c.eps[e.episode_number] = e; });
+        // Lampa splits a season with long release gaps (OVA) into fake seasons and keeps only the first part in «episodes»;
+        // the full list is in «episodes_original»
+        (j.episodes_original || j.episodes || []).forEach(function (e) { c.eps[e.episode_number] = e; });
         fin(Object.keys(c.eps).length > 0);
       }, function () { fin(false); });
     } catch (e) { fin(false); }
@@ -14456,7 +14458,12 @@
       var img = imgBox && imgBox.querySelector('img');
       var hasPic = imgBox && imgBox.classList.contains('online-prestige__img--loaded');
       var path = pickPath(ep, card);
-      if (img && path && !hasPic && !(img.getAttribute('src') && img.getAttribute('src').indexOf('img_broken') < 0 && img.complete && img.naturalWidth)) {
+      var cur = (img && img.getAttribute('src')) || '';
+      var isCardArt = !!card && !!cur && ((card.backdrop_path && cur.indexOf(card.backdrop_path) >= 0) || (card.poster_path && cur.indexOf(card.poster_path) >= 0));
+      var real = !!(ep && ep.still_path);
+      // set the picture when it is empty / broken, or when it is only the card's own art and this episode has a real still
+      var need = img && path && (!hasPic || /img_broken/.test(cur) || !cur || (real && isCardArt));
+      if (need && cur.indexOf(path) < 0) {
         var loader = imgBox.querySelector('.online-prestige__loader');
         img.onerror = function () { img.src = './img/img_broken.svg'; };
         img.onload = function () {

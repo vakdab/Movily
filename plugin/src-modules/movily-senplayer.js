@@ -127,7 +127,7 @@
       if (typeof id !== 'number' || !L().Api || !L().Api.sources || !L().Api.sources.tmdb) return;
       L().Api.sources.tmdb.get('tv/' + id + '/season/' + se, {}, function (j) {
         try {
-          var e2 = (j.episodes || []).filter(function (x) { return x.episode_number == ep; })[0];
+          var e2 = (j.episodes_original || j.episodes || []).filter(function (x) { return x.episode_number == ep; })[0];
           if (!e2 || !(e2.runtime > 0)) return;
           var cur = ls(KEY_PENDING);
           if (cur && cur.at === rec.at) { cur.duration = e2.runtime * 60; ls(KEY_PENDING, cur); }
