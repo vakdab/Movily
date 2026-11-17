@@ -13599,8 +13599,7 @@
    База віддає YouTube-ID, тому відтворення йде через YouTube iframe (youtube-nocookie), без елементів керування.
    Вибір ролика: тільки повноцінні трейлери (trailer / teaser / red_band / imax / tv_spot), офіційні й доступні,
    мова: українська > оригінальна мова фільму > англійська > будь-яка; всередині мови: за переглядами.
-   Серіали: у базі трейлери є лише в невеликої частини (популярних майже немає), тому, коли бази порожньо,
-   береться офіційний YouTube-трейлер, який Lampa вже завантажила в картку (дані TMDB). Фільми: лише The Trailer Database.
+   Каскад: база (SQL з фільтром і сортуванням) > TMDB напряму (включно з відео без мови) > відео з картки. Кандидатів кілька: недоступний ролик пропускається.
    Цикл: затримка > трейлер плавно проявляється (постер згасає) > кінець > постер повертається > пауза > знову.
    Вмикається/вимикається в Налаштування > Інтерфейс. Автономний модуль на подіях Lampa (full / complite). */
 (function () {
@@ -13677,54 +13676,85 @@
   }
   function sqlStr(v) { return String(v).replace(/[^0-9]/g, ''); }
 
-  /* пріоритет: тип ролика, мова, перегляди */
+  /* пріоритет: мова, офіційність, тип ролика, перегляди. Повертає СПИСОК кандидатів (унікальні YouTube-ID):
+     якщо перший ролик прибрано з YouTube або заборонено до вбудовування, плеєр бере наступний */
   var TYPE_RANK = { trailer: 0, teaser: 1, red_band: 2, imax: 3, tv_spot: 4 };
-  function pick(rows, origLang) {
-    var uiLang = 'uk', list = [];
+  var MAX_CAND = 6;
+  function uniq(a) { var o = [], seen = {}; a.forEach(function (x) { if (x && !seen[x]) { seen[x] = 1; o.push(x); } }); return o; }
+
+  function pickAll(rows, origLang) {
+    var list = [];
     rows.forEach(function (r) {
       if (!r || !r.youtube_id || r.is_available === 0) return;
       if (!(r.trailer_type in TYPE_RANK)) return;                          // без кліпів, фічеретів, бекстейджів
       if (r.duration_seconds && r.duration_seconds > MAX_SEC) return;
       list.push(r);
     });
-    function langRank(l) { l = (l || '').toLowerCase(); return l === uiLang ? 0 : (origLang && l === origLang ? 1 : (l === 'en' ? 2 : 3)); }
+    function langRank(l) { l = (l || '').toLowerCase(); return l === 'uk' ? 0 : (origLang && l === origLang ? 1 : (l === 'en' ? 2 : 3)); }
     list.sort(function (a, b) {
       return (langRank(a.language) - langRank(b.language)) ||
              ((b.is_official || 0) - (a.is_official || 0)) ||
              (TYPE_RANK[a.trailer_type] - TYPE_RANK[b.trailer_type]) ||
              ((b.view_count || 0) - (a.view_count || 0));
     });
-    return list.length ? list[0].youtube_id : null;
+    return uniq(list.map(function (r) { return r.youtube_id; }));
   }
 
-  /* запасний варіант для серіалів: відео з даних картки (TMDB), лише YouTube-трейлери/тізери */
+  /* відео TMDB (ті, що Lampa вже завантажила, або запит напряму): лише YouTube-трейлери/тізери */
   function pickTmdb(videos, origLang) {
     var list = ((videos && videos.results) || []).filter(function (v) {
       return v && v.key && String(v.site || '').toLowerCase() === 'youtube' && (v.type === 'Trailer' || v.type === 'Teaser');
     });
-    function rank(v) { var l = String(v.iso_639_1 || '').toLowerCase(); return l === 'uk' ? 0 : (origLang && l === origLang ? 1 : (l === 'en' ? 2 : 3)); }
+    function rank(v) { var l = String(v.iso_639_1 || '').toLowerCase(); return l === 'uk' ? 0 : (origLang && l === origLang ? 1 : (l === 'en' ? 2 : (l === '' ? 3 : 4))); }
     list.sort(function (a, b) {
       return (rank(a) - rank(b)) || ((b.official ? 1 : 0) - (a.official ? 1 : 0)) || ((a.type === 'Trailer' ? 0 : 1) - (b.type === 'Trailer' ? 0 : 1)) ||
              (new Date(b.published_at || 0) - new Date(a.published_at || 0));
     });
-    return list.length ? list[0].key : null;
+    return uniq(list.map(function (v) { return v.key; }));
   }
 
+  /* TMDB напряму. Lampa просить відео лише українською й англійською, без «мовних» (null) і оригінальної мови,
+     тому для багатьох фільмів і майже всіх серіалів у картці трейлерів немає, хоча вони є на TMDB */
+  function tmdbVideos(movie, isTv, cb) {
+    var tries = 0;
+    function go(langs) {
+      var url;
+      try { url = Lampa.TMDB.api((isTv ? 'tv/' : 'movie/') + movie.id + '/videos?api_key=' + Lampa.TMDB.key() + '&include_video_language=' + langs); } catch (e) { return cb(null); }
+      getJSON(url, function (j) { cb(j); }, function () { if (tries++ < 1) go(langs); else cb(null); });
+    }
+    var ol = movie.original_language && movie.original_language !== 'uk' && movie.original_language !== 'en' ? ',' + movie.original_language : '';
+    go('uk,en' + ol + ',null');
+  }
+
+  /* База -> TMDB напряму -> відео з картки. Кожен наступний крок лише якщо попередній нічого не дав.
+     SQL сам відфільтровує тип/доступність/тривалість і сортує: раніше «LIMIT 80» без сортування віддавав
+     випадкові 80 записів із тисяч (кліпи, фічеретки), і справжній трейлер у вибірку не потрапляв. */
   function trailerKey(movie, videos, cb) {
     var isTv = !!(movie.name || movie.first_air_date || movie.number_of_seasons);
     var id = sqlStr(movie.id);
     if (!id) return cb(null);
     var key = (isTv ? 'tv/' : 'movie/') + id, c = cache[key];
     if (c && Date.now() - c.t < 30 * 60000) return cb(c.k);
-    var sql = isTv
-      ? 'SELECT t.youtube_id,t.trailer_type,t.language,t.view_count,t.duration_seconds,t.is_official,t.is_available FROM series_trailers t JOIN series s ON s.id=t.series_id WHERE s.tmdb_id=' + id + ' LIMIT 80'
-      : 'SELECT t.youtube_id,t.trailer_type,t.language,t.view_count,t.duration_seconds,t.is_official,t.is_available FROM trailers t JOIN movies m ON m.id=t.movie_id WHERE m.tmdb_id=' + id + ' LIMIT 80';
+    function done(list) { list = list && list.length ? list.slice(0, MAX_CAND) : null; cache[key] = { k: list, t: Date.now() }; cb(list); }
+
+    function viaTmdb(prev) {
+      tmdbVideos(movie, isTv, function (j) {
+        var l = pickTmdb(j, movie.original_language);
+        if (!l.length) l = pickTmdb(videos, movie.original_language);
+        done(uniq((prev || []).concat(l)));
+      });
+    }
+
+    var tbl = isTv ? 'series_trailers' : 'trailers', par = isTv ? 'series' : 'movies', fk = isTv ? 'series_id' : 'movie_id';
+    var ol = String(movie.original_language || '').replace(/[^a-z]/gi, '').toLowerCase();
+    var sql = 'SELECT t.youtube_id,t.trailer_type,t.language,t.view_count,t.duration_seconds,t.is_official,t.is_available FROM ' + tbl + ' t JOIN ' + par + ' s ON s.id=t.' + fk +
+      ' WHERE s.tmdb_id=' + id + " AND t.trailer_type IN ('trailer','teaser','red_band','imax','tv_spot') AND t.is_available!=0 AND (t.duration_seconds IS NULL OR t.duration_seconds<=" + MAX_SEC + ')' +
+      " ORDER BY CASE t.language WHEN 'uk' THEN 0 WHEN '" + ol + "' THEN 1 WHEN 'en' THEN 2 ELSE 3 END, t.is_official DESC, CASE t.trailer_type WHEN 'trailer' THEN 0 WHEN 'teaser' THEN 1 ELSE 2 END, t.view_count DESC LIMIT 12";
     getJSON(DB + '?sql=' + encodeURIComponent(sql), function (j) {
-      var k = (j && j.success && j.rows) ? pick(j.rows, movie.original_language) : null;
-      if (!k && isTv) k = pickTmdb(videos, movie.original_language);
-      cache[key] = { k: k, t: Date.now() };
-      cb(k);
-    }, function () { cb(isTv ? pickTmdb(videos, movie.original_language) : null); });
+      var l = (j && j.success && j.rows) ? pickAll(j.rows, movie.original_language) : [];
+      if (l.length >= 2) return done(l);          // у базі достатньо: запасне джерело не потрібне
+      viaTmdb(l);                                 // мало або нічого: додаємо TMDB (бази-кандидати лишаються першими)
+    }, function () { viaTmdb([]); });
   }
 
   /* ---------- плеєр (YouTube iframe, без елементів керування) ---------- */
@@ -13754,7 +13784,9 @@
     try { c.frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: func, args: args || [] }), '*'); } catch (e) {}
   }
 
-  function play(render, ytId, holder, bgEl) {
+  function play(render, ids, holder, bgEl) {
+    ids = (ids instanceof Array) ? ids.slice() : [ids];
+    var ytId = ids.shift();
     stop(true);
     var box = document.createElement('div');
     box.className = 'mvt-box';
@@ -13811,6 +13843,15 @@
       }, PAUSE_BETWEEN);
     }
 
+    /* ролик недоступний (прибраний, заборонено вбудовування, віковий): пробуємо наступний кандидат */
+    function next() {
+      if (cur !== c) return;
+      if (!ids.length) { stop(); return; }
+      var rest = ids.slice();
+      log('наступний кандидат, лишилось ' + rest.length);
+      play(render, rest, holder, bgEl);
+    }
+
     /* події плеєра приходять через postMessage (enablejsapi=1 + listening) */
     c.onMsg = function (ev) {
       if (cur !== c || ev.source !== frame.contentWindow) return;
@@ -13826,7 +13867,7 @@
         else if (d.info.playerState === YT_STATE.ENDED) replay();
       } else if (d.event === 'onError') {
         log('помилка плеєра ' + d.info);
-        if (!c.started) stop();
+        if (!c.started) next();
       }
     };
     window.addEventListener('message', c.onMsg);
@@ -13835,7 +13876,7 @@
       try { frame.contentWindow.postMessage(JSON.stringify({ event: 'listening', id: 1, channel: 'widget' }), '*'); } catch (e) {}
       cmd(c, 'addEventListener', ['onStateChange']);
     });
-    c.timer = setTimeout(function () { if (cur === c && !c.started) { log('не стартував'); stop(); } }, 15000);
+    c.timer = setTimeout(function () { if (cur === c && !c.started) { log('не стартував'); next(); } }, 12000);
 
     frame.src = 'https://www.youtube-nocookie.com/embed/' + encodeURIComponent(ytId) +
       '?autoplay=1&mute=1&controls=0&disablekb=1&fs=0&iv_load_policy=3&rel=0&modestbranding=1&playsinline=1&enablejsapi=1' +
@@ -13855,11 +13896,11 @@
     var t0 = Date.now();
 
     /* запит до бази йде паралельно із затримкою; показуємо не раніше затримки */
-    trailerKey(movie, (e.data && e.data.videos) || null, function (ytId) {
+    trailerKey(movie, (e.data && e.data.videos) || null, function (ytId) {   /* ytId: список кандидатів */
       var wait = Math.max(0, delay - (Date.now() - t0));
       setTimeout(function () {
         if (token !== seq || !opt(K.on)) return;
-        if (!ytId) { log('трейлера немає'); return; }
+        if (!ytId || !ytId.length) { log('трейлера немає'); return; }
         var active = null; try { active = Lampa.Activity.active(); } catch (x) {}
         if (active && active.activity && active.activity.render()[0] !== render[0]) return;   /* уже пішли з картки */
         if (!document.body.contains(render[0])) return;
