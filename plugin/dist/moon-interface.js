@@ -13934,8 +13934,8 @@
 
   var KEY_PENDING = 'movily_sp_pending';   // що зараз грає в SenPlayer (localStorage, переживає перезапуск сторінки)
   var KEY_LOG = 'movily_sp_log';           // що повернув SenPlayer (для діагностики)
-  var POS_KEYS = ['position', 'time', 'currentTime', 'currenttime', 'lastPosition', 'last_position', 'playbackTime', 'progress', 'seconds', 'start', 'startTime'];
-  var DUR_KEYS = ['duration', 'total', 'length'];
+  var POS_KEYS = ['position', 'time', 'currentTime', 'currenttime', 'lastPosition', 'last_position', 'playbackTime', 'progress', 'seconds', 'start', 'startTime', 'lastPlayedPosition', 'lastPlayedTime', 'playedPosition', 'playedTime', 'lastPlayedProgress', 'elapsed'];
+  var DUR_KEYS = ['duration', 'total', 'length', 'totalTime', 'lastPlayedDuration'];
 
   function isApple() {
     try { return /iPhone|iPad|iPod|Macintosh/i.test(navigator.userAgent) && (/Mobile|iPad|iPhone/.test(navigator.userAgent) || navigator.maxTouchPoints > 1); } catch (e) { return false; }
@@ -14043,9 +14043,18 @@
   function flatten(params) {
     var out = {};
     function add(k, v) { if (!(k in out)) out[k] = v; }
+    function walk(o, depth) {
+      if (depth > 4 || o === null || o === undefined) return;
+      if (typeof o === 'object') { for (var k in o) { if (o[k] !== null && typeof o[k] === 'object') walk(o[k], depth + 1); else add(k, o[k]); } return; }
+      var v = String(o).trim();
+      if (/^[\[{]/.test(v)) { try { walk(JSON.parse(v), depth + 1); } catch (e) {} }
+    }
     for (var k in params) {
       var v = String(params[k]);
       add(k, v);
+      var kt = String(k).trim();
+      if (/^[\[{]/.test(kt)) { try { walk(JSON.parse(kt), 1); } catch (e) {} }   // the whole JSON arrived as the key
+      if (/^[\[{]/.test(v)) { try { walk(JSON.parse(v), 1); } catch (e) {} }
       var m = v.match(/[?#&]([^=&]+=[^#]*)$/);
       if (m) { try { new URLSearchParams(m[1]).forEach(function (vv, kk) { add(kk, vv); }); } catch (e) {} }
     }
@@ -14107,6 +14116,8 @@
     try { var ack = new BroadcastChannel(CH + '_ack'); ack.postMessage(r.id); ack.close(); } catch (e) {}
     var P = flatten(r.params || {});
     var secs = pick(P, POS_KEYS), dur = pick(P, DUR_KEYS);
+    if (secs === null) { for (var kk in P) { if (/pos|time|played|elapsed/i.test(kk) && !/url|title|name|date/i.test(kk)) { var nn = num(P[kk]); if (nn !== null) { secs = nn; break; } } } }
+    if (dur === null) { for (var k2 in P) { if (/dur|total|length/i.test(k2)) { var n2 = num(P[k2]); if (n2 !== null) { dur = n2; break; } } } }
     var pct = pick(P, ['percent', 'percentage']);
     var wrote = false, fullDur = dur || (pend && pend.duration) || 0;
     if (dur && dur > 100000) dur = dur / 1000;                      // duration in ms
@@ -14195,7 +14206,7 @@
           item.on('hover:enter click', function () {
             var log = ls(KEY_LOG) || [];
             var items = log.length ? log.map(function (r) {
-              return { title: (r.kind || '?') + (r.wrote ? ' · ✓' : '') + ' · ' + String(r.at).slice(11, 19), subtitle: JSON.stringify(r.params).slice(0, 160) };
+              return { title: (r.kind || '?') + (r.wrote ? ' · ✓' : '') + ' · ' + String(r.at).slice(11, 19), subtitle: Object.keys(r.params || {}).map(function (k) { var v = String(r.params[k]); return k.slice(0, 40) + '=' + v.replace(/https?:\/\/[^"]{20,}/g, 'URL').slice(0, 120); }).join(' | ') };
             }) : [{ title: tr('Ще нічого не поверталось', 'Nothing returned yet') }];
             L().Select.show({ title: tr('Що повернув SenPlayer', 'What SenPlayer returned'), items: items, onBack: function () { L().Controller.toggle('settings_component'); } });
           });
