@@ -13967,7 +13967,21 @@
   }
 
   function base() { return location.origin + location.pathname.replace(/[^/]*$/, ''); }
-  function cb(kind) { return base() + '?sp=' + kind; }
+  // A private relay topic (random, lives only in this app's storage). The return page opens in Safari, which cannot see the home-screen
+  // app's storage, so Safari drops what SenPlayer returned into this topic and the app picks it up when it comes to the front.
+  var RELAY = 'https://ntfy.sh/';
+  function topic() {
+    var t = null;
+    try { t = localStorage.getItem('movily_sp_topic'); } catch (e) {}
+    if (!t) {
+      var a = new Uint8Array(12);
+      try { crypto.getRandomValues(a); } catch (e) { for (var i = 0; i < 12; i++) a[i] = Math.floor(Math.random() * 256); }
+      t = 'mvl' + Array.prototype.map.call(a, function (b) { return ('0' + b.toString(16)).slice(-2); }).join('');
+      try { localStorage.setItem('movily_sp_topic', t); } catch (e) {}
+    }
+    return t;
+  }
+  function cb(kind) { return base() + '?sp=' + kind + '&t=' + topic(); }
 
   function senUrl(data, pos) {
     var u = L().Torserver && L().Torserver.toPlayUrl ? L().Torserver.toPlayUrl(data.url) : data.url;
@@ -14098,6 +14112,27 @@
       try { take(JSON.parse(ev.newValue)); } catch (e) {}
     });
   }
+  // pick up what the Safari return page dropped into the relay (only messages newer than the start of this playback)
+  var pulling = false;
+  function pull(cb2) {
+    var pend = ls(KEY_PENDING);
+    if (!pend || pulling || !window.fetch) return;
+    pulling = true;
+    var since = Math.max(0, Math.floor(pend.at / 1000) - 2);
+    fetch(RELAY + topic() + '/json?poll=1&since=' + since)
+      .then(function (r) { return r.text(); })
+      .then(function (txt) {
+        var last = null;
+        txt.split('\n').forEach(function (line) {
+          if (!line) return;
+          try { var m = JSON.parse(line); if (m.event === 'message' && m.message) last = JSON.parse(m.message); } catch (e) {}
+        });
+        pulling = false;
+        if (last && last.kind) { returned = last; handleReturn(); if (cb2) cb2(true); } else if (cb2) cb2(false);
+      })
+      .catch(function () { pulling = false; if (cb2) cb2(false); });
+  }
+
   function readReturn() {
     try {
       var sp = new URLSearchParams(location.search);
@@ -14189,8 +14224,8 @@
     asked = true;
     setTimeout(function () { asked = false; }, 3000);
     if (!L() || !L().Select) return;
-    // a callback return was handled (and cleared the pending record) by start(); this is the no-callback path
-    setTimeout(askManual, 400);
+    // first the relay (the real position from SenPlayer); the manual choice only if nothing arrived
+    pull(function (ok) { if (!ok && ls(KEY_PENDING)) setTimeout(askManual, 200); });
   }
 
   // ---------- settings ----------
@@ -14235,7 +14270,7 @@
     listen();
     try { L().Player.listener.follow('create', onCreate); } catch (e) {}
     settings();
-    setTimeout(function () { handleReturn(); }, 600);
+    setTimeout(function () { if (!handleReturn()) pull(); }, 600);
     document.addEventListener('visibilitychange', onVisible);
     window.addEventListener('pageshow', function () { setTimeout(function () { if (!returned) onVisible(); }, 300); });
   }

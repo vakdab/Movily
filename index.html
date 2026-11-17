@@ -44,10 +44,15 @@
                 var q = new URLSearchParams(location.search);
                 if (!q.has('sp')) return;
                 var params = {}; q.forEach(function (v, k) { if (k !== 'sp') params[k] = v; });
+                delete params.t;
                 var r = { kind: q.get('sp'), params: params, id: Date.now() + '-' + Math.random().toString(36).slice(2, 7) };
                 window.__movily_stop = true;
                 try { var bc = new BroadcastChannel('movily_sp_channel'); bc.postMessage(r); bc.close(); } catch (e) {}
                 try { localStorage.setItem('movily_sp_channel', JSON.stringify(r)); } catch (e) {}
+                var tp = q.get('t');
+                if (tp && /^[a-z0-9]{8,64}$/i.test(tp) && window.fetch) {
+                    try { fetch('https://ntfy.sh/' + tp, { method: 'POST', body: JSON.stringify(r) }).catch(function () {}); } catch (e) {}
+                }
                 var acked = false;
                 try { var ack = new BroadcastChannel('movily_sp_channel_ack'); ack.onmessage = function () { acked = true; }; } catch (e) {}
                 var uk = /^(uk|ru)/i.test(navigator.language || 'uk');
