@@ -11,7 +11,7 @@
 
   function L() { return window.Lampa; }
   function activeCard() {
-    try { var a = L().Activity.active(); return a && (a.movie || a.card); } catch (e) { return null; }
+    try { var a = L().Activity.active(); return a && (a.card || a.movie); } catch (e) { return null; }
   }
   function tmdbId(card) {
     var id = card && card.id;
@@ -59,26 +59,36 @@
     } catch (e) { fin(false); }
   }
 
-  function fill(row, ep) {
-    if (row.getAttribute('data-mv-art')) return;
+  function isBare(txt) { return /^\s*(\d+\s*)?(сери[яи]|серія|episode|ep\.?|эпизод)\s*(\d+)?\s*$/i.test(txt || ''); }
+
+  // the best picture we can find: this episode's still, else the card's backdrop (never an empty card)
+  function pickPath(ep, card) {
+    if (ep && ep.still_path) return ep.still_path;
+    return (card && (card.backdrop_path || card.poster_path)) || null;
+  }
+
+  function fill(row, ep, card) {
+    if (row.getAttribute('data-mv-art') === '1') return;
     row.setAttribute('data-mv-art', '1');
     try {
-      // picture
+      // picture: only when Lampa left it empty
       var imgBox = row.querySelector('.online-prestige__img');
       var img = imgBox && imgBox.querySelector('img');
       var hasPic = imgBox && imgBox.classList.contains('online-prestige__img--loaded');
-      if (img && ep.still_path && !hasPic) {
+      var path = pickPath(ep, card);
+      if (img && path && !hasPic && !(img.getAttribute('src') && img.getAttribute('src').indexOf('img_broken') < 0 && img.complete && img.naturalWidth)) {
         var loader = imgBox.querySelector('.online-prestige__loader');
         img.onerror = function () { img.src = './img/img_broken.svg'; };
         img.onload = function () {
           imgBox.classList.add('online-prestige__img--loaded');
           if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
         };
-        img.src = L().TMDB.image('t/p/w300' + ep.still_path);
+        img.src = L().TMDB.image('t/p/w300' + path);
       }
-      // title only when the source gave a bare «N серия»
+      if (!ep) return;
+      // title only when the source gave a bare «Episode N» / «N серия» and TMDB has a real name
       var tt = row.querySelector('.online-prestige__title');
-      if (tt && ep.name && /^\s*(\d+\s*)?(сери[яи]|серія|episode|ep\.?|эпизод)\s*(\d+)?\s*$/i.test(tt.textContent)) tt.textContent = ep.name;
+      if (tt && ep.name && isBare(tt.textContent) && !isBare(ep.name)) tt.textContent = ep.name;
       // time
       var tm = row.querySelector('.online-prestige__time');
       if (tm && ep.runtime && !/[1-9]/.test(tm.textContent)) {
@@ -88,9 +98,8 @@
       // rating
       var info = row.querySelector('.online-prestige__info');
       if (info && ep.vote_average && !info.querySelector('.online-prestige-rate')) {
-        var tpl = L().Template.get('lampac_prestige_rate', { rate: parseFloat(ep.vote_average + '').toFixed(1) }, true);
         var sp = document.createElement('span');
-        sp.innerHTML = tpl;
+        sp.innerHTML = L().Template.get('lampac_prestige_rate', { rate: parseFloat(ep.vote_average + '').toFixed(1) }, true);
         info.insertBefore(sp, info.firstChild);
         var dot = document.createElement('span');
         dot.className = 'online-prestige-split';
@@ -111,11 +120,10 @@
         var season = seasonOf(roots[r]);
         (function (rowsList, season) {
           load(id, season, function (eps) {
-            if (!eps) { for (var q = 0; q < rowsList.length; q++) rowsList[q].setAttribute('data-mv-art', '0'); return; }
             for (var i = 0; i < rowsList.length; i++) {
               var row = rowsList[i];
               var n = episodeNumber(row, i);
-              if (eps[n]) fill(row, eps[n]); else row.setAttribute('data-mv-art', '0');
+              fill(row, eps ? eps[n] : null, card);
             }
           });
         })(Array.prototype.slice.call(rows), season);
@@ -130,7 +138,7 @@
     else setInterval(scan, 1000);
     // the season can change without a new row set arriving at once: rows drawn for another season get checked again
     document.addEventListener('click', function () { setTimeout(function () {
-      var done = document.querySelectorAll('.online-prestige[data-mv-art="0"]');
+      var done = [];
       for (var i = 0; i < done.length; i++) done[i].removeAttribute('data-mv-art');
     }, 600); }, true);
     scan();
