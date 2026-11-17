@@ -16,6 +16,12 @@ Lampa (https://github.com/yumata/lampa) з інтерфейсом із плаг�
 - `plugin/src-modules/` : модулі інтерфейсу
 - `plugin/build.sh` : збирає `plugin/dist/moon-interface.js` (`cd plugin && ./build.sh`)
 
+## Зовнішній плеєр SenPlayer і таймкоди
+
+Модуль `plugin/src-modules/movily-senplayer.js`. На iPhone/iPad у браузері (не в Telegram) за замовчуванням плеєр SenPlayer (один раз на пристрій, змінюється в Налаштування > Плеєр). Модуль перехоплює запуск відео (`Player.listener 'create'`), скасовує штатний запуск Lampa і відкриває `senplayer://x-callback-url/play` зі стартовою позицією (`position`) та колбеками `x-success` / `x-cancel` / `x-error`, які ведуть на https-адресу сайту (`?sp=done|cancel|error`), бо `lampa://` у веб-версії не обробляється.
+
+Таймкод: якщо SenPlayer передав у колбеку позицію (`position`, `time`, `currentTime` та подібні), вона записується в Lampa (`Timeline.update`, з прив'язкою до серії). Якщо ні, після повернення на сторінку показується вибір «Скільки переглянуто?» (25 / 50 / 75 / 90 % / до кінця). Усе, що повернув SenPlayer, видно в Налаштування > Інтерфейс > SenPlayer. Документації щодо колбеків SenPlayer немає, тому чи повертає він позицію, потрібно перевірити на пристрої.
+
 ## Telegram Mini App
 
 Модуль `plugin/src-modules/movily-telegram.js` працює лише всередині Telegram (поза ним нічого не робить): розгортає застосунок, вимикає закриття свайпом, фарбує шапку в чорний, передає безпечні відступи в CSS (`--tg-safe-*`). Відео грає вбудовано (`playsinline` на кожному `<video>`), плеєр завжди «inner» (зовнішні iOS/Android плеєри у вебв'ю Telegram не відкриваються), на час відео вмикається повний екран Telegram (`requestFullscreen`, Bot API 8.0+) і не гасне екран. Кнопка «Назад» Telegram закриває плеєр або повертає на крок назад.
