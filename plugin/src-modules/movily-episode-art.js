@@ -61,6 +61,37 @@
     } catch (e) { fin(false); }
   }
 
+
+  // «Геллсінґ II», «Геллсінґ  І», «Part IV» -> «Геллсінґ 2», «Геллсінґ 1», «Part 4»: a Roman numeral at the END of the title becomes a normal number.
+  // The Cyrillic І / Х / С / М / Д look like Latin I / X / C / M / D, so they are treated the same.
+  function romanToInt(r) {
+    var v = { I: 1, V: 5, X: 10, L: 50, C: 100, D: 500, M: 1000 }, t = 0, p = 0;
+    for (var i = r.length - 1; i >= 0; i--) { var c = v[r[i]]; if (!c) return 0; t += c < p ? -c : c; p = c; }
+    return t;
+  }
+  function fixRoman(txt) {
+    if (!txt) return txt;
+    var s = txt.replace(/[\u0406\u0456]/g, 'I').replace(/\u0425/g, 'X').replace(/\u0421/g, 'C').replace(/\u041C/g, 'M').replace(/\u0414/g, 'D').replace(/\u0412/g, 'V');
+    var m = /^(.*?[\s\u00a0.:-]+)([IVXLC]+)\s*$/.exec(s.replace(/\s+/g, ' ').trim());
+    if (!m) return txt;
+    var n = romanToInt(m[2]);
+    if (!n || n > 199) return txt;
+    // only a real numeral: canonical form (so a word such as «МІХ» is not touched)
+    var back = (function (x) { var map = [[100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']], o = ''; map.forEach(function (a) { while (x >= a[0]) { o += a[1]; x -= a[0]; } }); return o; })(n);
+    if (back !== m[2]) return txt;
+    return txt.replace(/\s+/g, ' ').trim().replace(/[\s\u00a0.:-]+\S+$/, function (tail) { return tail.replace(/\S+$/, '') + n; });
+  }
+
+  function fixTitles() {
+    try {
+      var ts = document.querySelectorAll('.online-prestige__title');
+      for (var i = 0; i < ts.length; i++) {
+        var old = ts[i].textContent, nw = fixRoman(old);
+        if (nw !== old && nw) ts[i].textContent = nw;
+      }
+    } catch (e) {}
+  }
+
   function isBare(txt) { return /^\s*(\d+\s*)?(сери[яи]|серія|episode|ep\.?|эпизод)\s*(\d+)?\s*$/i.test(txt || ''); }
 
   // the best picture we can find: this episode's still, else the card's backdrop (never an empty card)
@@ -117,6 +148,7 @@
   }
 
   function scan() {
+    fixTitles();
     try {
       var card = activeCard(), id = tmdbId(card);
       if (!id || !card.name && !card.original_name) return;
@@ -132,6 +164,7 @@
               var n = episodeNumber(row, i);
               fill(row, eps ? eps[n] : null, card);
             }
+            fixTitles();
           });
         })(Array.prototype.slice.call(rows), season);
       }
