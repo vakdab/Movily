@@ -13665,59 +13665,30 @@
       '.mvt-sound .mvt-ic-off{display:none}',
       '.mvt-sound.muted .mvt-ic-on{display:none}',
       '.mvt-sound.muted .mvt-ic-off{display:block}',
-      /* ФОРМАТ «ВІКНО 16:9» (телефон, портрет): трейлер лежить У ПОТОЦІ картки, одразу під лого/назвою
-         (order між назвою й реакціями), на всю ширину 16:9. Нічого не накладається, відступи рахує сам потік. */
+      /* ФОРМАТ «ВІКНО 16:9» (телефон, портрет), як у Prisma: відео 16:9 на всю ширину у потоці картки,
+         текстове лого з назвою НАКЛАДАЄТЬСЯ на його нижній край (частково на відео, частково на чорне нижче). */
       '.mvt-box.mvt-inflow{position:relative;left:auto;top:auto;width:100vw;max-width:100vw;height:0;aspect-ratio:auto;z-index:1;flex:0 0 auto;',
-      'order:1;margin:0;-webkit-mask-image:none;mask-image:none;background:#000;align-self:center;overflow:hidden;border-radius:0;',
-      'transition:height .5s ease,margin .5s ease,opacity ' + FADE + 'ms ease-in-out}',
-      '.mvt-box.mvt-inflow.loaded{height:56.25vw;margin:14px 0 22px}',
-      /* порядок у правій колонці (специфічність вища за snack-header): лого/назва, трейлер, реакції, мета, кнопки, опис */
-      'body.stv .mvt-win .full-start-new__title{order:1!important}',
-      'body.stv .mvt-win .mvt-box.mvt-inflow{order:2!important}',
-      'body.stv .mvt-win .full-start-new__reactions{order:3!important}',
+      'margin:0;-webkit-mask-image:none;mask-image:none;background:#000;border:0;outline:0;box-shadow:none;align-self:center;overflow:hidden;border-radius:0;',
+      'transition:height .5s ease,opacity ' + FADE + 'ms ease-in-out}',
+      '.mvt-box.mvt-inflow.loaded{height:56.25vw}',
+      /* порядок: відео, лого/назва (з накладанням), реакції, мета, кнопки, опис */
+      'body.stv .mvt-win .mvt-box.mvt-inflow{order:1!important}',
+      'body.stv .mvt-win .full-start-new__title{order:2!important;position:relative;z-index:3;margin-top:-17vw!important;padding:0!important;min-height:0!important;pointer-events:none}',
+      /* лишається лише текстове лого; дубль-назва під ним зникає */
+      'body.stv .mvt-win .full-start-new__title.stv-has-logo{font-size:0!important;line-height:0!important;gap:0!important}',
+      'body.stv .mvt-win .full-start-new__title.stv-has-logo .stv-logo{max-height:30vw;filter:drop-shadow(0 2px 14px rgba(0,0,0,.6))}',
+      'body.stv .mvt-win .full-start-new__reactions{order:3!important;margin-top:14px!important}',
       'body.stv .mvt-win .stv-meta{order:4!important}',
       'body.stv .mvt-win .full-start-new__buttons{order:5!important}',
       'body.stv .mvt-win .stv-desc{order:6!important}',
-      /* iframe більший за кадр і по центру: ховає чорні смуги 16:9 та елементи YouTube по краях */
-      '.mvt-box iframe{position:absolute;left:50%;top:50%;width:max(100%,177.78vh);height:max(100%,56.25vw);min-width:100%;min-height:100%;',
-      'transform:translate(-50%,-50%) scale(1.12);border:0;pointer-events:none}',
-      /* фон і постер згасають, поки грає трейлер */
-      '.mvt-on .full-start__background,.mvt-on .stv-own-bg{opacity:0!important;transition:opacity ' + FADE + 'ms ease-in-out}',
-      '.mvt-on .full-start__poster,.mvt-on .full-start-new__poster{opacity:0;transition:opacity ' + FADE + 'ms ease-in-out}',
-      /* кнопка звуку */
-      '.mvt-sound{position:absolute;right:1.1em;top:5.2em;z-index:30;width:2.6em;height:2.6em;border-radius:50%;display:none;align-items:center;justify-content:center;',
-      'background:rgba(30,30,34,.55);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);color:#fff;cursor:pointer;opacity:0;transition:opacity .4s}',
-      '.mvt-sound.show{display:flex;opacity:1}',
-      '.mvt-sound svg{width:55%;height:55%}',
-      '.mvt-sound .mvt-ic-off{display:none}',
-      '.mvt-sound.muted .mvt-ic-on{display:none}',
-      '.mvt-sound.muted .mvt-ic-off{display:block}',
-      /* ФОРМАТ «ВІКНО 16:9» (телефон, портрет): трейлер лежить У ПОТОЦІ картки, одразу під лого/назвою
-         (order між назвою й реакціями), на всю ширину 16:9. Нічого не накладається, відступи рахує сам потік. */
-      '.mvt-box.mvt-inflow{position:relative;left:auto;top:auto;width:100vw;max-width:100vw;height:0;aspect-ratio:auto;z-index:1;flex:0 0 auto;',
-      'order:1;margin:0;-webkit-mask-image:none;mask-image:none;background:#000;align-self:center;overflow:hidden;border-radius:0;',
-      'transition:height .5s ease,margin .5s ease,opacity ' + FADE + 'ms ease-in-out}',
-      '.mvt-box.mvt-inflow.loaded{height:56.25vw;margin:14px 0 22px}',
-      /* порядок у правій колонці: лого/назва (1), трейлер (2), реакції, мета, кнопки, опис далі */
-      '.mvt-win .full-start-new__title{order:0!important}',
-      '.mvt-win .mvt-box.mvt-inflow{order:1!important}',
-      '.mvt-win .full-start-new__reactions{order:2!important}',
-      '.mvt-win .stv-meta{order:3!important}',
-      '.mvt-win .full-start-new__buttons{order:4!important}',
-      '.mvt-win .stv-desc{order:5!important}',
-      /* iframe більший за кадр: заголовок ролика зверху й логотип YouTube знизу виходять за межі й обрізаються */
-      '.mvt-box.mvt-inflow iframe{position:absolute;left:50%;top:50%;width:100%;height:100%;min-width:0;min-height:0;transform:translate(-50%,-50%) scale(1.32);border:0;pointer-events:none}',
-      /* поки не грає: усередині лише чорне, жодних плашок YouTube (назва, пауза, «Bonanza», логотип) */
-      '.mvt-box iframe{opacity:0;transition:opacity .35s}',
-      '.mvt-box.loaded iframe{opacity:1}',
-      /* поки грає вікно, фон картки лишається як є (трейлер у потоці нічого не перекриває) */
+      /* iframe з запасом по краях: заголовок ролика, плашки й логотип YouTube виходять за кадр і обрізаються */
+      '.mvt-box.mvt-inflow iframe{width:100%;height:100%;min-width:0;min-height:0;transform:translate(-50%,-50%) scale(1.32)}',
+      /* у вікні постер/фон не гасимо (під відео чорне, решта як є), кнопка звуку всередині відео */
       '.mvt-win.mvt-on .full-start__poster,.mvt-win.mvt-on .full-start-new__poster{opacity:1}',
-      '.mvt-win .mvt-sound{display:none!important}',
-      '.mvt-box.mvt-inflow .mvt-sound{position:absolute;right:.8em;bottom:.8em;top:auto;z-index:5}',
-      '.mvt-box.mvt-inflow .mvt-sound.show{display:flex!important}',
-      '.mvt-win .full-start-new__right{align-items:center!important;text-align:center}',
-      '.mvt-win .stv-meta,.mvt-win .full-start-new__buttons,.mvt-win .full-start-new__reactions{justify-content:center!important;text-align:center}',
-      '.mvt-win .stv-desc{text-align:center}'
+      '.mvt-box.mvt-inflow .mvt-sound{position:absolute;right:.9em;top:auto;bottom:.9em}',
+      /* картка починається одразу під шапкою, без порожнього поля над відео */
+      'body.stv .mvt-win .full-start-new__body{min-height:0!important;align-items:flex-start!important;padding-top:calc(env(safe-area-inset-top,0px) + 4.4em)!important}',
+      'body.stv .mvt-win .full-start-new__right{align-items:center!important;text-align:center}'
     ].join('');
     (document.head || document.documentElement).appendChild(st);
   }
@@ -13860,7 +13831,7 @@
       ttl = render.find('.full-start-new__title').first()[0];
       if (ttl && ttl.parentNode) inflow = ttl.parentNode;
     }
-    if (inflow) { box.className = 'mvt-box mvt-inflow'; inflow.insertBefore(box, ttl.nextSibling); }
+    if (inflow) { box.className = 'mvt-box mvt-inflow'; inflow.insertBefore(box, ttl); }   /* відео ПЕРЕД лого: лого накладається на його низ */
     else holder.insertBefore(box, bgEl ? bgEl.nextSibling : holder.firstChild);
 
     var c = cur = { box: box, frame: frame, render: render, muted: opt(K.sound) !== true, started: false, btn: null, timer: 0, loop: 0, onMsg: null };
