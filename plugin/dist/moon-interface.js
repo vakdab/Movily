@@ -13654,6 +13654,9 @@
       /* iframe більший за кадр і по центру: ховає чорні смуги 16:9 та елементи YouTube по краях */
       '.mvt-box iframe{position:absolute;left:50%;top:50%;width:max(100%,177.78vh);height:max(100%,56.25vw);min-width:100%;min-height:100%;',
       'transform:translate(-50%,-50%) scale(1.12);border:0;pointer-events:none}',
+      /* поки відео не заграло: iframe прозорий, жодних плашок YouTube (назва, пауза, логотип) */
+      '.mvt-box iframe{opacity:0;transition:opacity .35s}',
+      '.mvt-box.loaded iframe{opacity:1}',
       /* фон і постер згасають, поки грає трейлер */
       '.mvt-on .full-start__background,.mvt-on .stv-own-bg{opacity:0!important;transition:opacity ' + FADE + 'ms ease-in-out}',
       '.mvt-on .full-start__poster,.mvt-on .full-start-new__poster{opacity:0;transition:opacity ' + FADE + 'ms ease-in-out}',
@@ -13665,30 +13668,31 @@
       '.mvt-sound .mvt-ic-off{display:none}',
       '.mvt-sound.muted .mvt-ic-on{display:none}',
       '.mvt-sound.muted .mvt-ic-off{display:block}',
-      /* ФОРМАТ «ВІКНО 16:9» (телефон, портрет), як у Prisma: відео 16:9 на всю ширину у потоці картки,
-         текстове лого з назвою НАКЛАДАЄТЬСЯ на його нижній край (частково на відео, частково на чорне нижче). */
-      '.mvt-box.mvt-inflow{position:relative;left:auto;top:auto;width:100vw;max-width:100vw;height:0;aspect-ratio:auto;z-index:1;flex:0 0 auto;',
-      'margin:0;-webkit-mask-image:none;mask-image:none;background:#000;border:0;outline:0;box-shadow:none;align-self:center;overflow:hidden;border-radius:0;',
-      'transition:height .5s ease,opacity ' + FADE + 'ms ease-in-out}',
-      '.mvt-box.mvt-inflow.loaded{height:56.25vw}',
-      /* порядок: відео, лого/назва (з накладанням), реакції, мета, кнопки, опис */
-      'body.stv .mvt-win .mvt-box.mvt-inflow{order:1!important}',
-      'body.stv .mvt-win .full-start-new__title{order:2!important;position:relative;z-index:3;margin-top:-17vw!important;padding:0!important;min-height:0!important;pointer-events:none}',
-      /* лишається лише текстове лого; дубль-назва під ним зникає */
-      'body.stv .mvt-win .full-start-new__title.stv-has-logo{font-size:0!important;line-height:0!important;gap:0!important}',
-      'body.stv .mvt-win .full-start-new__title.stv-has-logo .stv-logo{max-height:30vw;filter:drop-shadow(0 2px 14px rgba(0,0,0,.6))}',
-      'body.stv .mvt-win .full-start-new__reactions{order:3!important;margin-top:14px!important}',
-      'body.stv .mvt-win .stv-meta{order:4!important}',
-      'body.stv .mvt-win .full-start-new__buttons{order:5!important}',
-      'body.stv .mvt-win .stv-desc{order:6!important}',
-      /* iframe з запасом по краях: заголовок ролика, плашки й логотип YouTube виходять за кадр і обрізаються */
-      '.mvt-box.mvt-inflow iframe{width:100%;height:100%;min-width:0;min-height:0;transform:translate(-50%,-50%) scale(1.32)}',
-      /* у вікні постер/фон не гасимо (під відео чорне, решта як є), кнопка звуку всередині відео */
-      '.mvt-win.mvt-on .full-start__poster,.mvt-win.mvt-on .full-start-new__poster{opacity:1}',
-      '.mvt-box.mvt-inflow .mvt-sound{position:absolute;right:.9em;top:auto;bottom:.9em}',
-      /* картка починається одразу під шапкою, без порожнього поля над відео */
-      'body.stv .mvt-win .full-start-new__body{min-height:0!important;align-items:flex-start!important;padding-top:calc(env(safe-area-inset-top,0px) + 4.4em)!important}',
-      'body.stv .mvt-win .full-start-new__right{align-items:center!important;text-align:center}'
+      /* ФОРМАТ «ВІКНО 16:9» (телефон, портрет): відео на всю ширину під шапкою, ПЕРШИЙ формат.
+         Текстове лого й назва лежать ПОВЕРХ нижньої частини відео. Блок абсолютний, під час скролу
+         js зсуває його разом із контентом і плавно гасить (див. bindScroll). */
+      '.mvt-win .mvt-box{left:0;top:calc(env(safe-area-inset-top,0px) + 4.6em);width:100%;height:auto;aspect-ratio:16/9;z-index:1;',
+      '-webkit-mask-image:none;mask-image:none;background:#000;will-change:transform,opacity;border:0;outline:0;box-shadow:none}',
+      '.mvt-win .mvt-box.mvt-scrolling{transition:none}',
+      '.mvt-win .mvt-box iframe{width:100%;height:100%;min-width:0;min-height:0;transform:translate(-50%,-50%) scale(1.32)}',
+      /* поки грає: постер-фон гасне в чорне */
+      '.mvt-win.mvt-on .full-start__background,.mvt-win.mvt-on .stv-own-bg,.mvt-win.mvt-on .stv-scrim{opacity:0!important}',
+      '.mvt-win.mvt-on{background:#000}',
+      '.mvt-win .mvt-sound{top:calc(env(safe-area-inset-top,0px) + 4.6em + 56.25vw - 3.4em)}',
+      /* тіло картки починається так, щоб лого (внизу відео) накладалося на нього: рівно на ~22vw піднімаємо над нижнім краєм */
+      '.mvt-win .full-start-new__body{min-height:0!important;align-items:flex-start!important;',
+      'padding-top:calc(env(safe-area-inset-top,0px) + 4.6em + 56.25vw - 30vw)!important}',
+      /* лого + назва поверх відео: тінь для читабельності, над трейлером */
+      '.mvt-win .full-start-new__body{position:relative;z-index:2}',
+      '.mvt-win .full-start-new__title{position:relative;z-index:3}',
+      '.mvt-win .full-start-new__title .stv-logo{filter:drop-shadow(0 2px 14px rgba(0,0,0,.65))}',
+      '.mvt-win .full-start-new__title{text-shadow:0 2px 16px rgba(0,0,0,.75)}',
+      '.mvt-win .full-start-new__right{align-items:center!important;text-align:center}',
+      '.mvt-win .stv-meta,.mvt-win .full-start-new__buttons,.mvt-win .full-start-new__reactions{justify-content:center!important;text-align:center}',
+      '.mvt-win .stv-desc{text-align:center}',
+      /* м'яке затемнення знизу відео, щоб лого й назва читалися поверх картинки */
+      '.mvt-win .mvt-box:after{content:"";position:absolute;left:0;right:0;bottom:0;height:55%;pointer-events:none;',
+      'background:linear-gradient(to bottom,rgba(0,0,0,0),rgba(0,0,0,.85))}'
     ].join('');
     (document.head || document.documentElement).appendChild(st);
   }
@@ -13806,12 +13810,55 @@
         if (now) rm(); else { c.box.classList.remove('loaded'); setTimeout(rm, FADE); }
       }
     } catch (e) {}
+    try { if (c.unScroll) c.unScroll(); } catch (e) {}
     try { if (c.btn && c.btn.parentNode) c.btn.parentNode.removeChild(c.btn); } catch (e) {}
     try { c.render.removeClass('mvt-on'); c.render.removeClass('mvt-win'); } catch (e) {}
   }
 
   function cmd(c, func, args) {
     try { c.frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: func, args: args || [] }), '*'); } catch (e) {}
+  }
+
+  /* ---------- скрол: трейлер їде вгору разом із контентом і плавно гасне ---------- */
+  function scrollY(render) {
+    var y = 0, list = render.find('.scroll'), i, el, body, m;
+    for (i = 0; i < list.length; i++) {
+      el = list[i];
+      if (el.scrollTop > y) y = el.scrollTop;
+      body = el.querySelector('.scroll__body');
+      if (body) {
+        m = /translate3d?\(\s*[-\d.]+(?:px)?\s*,\s*(-?[\d.]+)px/.exec(body.style.transform || '');
+        if (m && -parseFloat(m[1]) > y) y = -parseFloat(m[1]);
+      }
+    }
+    return y;
+  }
+  function bindScroll(c) {
+    var raf = 0, hidden = false;
+    function apply() {
+      raf = 0;
+      if (cur !== c || !c.box.parentNode) return;
+      var y = scrollY(c.render);
+      var h = c.box.offsetHeight || 1;
+      var k = Math.max(0, Math.min(1, y / (h * 0.65)));            // 0 = на місці, 1 = зникло
+      c.box.classList.toggle('mvt-scrolling', y > 0);
+      c.box.style.transform = y ? 'translate3d(0,' + (-y) + 'px,0)' : '';
+      c.box.style.opacity = y ? String(c.box.classList.contains('loaded') ? (1 - k) : 0) : '';
+      if (c.btn) c.btn.style.opacity = y ? String(Math.max(0, 1 - k * 2)) : '';
+      var gone = k >= 1;
+      if (gone && !hidden) { hidden = true; cmd(c, 'pauseVideo'); }
+      else if (!gone && hidden) { hidden = false; if (c.started) cmd(c, 'playVideo'); }
+    }
+    c.onScroll = function () { if (!raf) raf = requestAnimationFrame(apply); };
+    document.addEventListener('scroll', c.onScroll, true);
+    document.addEventListener('touchmove', c.onScroll, true);
+    document.addEventListener('wheel', c.onScroll, true);
+    c.unScroll = function () {
+      document.removeEventListener('scroll', c.onScroll, true);
+      document.removeEventListener('touchmove', c.onScroll, true);
+      document.removeEventListener('wheel', c.onScroll, true);
+      if (raf) cancelAnimationFrame(raf);
+    };
   }
 
   function play(render, ids, holder, bgEl) {
@@ -13826,16 +13873,11 @@
     frame.setAttribute('tabindex', '-1');
     frame.setAttribute('aria-hidden', 'true');
     box.appendChild(frame);
-    var inflow = null, ttl = null;
-    if (fmt() === 'win') {                       /* вікно 16:9: у потік картки, одразу під лого/назвою */
-      ttl = render.find('.full-start-new__title').first()[0];
-      if (ttl && ttl.parentNode) inflow = ttl.parentNode;
-    }
-    if (inflow) { box.className = 'mvt-box mvt-inflow'; inflow.insertBefore(box, ttl); }   /* відео ПЕРЕД лого: лого накладається на його низ */
-    else holder.insertBefore(box, bgEl ? bgEl.nextSibling : holder.firstChild);
+    holder.insertBefore(box, bgEl ? bgEl.nextSibling : holder.firstChild);
 
     var c = cur = { box: box, frame: frame, render: render, muted: opt(K.sound) !== true, started: false, btn: null, timer: 0, loop: 0, onMsg: null };
 
+    bindScroll(c);
     var btn = document.createElement('div');
     btn.className = 'mvt-sound muted';
     btn.innerHTML = '<svg class="mvt-ic-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>' +
@@ -13850,7 +13892,7 @@
     };
     btn.addEventListener('click', onTap);
     btn.addEventListener('touchend', onTap);
-    var anchor = inflow ? box : render[0];
+    var anchor = render[0];
     if (window.getComputedStyle(anchor).position === 'static') anchor.style.position = 'relative';
     anchor.appendChild(btn);
     c.btn = btn;
