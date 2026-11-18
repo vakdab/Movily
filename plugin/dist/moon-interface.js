@@ -1241,6 +1241,17 @@
   var SHOW_WAS = { stv_show_react: 'stv_hide_react', stv_show_shots: 'stv_hide_shots', stv_show_tech: 'stv_hide_tech', stv_show_play: 'stv_hide_play' };
   function opt(k) { var v; try { v = Lampa.Storage.get(k, DEF[k]); } catch (e) { v = DEF[k]; } if (v === 'true') return true; if (v === 'false') return false; return v; }
 
+  function ensureMovilyDefaults() {
+    try {
+      var flag = 'movily_defaults_v3';
+      if (window.localStorage && window.localStorage.getItem(flag)) return;
+      Lampa.Storage.set('stv_titles', true);
+      Lampa.Storage.set('movily_trailer_sound', false);
+      Lampa.Storage.set('movily_trailer_format', 'win');
+      if (window.localStorage) window.localStorage.setItem(flag, '1');
+    } catch (e) {}
+  }
+
   // ---------- device: the iPad look or the tvOS look; light mode for TVs ----------
   // TVs before the touch marks: TV boxes' WebViews claim touch, and Lampa marks the page touch / mobile unless the
   // browser's name says «Android TV». A TV: Lampa's own tv() (tvbox() included), an Android with no touch screen
@@ -4496,6 +4507,7 @@
   // ---------- start ----------
   function start() {
     if (started || !PACK.c) return;
+    ensureMovilyDefaults();
     started = true;
     logoCache();
     settings();
@@ -14062,6 +14074,14 @@
   }
 
   function start() {
+    try {
+      var flag = 'movily_defaults_v3';
+      if (!window.localStorage || !window.localStorage.getItem(flag)) {
+        Lampa.Storage.set('movily_trailer_sound', false);
+        Lampa.Storage.set('movily_trailer_format', 'win');
+        if (window.localStorage) window.localStorage.setItem(flag, '1');
+      }
+    } catch (e) {}
     css();
     settings();
     Lampa.Listener.follow('full', function (e) { try { onFull(e); } catch (x) { log(x && x.message); } });

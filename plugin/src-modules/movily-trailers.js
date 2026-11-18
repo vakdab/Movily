@@ -421,6 +421,14 @@
   }
 
   function start() {
+    try {
+      var flag = 'movily_defaults_v3';
+      if (!window.localStorage || !window.localStorage.getItem(flag)) {
+        Lampa.Storage.set('movily_trailer_sound', false);
+        Lampa.Storage.set('movily_trailer_format', 'win');
+        if (window.localStorage) window.localStorage.setItem(flag, '1');
+      }
+    } catch (e) {}
     css();
     settings();
     Lampa.Listener.follow('full', function (e) { try { onFull(e); } catch (x) { log(x && x.message); } });
