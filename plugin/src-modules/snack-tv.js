@@ -32,6 +32,7 @@
     on_:         ['Вкл', 'Увімк', 'On'],
     off_:        ['Выкл', 'Вимк', 'Off'],
     h_react:     ['Реакции', 'Реакції', 'Reactions'],
+    sound:       ['Звук', 'Звук', 'Sound'],
     h_shots:     ['Shots на главной', 'Shots на головній', 'Shots on Home'],
     loc:         ['Названия и постеры на языке интерфейса', 'Назви й постери мовою інтерфейсу', 'Titles and posters in the interface language'],
     loc_d:       ['Для карточек из CUB и сохранённых на другом языке (закладки, история, рекомендации): из TMDB, только на экране', 'Для карток із CUB і збережених іншою мовою (закладки, історія, рекомендації): з TMDB, лише на екрані', 'For cards from CUB or saved in another language (bookmarks, history, recommendations): from TMDB, on screen only'],
@@ -1367,6 +1368,29 @@
   // No labels under the round buttons: TVs show the focused one's name, touch a long press (tipFor)
   var ROW = ['.button--alc-trailer', '.button--book', '.button--alc-torrent'];
   var DOTS = '<svg viewBox="0 0 24 24" width="24" height="24"><circle cx="5" cy="12" r="2.2" fill="currentColor"/><circle cx="12" cy="12" r="2.2" fill="currentColor"/><circle cx="19" cy="12" r="2.2" fill="currentColor"/></svg>';
+  var SOUND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg><span></span>';
+  function toggleTrailerSound() {
+    try {
+      if (typeof window.__movily_toggle_trailer_sound === 'function') return window.__movily_toggle_trailer_sound();
+      var overlay = document.querySelector('.mvt-sound.show');
+      if (overlay) { overlay.click(); return true; }
+    } catch (e) {}
+    return false;
+  }
+  function ensureSoundButton(box) {
+    var b = box.children('.button--movily-sound').first();
+    if (!b.length) {
+      b = $('<div class="full-start__button selector button--movily-sound" title="' + tr('sound') + '" aria-label="' + tr('sound') + '">' + SOUND + '</div>');
+      b.on('hover:enter click', function (e) {
+        if (e && e.type === 'click') e.preventDefault();
+        toggleTrailerSound();
+      });
+      var bell = box.children('.button--subscribe').first();
+      if (bell.length) bell.after(b); else box.children('.button--options').first().before(b);
+    }
+    b.children('span').text(tr('sound'));
+    return b;
+  }
   function markButtons(render) {
     document.body.classList.toggle('stv-noplay', noPlay());
     var box = render.find('.full-start-new__buttons').first();
@@ -1389,10 +1413,13 @@
     box.children('.mv-src').not('.hide').each(function () { if (row.indexOf(this) < 0) row.push(this); });
     // the bell is always in the row: Lampa unhides it only when CUB answers, sometimes late or never
     box.children('.button--subscribe').removeClass('hide');
+    // Movily: keep the trailer sound control immediately after the bell, like the mobile reference layout
+    ensureSoundButton(box);
     // Lampa's own Play beside Autopilot's: in «⋯» only while Autopilot has a server and the viewer did
     // not ask for it (the setting); otherwise in the row (the way into the other online plugins)
     ROW.forEach(add);
     if (!add('.button--snack-sub')) add('.button--subscribe');
+    add('.button--movily-sound');
     var more = moreButton(box);
     row.push(more[0]);
     all = box.children('.full-start__button');

@@ -396,6 +396,11 @@
     });
   }
 
+  window.__movily_toggle_trailer_sound = function () {
+    if (!cur || !cur.btn || !cur.btn.classList.contains('show')) return false;
+    cur.btn.click();
+    return true;
+  };
   function pause() { if (cur) cmd(cur, 'pauseVideo'); }
   function resume() { if (cur && cur.started) cmd(cur, 'playVideo'); }
 
