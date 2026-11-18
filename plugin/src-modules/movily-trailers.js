@@ -272,6 +272,7 @@
     box.className = 'mvt-box';
     var frame = document.createElement('iframe');
     frame.setAttribute('allow', 'autoplay; encrypted-media');
+    frame.setAttribute('sandbox', 'allow-scripts allow-same-origin');
     frame.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
     frame.setAttribute('tabindex', '-1');
     frame.setAttribute('aria-hidden', 'true');
@@ -359,7 +360,7 @@
     c.timer = setTimeout(function () { if (cur === c && !c.started) { log('не стартував'); next(); } }, 12000);
 
     frame.src = 'https://www.youtube-nocookie.com/embed/' + encodeURIComponent(ytId) +
-      '?autoplay=1&mute=1&controls=0&disablekb=1&fs=0&iv_load_policy=3&cc_load_policy=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1' +
+      '?autoplay=1&mute=1&controls=0&disablekb=1&fs=0&iv_load_policy=3&cc_load_policy=0&rel=0&modestbranding=1&showinfo=0&autohide=1&playsinline=1&enablejsapi=1' +
       '&origin=' + encodeURIComponent(location.origin);
   }
 
