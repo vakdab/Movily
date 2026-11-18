@@ -2499,7 +2499,7 @@
   function ensureSoundButton(box) {
     var b = box.children('.button--movily-sound').first();
     if (!b.length) {
-      b = $('<div class="full-start__button selector button--movily-sound mvt-row-sound-pending" title="' + tr('sound') + '" aria-label="' + tr('sound') + '">' + SOUND + '</div>');
+      b = $('<div class="full-start__button selector button--movily-sound mvt-row-sound-pending mvt-row-sound-muted" title="' + tr('sound') + '" aria-label="' + tr('sound') + '">' + SOUND + '</div>');
       var lastTap = 0;
       b.on('hover:enter click', function (e) {
         var now = Date.now();
@@ -2511,7 +2511,6 @@
       var bell = box.children('.button--subscribe').first();
       if (bell.length) bell.after(b); else box.children('.button--options').first().before(b);
     }
-    b.removeClass('mvt-row-sound-muted');
     b.children('span').text(tr('sound'));
     return b;
   }
