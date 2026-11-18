@@ -532,6 +532,7 @@
     // a long name without a logo (anime): smaller and at most 3 lines, else it pushed the buttons off the screen
     r.push(F + ' .full-start-new__title.stv-tl-long{font-size:' + tp(54, 30) + '}' + F + ' .full-start-new__title.stv-tl-xlong{font-size:' + tp(42, 24) + '}');
     r.push(F + ' .full-start-new__title:not(.stv-has-logo){display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}');
+    r.push(F + ' .mvt-row-sound-pending{display:none!important}');
     r.push(F + ' .full-start-new__title.stv-has-logo{font-size:0;line-height:0;color:transparent}');
     r.push(F + ' .full-start-new__title .stv-logo{display:block;max-width:' + px(t.logoW) + ';max-height:' + px(t.logoH) + ';width:auto;height:auto;' +
       'object-fit:contain;object-position:left bottom;opacity:0;transition:opacity .35s}');
@@ -1380,8 +1381,12 @@
   function ensureSoundButton(box) {
     var b = box.children('.button--movily-sound').first();
     if (!b.length) {
-      b = $('<div class="full-start__button selector button--movily-sound" title="' + tr('sound') + '" aria-label="' + tr('sound') + '">' + SOUND + '</div>');
+      b = $('<div class="full-start__button selector button--movily-sound mvt-row-sound-pending" title="' + tr('sound') + '" aria-label="' + tr('sound') + '">' + SOUND + '</div>');
+      var lastTap = 0;
       b.on('hover:enter click', function (e) {
+        var now = Date.now();
+        if (now - lastTap < 350) return;
+        lastTap = now;
         if (e && e.type === 'click') e.preventDefault();
         toggleTrailerSound();
       });

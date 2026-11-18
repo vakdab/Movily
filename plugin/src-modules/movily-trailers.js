@@ -86,7 +86,7 @@
       /* Геометрія: відео стоїть absolute від top = шапка(4.6em) і має висоту 56.25vw. Тіло картки (flex-колонка)
          починається під відео мінус «запас накладання» (22vw): лого й назва лягають на нижню частину відео. */
       'body.stv .mvt-win .full-start-new__body{min-height:0!important;align-items:flex-start!important;position:relative!important;z-index:2!important;',
-      'padding-top:calc(env(safe-area-inset-top,0px) + 4.6em + 56.25vw - 22vw)!important}',
+      'padding-top:calc(env(safe-area-inset-top,0px) + 4.6em + 56.25vw + 1em)!important}',
       'body.stv .mvt-win .full-start-new__title{position:relative!important;z-index:3!important;margin-top:0!important}',
       'body.stv .mvt-win .full-start-new__title .stv-logo{filter:drop-shadow(0 2px 14px rgba(0,0,0,.7))}',
       'body.stv .mvt-win .full-start-new__title{text-shadow:0 2px 16px rgba(0,0,0,.8)}',
@@ -295,9 +295,6 @@
     };
     btn.addEventListener('click', onTap);
     btn.addEventListener('touchend', onTap);
-    var anchor = render[0];
-    if (window.getComputedStyle(anchor).position === 'static') anchor.style.position = 'relative';
-    anchor.appendChild(btn);
     c.btn = btn;
 
     function showTrailer() {
@@ -307,14 +304,14 @@
       box.classList.add('loaded');
       if (fmt() === 'win') render.addClass('mvt-win'); else render.removeClass('mvt-win');
       render.addClass('mvt-on');
-      btn.classList.add('show');
+      render.find('.button--movily-sound').removeClass('mvt-row-sound-pending');
       if (!c.muted) { cmd(c, 'unMute'); cmd(c, 'setVolume', [60]); btn.classList.remove('muted'); }
     }
     function hideTrailer() {            // постер повертається
       box.classList.remove('loaded');
       render.removeClass('mvt-on');
       render.removeClass('mvt-win');
-      btn.classList.remove('show');
+      render.find('.button--movily-sound').addClass('mvt-row-sound-pending');
     }
     function replay() {                 // пауза з постером, потім трейлер знову
       if (cur !== c) return;
@@ -397,7 +394,7 @@
   }
 
   window.__movily_toggle_trailer_sound = function () {
-    if (!cur || !cur.btn || !cur.btn.classList.contains('show')) return false;
+    if (!cur || !cur.btn || !cur.started) return false;
     cur.btn.click();
     return true;
   };
