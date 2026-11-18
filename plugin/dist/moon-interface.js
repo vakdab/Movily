@@ -13684,8 +13684,8 @@
       'transition:opacity ' + FADE + 'ms ease-in-out;-webkit-mask-image:linear-gradient(to bottom,#000 55%,rgba(0,0,0,0) 100%);mask-image:linear-gradient(to bottom,#000 55%,rgba(0,0,0,0) 100%)}',
       '.mvt-box.loaded{opacity:1}',
       /* iframe більший за кадр і по центру: ховає чорні смуги 16:9 та елементи YouTube по краях */
-      '.mvt-box iframe{position:absolute;left:50%;top:50%;width:max(100%,177.78vh);height:max(100%,56.25vw);min-width:100%;min-height:100%;',
-      'transform:translate(-50%,-50%) scale(1.12);border:0;pointer-events:none}',
+      '.mvt-box iframe{position:absolute;left:0;top:0;width:100%;height:100%;min-width:0;min-height:0;',
+      'transform:none;border:0;pointer-events:none}',
       /* поки відео не заграло: iframe прозорий, жодних плашок YouTube (назва, пауза, логотип) */
       '.mvt-box iframe{opacity:0;transition:opacity .35s}',
       '.mvt-box.loaded iframe{opacity:1}',
