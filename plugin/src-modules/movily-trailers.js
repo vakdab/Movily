@@ -78,7 +78,7 @@
       '.mvt-win .mvt-box{left:0;top:calc(env(safe-area-inset-top,0px) + 4.6em);width:100%;height:auto;aspect-ratio:16/9;z-index:1;',
       '-webkit-mask-image:none;mask-image:none;background:#000;will-change:transform,opacity;border:0;outline:0;box-shadow:none}',
       '.mvt-win .mvt-box.mvt-scrolling{transition:none}',
-      '.mvt-win .mvt-box iframe{width:100%;height:100%;min-width:0;min-height:0;transform:translate(-50%,-50%) scale(1.32)}',
+      '.mvt-win .mvt-box iframe{width:100%;height:100%;min-width:0;min-height:0;transform:translate(-50%,-50%) scale(1)}',
       /* поки грає: постер-фон гасне в чорне */
       '.mvt-win.mvt-on .full-start__background,.mvt-win.mvt-on .stv-own-bg,.mvt-win.mvt-on .stv-scrim{opacity:0!important}',
       '.mvt-win.mvt-on{background:#000}',
