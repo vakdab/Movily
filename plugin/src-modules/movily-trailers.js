@@ -83,17 +83,16 @@
       '.mvt-win.mvt-on .full-start__background,.mvt-win.mvt-on .stv-own-bg,.mvt-win.mvt-on .stv-scrim{opacity:0!important}',
       '.mvt-win.mvt-on{background:#000}',
       '.mvt-win .mvt-sound{top:calc(env(safe-area-inset-top,0px) + 4.6em + 56.25vw - 3.4em)}',
-      /* тіло картки починається так, щоб лого (внизу відео) накладалося на нього: рівно на ~22vw піднімаємо над нижнім краєм */
-      '.mvt-win .full-start-new__body{min-height:0!important;align-items:flex-start!important;',
-      'padding-top:calc(env(safe-area-inset-top,0px) + 4.6em + 56.25vw - 30vw)!important}',
-      /* лого + назва поверх відео: тінь для читабельності, над трейлером */
-      '.mvt-win .full-start-new__body{position:relative;z-index:2}',
-      '.mvt-win .full-start-new__title{position:relative;z-index:3}',
-      '.mvt-win .full-start-new__title .stv-logo{filter:drop-shadow(0 2px 14px rgba(0,0,0,.65))}',
-      '.mvt-win .full-start-new__title{text-shadow:0 2px 16px rgba(0,0,0,.75)}',
-      '.mvt-win .full-start-new__right{align-items:center!important;text-align:center}',
-      '.mvt-win .stv-meta,.mvt-win .full-start-new__buttons,.mvt-win .full-start-new__reactions{justify-content:center!important;text-align:center}',
-      '.mvt-win .stv-desc{text-align:center}',
+      /* Геометрія: відео стоїть absolute від top = шапка(4.6em) і має висоту 56.25vw. Тіло картки (flex-колонка)
+         починається під відео мінус «запас накладання» (22vw): лого й назва лягають на нижню частину відео. */
+      'body.stv .mvt-win .full-start-new__body{min-height:0!important;align-items:flex-start!important;position:relative!important;z-index:2!important;',
+      'padding-top:calc(env(safe-area-inset-top,0px) + 4.6em + 56.25vw - 22vw)!important}',
+      'body.stv .mvt-win .full-start-new__title{position:relative!important;z-index:3!important;margin-top:0!important}',
+      'body.stv .mvt-win .full-start-new__title .stv-logo{filter:drop-shadow(0 2px 14px rgba(0,0,0,.7))}',
+      'body.stv .mvt-win .full-start-new__title{text-shadow:0 2px 16px rgba(0,0,0,.8)}',
+      'body.stv .mvt-win .full-start-new__right{align-items:center!important;text-align:center}',
+      'body.stv .mvt-win .stv-meta,body.stv .mvt-win .full-start-new__buttons,body.stv .mvt-win .full-start-new__reactions{justify-content:center!important;text-align:center}',
+      'body.stv .mvt-win .stv-desc{text-align:center}',
       /* м'яке затемнення знизу відео, щоб лого й назва читалися поверх картинки */
       '.mvt-win .mvt-box:after{content:"";position:absolute;left:0;right:0;bottom:0;height:55%;pointer-events:none;',
       'background:linear-gradient(to bottom,rgba(0,0,0,0),rgba(0,0,0,.85))}'
