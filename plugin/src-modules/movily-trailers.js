@@ -5,14 +5,15 @@
    мова: українська > оригінальна мова фільму > англійська > будь-яка; всередині мови: за переглядами.
    Каскад: база (SQL з фільтром і сортуванням) > TMDB напряму (включно з відео без мови) > відео з картки. Кандидатів кілька: недоступний ролик пропускається.
    Цикл: затримка > трейлер плавно проявляється (постер згасає) > кінець > постер повертається > пауза > знову.
+   Формат (Налаштування > Інтерфейс > «Формат трейлера»): «На весь фон» (як було) або «Вікно 16:9» (лише портрет/телефон): блок 16:9 під шапкою, лого й текст по центру нижче.
    Вмикається/вимикається в Налаштування > Інтерфейс. Автономний модуль на подіях Lampa (full / complite). */
 (function () {
   'use strict';
   if (window.__movily_trailers) return;
   window.__movily_trailers = true;
 
-  var K = { on: 'movily_trailer', sound: 'movily_trailer_sound', delay: 'movily_trailer_delay' };
-  var DEF = { movily_trailer: true, movily_trailer_sound: false, movily_trailer_delay: '1500' };
+  var K = { on: 'movily_trailer', sound: 'movily_trailer_sound', delay: 'movily_trailer_delay', fmt: 'movily_trailer_format' };
+  var DEF = { movily_trailer: true, movily_trailer_sound: false, movily_trailer_delay: '1500', movily_trailer_format: 'bg' };
   var FADE = 600;
   var DB = 'https://trailerdb.mhadifilms.workers.dev/query';
   var MAX_SEC = 240;            // довші ролики (фічерети, добірки) не беремо
@@ -21,15 +22,18 @@
     uk: { grp: 'Трейлери', on: 'Трейлер у картці фільму', on_d: 'На сторінці фільму трейлер сам запускається фоном. Джерело: The Trailer Database.',
           sound: 'Звук трейлера', sound_d: 'Вмикати звук одразу. Якщо браузер не дозволяє, трейлер стартує без звуку.',
           delay: 'Затримка трейлера', d1: '1 секунда', d15: '1,5 секунди', d3: '3 секунди', d5: '5 секунд',
-          mute: 'Звук', unmute: 'Вимкнути звук' },
+          mute: 'Звук', unmute: 'Вимкнути звук',
+          fmt: 'Формат трейлера', fmt_d: 'Як трейлер виглядає в картці: фоном на весь екран або окремим вікном 16:9 під шапкою, логотип поверх нього.', f_bg: 'На весь фон', f_win: 'Вікно 16:9' },
     ru: { grp: 'Трейлеры', on: 'Трейлер в карточке фильма', on_d: 'На странице фильма трейлер сам запускается фоном. Источник: The Trailer Database.',
           sound: 'Звук трейлера', sound_d: 'Включать звук сразу. Если браузер не разрешает, трейлер стартует без звука.',
           delay: 'Задержка трейлера', d1: '1 секунда', d15: '1,5 секунды', d3: '3 секунды', d5: '5 секунд',
-          mute: 'Звук', unmute: 'Выключить звук' },
+          mute: 'Звук', unmute: 'Выключить звук',
+          fmt: 'Формат трейлера', fmt_d: 'Как трейлер выглядит в карточке: фоном на весь экран или отдельным окном 16:9 под шапкой, логотип поверх него.', f_bg: 'На весь фон', f_win: 'Окно 16:9' },
     en: { grp: 'Trailers', on: 'Trailer in the movie card', on_d: 'On a movie page the trailer starts by itself in the background. Source: The Trailer Database.',
           sound: 'Trailer sound', sound_d: 'Start with sound. If the browser blocks it, the trailer starts muted.',
           delay: 'Trailer delay', d1: '1 second', d15: '1.5 seconds', d3: '3 seconds', d5: '5 seconds',
-          mute: 'Sound', unmute: 'Mute' }
+          mute: 'Sound', unmute: 'Mute',
+          fmt: 'Trailer format', fmt_d: 'How the trailer looks in the card: full-screen background or a separate 16:9 window under the header with the logo over it.', f_bg: 'Full background', f_win: '16:9 window' }
   };
   function lang() { var l = 'uk'; try { l = String(Lampa.Storage.get('language', 'uk') || 'uk'); } catch (e) {} return STR[l] ? l : (l === 'be' ? 'ru' : 'en'); }
   function tr(k) { return (STR[lang()] || STR.en)[k] || STR.en[k] || k; }
@@ -39,6 +43,8 @@
     var v; try { v = Lampa.Storage.get(k, DEF[k]); } catch (e) { v = DEF[k]; }
     if (v === 'true') return true; if (v === 'false') return false; return v;
   }
+
+  function fmt() { return opt(K.fmt) === 'win' && window.innerHeight > window.innerWidth * 1.15 ? 'win' : 'bg'; }   /* вікно 16:9 лише на портретному екрані (телефон) */
 
   /* ---------- CSS ---------- */
   function css() {
@@ -62,7 +68,21 @@
       '.mvt-sound svg{width:55%;height:55%}',
       '.mvt-sound .mvt-ic-off{display:none}',
       '.mvt-sound.muted .mvt-ic-on{display:none}',
-      '.mvt-sound.muted .mvt-ic-off{display:block}'
+      '.mvt-sound.muted .mvt-ic-off{display:block}',
+      /* ФОРМАТ «ВІКНО 16:9»: трейлер окремим блоком на всю ширину під шапкою, як на Apple TV / Netflix (мобільна картка).
+         Блок позиційований від верху картки; лого тайтлу накладається на його нижній край, далі все по центру. */
+      '.mvt-win .mvt-box{left:0;top:calc(env(safe-area-inset-top,0px) + 4.6em);width:100%;height:auto;aspect-ratio:16/9;z-index:1;',
+      '-webkit-mask-image:none;mask-image:none;background:#000}',
+      '.mvt-win .mvt-box iframe{width:100%;height:100%;min-width:0;min-height:0;transform:translate(-50%,-50%) scale(1.04)}',
+      /* поки грає вікно: постер-фон гасне в чорне (як на Apple TV), весь блок інформації їде під трейлер */
+      '.mvt-win.mvt-on .full-start__background,.mvt-win.mvt-on .stv-own-bg,.mvt-win.mvt-on .stv-scrim{opacity:0!important}',
+      '.mvt-win.mvt-on{background:#000}',
+      '.mvt-win .mvt-sound{top:calc(env(safe-area-inset-top,0px) + 4.6em + 56.25vw - 3.4em)}',
+      '.mvt-win .full-start-new__body{min-height:0!important;padding-top:calc(env(safe-area-inset-top,0px) + 4.6em + 56.25vw - 4.2em)!important;align-items:flex-start!important}',
+      '.mvt-win .full-start-new__title.stv-has-logo{position:relative;z-index:3}',
+      '.mvt-win .full-start-new__right{align-items:center!important;text-align:center}',
+      '.mvt-win .stv-meta,.mvt-win .full-start-new__buttons,.mvt-win .full-start-new__reactions{justify-content:center!important;text-align:center}',
+      '.mvt-win .stv-desc{text-align:center}'
     ].join('');
     (document.head || document.documentElement).appendChild(st);
   }
@@ -181,7 +201,7 @@
       }
     } catch (e) {}
     try { if (c.btn && c.btn.parentNode) c.btn.parentNode.removeChild(c.btn); } catch (e) {}
-    try { c.render.removeClass('mvt-on'); } catch (e) {}
+    try { c.render.removeClass('mvt-on'); c.render.removeClass('mvt-win'); } catch (e) {}
   }
 
   function cmd(c, func, args) {
@@ -228,6 +248,7 @@
       c.started = true;
       clearTimeout(c.timer);
       box.classList.add('loaded');
+      if (fmt() === 'win') render.addClass('mvt-win'); else render.removeClass('mvt-win');
       render.addClass('mvt-on');
       btn.classList.add('show');
       if (!c.muted) { cmd(c, 'unMute'); cmd(c, 'setVolume', [60]); btn.classList.remove('muted'); }
@@ -235,6 +256,7 @@
     function hideTrailer() {            // постер повертається
       box.classList.remove('loaded');
       render.removeClass('mvt-on');
+      render.removeClass('mvt-win');
       btn.classList.remove('show');
     }
     function replay() {                 // пауза з постером, потім трейлер знову
@@ -329,6 +351,9 @@
     api.addParam({ component: 'interface', param: { name: K.on, type: 'trigger', 'default': DEF[K.on] },
       field: { name: tr('on'), description: tr('on_d') },
       onChange: function (v) { if (v === false || v === 'false') { seq++; stop(); } } });
+    api.addParam({ component: 'interface', param: { name: K.fmt, type: 'select', values: { bg: tr('f_bg'), win: tr('f_win') }, 'default': DEF[K.fmt] },
+      field: { name: tr('fmt'), description: tr('fmt_d') },
+      onChange: function () { try { var a = Lampa.Activity.active(); if (a && a.activity) { seq++; stop(true); } } catch (e) {} } });
     api.addParam({ component: 'interface', param: { name: K.sound, type: 'trigger', 'default': DEF[K.sound] },
       field: { name: tr('sound'), description: tr('sound_d') } });
     api.addParam({ component: 'interface', param: { name: K.delay, type: 'select', values: { '1000': tr('d1'), '1500': tr('d15'), '3000': tr('d3'), '5000': tr('d5') }, 'default': DEF[K.delay] },
