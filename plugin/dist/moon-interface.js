@@ -1022,7 +1022,7 @@
     stv_on: true,
     stv_mode: 'ipad',
     stv_hide_head: true,
-    stv_titles: false,
+    stv_titles: true,
     stv_tint: true,
     stv_logo_lang: 'ui',
     stv_episodes: true,
@@ -1057,7 +1057,9 @@
     appletv_agnative_category_size: 'md',
     appletv_agnative_clock_seconds: 'off',
     appletv_agnative_control_panel: 'off',
-    appletv_agnative_cache_size: '100'
+    appletv_agnative_cache_size: '100',
+    movily_trailer_sound: false,
+    movily_trailer_format: 'win'
   };
 
   function apply() {
@@ -1074,11 +1076,22 @@
     return true;
   }
 
-  /* once per device: after that the user's own changes are never touched */
+  /* once per device: migrate the previous automatic values for Movily's new defaults */
   var FLAG = 'snack_defaults_done_v1';
+  var MOVILY_FLAG = 'movily_defaults_v2';
+  function migrateMovily() {
+    try {
+      if (window.localStorage && window.localStorage.getItem(MOVILY_FLAG)) return;
+      Lampa.Storage.set('stv_titles', true);
+      Lampa.Storage.set('movily_trailer_sound', false);
+      Lampa.Storage.set('movily_trailer_format', 'win');
+      if (window.localStorage) window.localStorage.setItem(MOVILY_FLAG, '1');
+    } catch (e) {}
+  }
   function run() {
-    try { if (window.localStorage && window.localStorage.getItem(FLAG)) return; } catch (e) {}
+    try { if (window.localStorage && window.localStorage.getItem(FLAG)) { migrateMovily(); return; } } catch (e) {}
     if (!apply()) return false;
+    migrateMovily();
     try { window.localStorage.setItem(FLAG, '1'); } catch (e) {}
     return true;
   }
@@ -1224,7 +1237,7 @@
   var K = { on: 'stv_on', mode: 'stv_mode', lite: 'stv_lite', react: 'stv_show_react', shots: 'stv_show_shots',
     tech: 'stv_show_tech', head: 'stv_hide_head', play: 'stv_show_play', episodes: 'stv_episodes', tint: 'stv_tint', logo_lang: 'stv_logo_lang', img: 'stv_img', titles: 'stv_titles', remote: 'stv_remote', loc: 'stv_local_cards' };
   var DEF = { stv_on: true, stv_mode: 'auto', stv_lite: 'auto', stv_show_react: false, stv_show_shots: false,
-    stv_show_tech: false, stv_hide_head: true, stv_show_play: false, stv_episodes: true, stv_tint: true, stv_logo_lang: 'ui', stv_img: 'auto', stv_titles: false, stv_remote: '', stv_local_cards: true };
+    stv_show_tech: false, stv_hide_head: true, stv_show_play: false, stv_episodes: true, stv_tint: true, stv_logo_lang: 'ui', stv_img: 'auto', stv_titles: true, stv_remote: '', stv_local_cards: true };
   var SHOW_WAS = { stv_show_react: 'stv_hide_react', stv_show_shots: 'stv_hide_shots', stv_show_tech: 'stv_hide_tech', stv_show_play: 'stv_hide_play' };
   function opt(k) { var v; try { v = Lampa.Storage.get(k, DEF[k]); } catch (e) { v = DEF[k]; } if (v === 'true') return true; if (v === 'false') return false; return v; }
 
@@ -13641,7 +13654,7 @@
   window.__movily_trailers = true;
 
   var K = { on: 'movily_trailer', sound: 'movily_trailer_sound', delay: 'movily_trailer_delay', fmt: 'movily_trailer_format' };
-  var DEF = { movily_trailer: true, movily_trailer_sound: false, movily_trailer_delay: '1500', movily_trailer_format: 'bg' };
+  var DEF = { movily_trailer: true, movily_trailer_sound: false, movily_trailer_delay: '1500', movily_trailer_format: 'win' };
   var FADE = 600;
   var DB = 'https://trailerdb.mhadifilms.workers.dev/query';
   var MAX_SEC = 240;            // довші ролики (фічерети, добірки) не беремо

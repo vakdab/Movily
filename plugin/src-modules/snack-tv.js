@@ -131,7 +131,7 @@
   var K = { on: 'stv_on', mode: 'stv_mode', lite: 'stv_lite', react: 'stv_show_react', shots: 'stv_show_shots',
     tech: 'stv_show_tech', head: 'stv_hide_head', play: 'stv_show_play', episodes: 'stv_episodes', tint: 'stv_tint', logo_lang: 'stv_logo_lang', img: 'stv_img', titles: 'stv_titles', remote: 'stv_remote', loc: 'stv_local_cards' };
   var DEF = { stv_on: true, stv_mode: 'auto', stv_lite: 'auto', stv_show_react: false, stv_show_shots: false,
-    stv_show_tech: false, stv_hide_head: true, stv_show_play: false, stv_episodes: true, stv_tint: true, stv_logo_lang: 'ui', stv_img: 'auto', stv_titles: false, stv_remote: '', stv_local_cards: true };
+    stv_show_tech: false, stv_hide_head: true, stv_show_play: false, stv_episodes: true, stv_tint: true, stv_logo_lang: 'ui', stv_img: 'auto', stv_titles: true, stv_remote: '', stv_local_cards: true };
   var SHOW_WAS = { stv_show_react: 'stv_hide_react', stv_show_shots: 'stv_hide_shots', stv_show_tech: 'stv_hide_tech', stv_show_play: 'stv_hide_play' };
   function opt(k) { var v; try { v = Lampa.Storage.get(k, DEF[k]); } catch (e) { v = DEF[k]; } if (v === 'true') return true; if (v === 'false') return false; return v; }
 

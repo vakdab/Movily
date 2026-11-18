@@ -27,7 +27,7 @@
     stv_on: true,
     stv_mode: 'ipad',
     stv_hide_head: true,
-    stv_titles: false,
+    stv_titles: true,
     stv_tint: true,
     stv_logo_lang: 'ui',
     stv_episodes: true,
@@ -62,7 +62,9 @@
     appletv_agnative_category_size: 'md',
     appletv_agnative_clock_seconds: 'off',
     appletv_agnative_control_panel: 'off',
-    appletv_agnative_cache_size: '100'
+    appletv_agnative_cache_size: '100',
+    movily_trailer_sound: false,
+    movily_trailer_format: 'win'
   };
 
   function apply() {
@@ -79,11 +81,22 @@
     return true;
   }
 
-  /* once per device: after that the user's own changes are never touched */
+  /* once per device: migrate the previous automatic values for Movily's new defaults */
   var FLAG = 'snack_defaults_done_v1';
+  var MOVILY_FLAG = 'movily_defaults_v2';
+  function migrateMovily() {
+    try {
+      if (window.localStorage && window.localStorage.getItem(MOVILY_FLAG)) return;
+      Lampa.Storage.set('stv_titles', true);
+      Lampa.Storage.set('movily_trailer_sound', false);
+      Lampa.Storage.set('movily_trailer_format', 'win');
+      if (window.localStorage) window.localStorage.setItem(MOVILY_FLAG, '1');
+    } catch (e) {}
+  }
   function run() {
-    try { if (window.localStorage && window.localStorage.getItem(FLAG)) return; } catch (e) {}
+    try { if (window.localStorage && window.localStorage.getItem(FLAG)) { migrateMovily(); return; } } catch (e) {}
     if (!apply()) return false;
+    migrateMovily();
     try { window.localStorage.setItem(FLAG, '1'); } catch (e) {}
     return true;
   }

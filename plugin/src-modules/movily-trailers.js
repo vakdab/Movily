@@ -13,7 +13,7 @@
   window.__movily_trailers = true;
 
   var K = { on: 'movily_trailer', sound: 'movily_trailer_sound', delay: 'movily_trailer_delay', fmt: 'movily_trailer_format' };
-  var DEF = { movily_trailer: true, movily_trailer_sound: false, movily_trailer_delay: '1500', movily_trailer_format: 'bg' };
+  var DEF = { movily_trailer: true, movily_trailer_sound: false, movily_trailer_delay: '1500', movily_trailer_format: 'win' };
   var FADE = 600;
   var DB = 'https://trailerdb.mhadifilms.workers.dev/query';
   var MAX_SEC = 240;            // довші ролики (фічерети, добірки) не беремо
