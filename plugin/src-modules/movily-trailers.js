@@ -44,6 +44,10 @@
     if (v === 'true') return true; if (v === 'false') return false; return v;
   }
 
+  function syncRowSound(render, muted) {
+    try { render.find('.button--movily-sound').toggleClass('mvt-row-sound-muted', !!muted); } catch (e) {}
+  }
+
   function fmt() { return opt(K.fmt) === 'win' && window.innerHeight > window.innerWidth * 1.15 ? 'win' : 'bg'; }   /* вікно 16:9 лише на портретному екрані (телефон) */
 
   /* ---------- CSS ---------- */
@@ -293,10 +297,12 @@
       c.muted = !c.muted;
       if (c.muted) cmd(c, 'mute'); else { cmd(c, 'unMute'); cmd(c, 'setVolume', [60]); }
       btn.classList.toggle('muted', c.muted);
+      syncRowSound(render, c.muted);
     };
     btn.addEventListener('click', onTap);
     btn.addEventListener('touchend', onTap);
     c.btn = btn;
+    syncRowSound(render, c.muted);
 
     function showTrailer() {
       if (cur !== c) return;
@@ -306,6 +312,7 @@
       if (fmt() === 'win') render.addClass('mvt-win'); else render.removeClass('mvt-win');
       render.addClass('mvt-on');
       render.find('.button--movily-sound').removeClass('mvt-row-sound-pending');
+      syncRowSound(render, c.muted);
       if (!c.muted) { cmd(c, 'unMute'); cmd(c, 'setVolume', [60]); btn.classList.remove('muted'); }
     }
     function hideTrailer() {            // постер повертається

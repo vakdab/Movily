@@ -1650,6 +1650,7 @@
     r.push(F + ' .full-start-new__title.stv-tl-long{font-size:' + tp(54, 30) + '}' + F + ' .full-start-new__title.stv-tl-xlong{font-size:' + tp(42, 24) + '}');
     r.push(F + ' .full-start-new__title:not(.stv-has-logo){display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}');
     r.push(F + ' .mvt-row-sound-pending{display:none!important}');
+    r.push(F + ' .button--movily-sound .mvt-row-sound-off{display:none}' + F + ' .button--movily-sound.mvt-row-sound-muted .mvt-row-sound-on{display:none}' + F + ' .button--movily-sound.mvt-row-sound-muted .mvt-row-sound-off{display:inline-block}');
     r.push(F + ' .full-start-new__title.stv-has-logo{font-size:0;line-height:0;color:transparent}');
     r.push(F + ' .full-start-new__title .stv-logo{display:block;max-width:' + px(t.logoW) + ';max-height:' + px(t.logoH) + ';width:auto;height:auto;' +
       'object-fit:contain;object-position:left bottom;opacity:0;transition:opacity .35s}');
@@ -2486,7 +2487,7 @@
   // No labels under the round buttons: TVs show the focused one's name, touch a long press (tipFor)
   var ROW = ['.button--alc-trailer', '.button--book', '.button--alc-torrent'];
   var DOTS = '<svg viewBox="0 0 24 24" width="24" height="24"><circle cx="5" cy="12" r="2.2" fill="currentColor"/><circle cx="12" cy="12" r="2.2" fill="currentColor"/><circle cx="19" cy="12" r="2.2" fill="currentColor"/></svg>';
-  var SOUND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg><span></span>';
+  var SOUND = '<svg class="mvt-row-sound-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg><svg class="mvt-row-sound-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M22 9l-6 6"/><path d="M16 9l6 6"/></svg><span></span>';
   function toggleTrailerSound() {
     try {
       if (typeof window.__movily_toggle_trailer_sound === 'function') return window.__movily_toggle_trailer_sound();
@@ -2510,6 +2511,7 @@
       var bell = box.children('.button--subscribe').first();
       if (bell.length) bell.after(b); else box.children('.button--options').first().before(b);
     }
+    b.removeClass('mvt-row-sound-muted');
     b.children('span').text(tr('sound'));
     return b;
   }
@@ -13697,6 +13699,10 @@
     if (v === 'true') return true; if (v === 'false') return false; return v;
   }
 
+  function syncRowSound(render, muted) {
+    try { render.find('.button--movily-sound').toggleClass('mvt-row-sound-muted', !!muted); } catch (e) {}
+  }
+
   function fmt() { return opt(K.fmt) === 'win' && window.innerHeight > window.innerWidth * 1.15 ? 'win' : 'bg'; }   /* вікно 16:9 лише на портретному екрані (телефон) */
 
   /* ---------- CSS ---------- */
@@ -13946,10 +13952,12 @@
       c.muted = !c.muted;
       if (c.muted) cmd(c, 'mute'); else { cmd(c, 'unMute'); cmd(c, 'setVolume', [60]); }
       btn.classList.toggle('muted', c.muted);
+      syncRowSound(render, c.muted);
     };
     btn.addEventListener('click', onTap);
     btn.addEventListener('touchend', onTap);
     c.btn = btn;
+    syncRowSound(render, c.muted);
 
     function showTrailer() {
       if (cur !== c) return;
@@ -13959,6 +13967,7 @@
       if (fmt() === 'win') render.addClass('mvt-win'); else render.removeClass('mvt-win');
       render.addClass('mvt-on');
       render.find('.button--movily-sound').removeClass('mvt-row-sound-pending');
+      syncRowSound(render, c.muted);
       if (!c.muted) { cmd(c, 'unMute'); cmd(c, 'setVolume', [60]); btn.classList.remove('muted'); }
     }
     function hideTrailer() {            // постер повертається
