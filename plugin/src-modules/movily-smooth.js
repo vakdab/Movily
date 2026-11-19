@@ -11,7 +11,7 @@
   var ENTER = 'movily-page-enter';
   var EXIT = 'movily-page-exit';
   var HOLD = 'movily-page-hold';
-  var DURATION = 320;
+  var DURATION = 260;
   var EASE = 'cubic-bezier(.22,.61,.36,1)';
   var previous = null;
   var activeObserver = null;
@@ -31,13 +31,13 @@
       'body.' + MOTION + ' .activity.' + HOLD + '{z-index:1!important;opacity:1!important;filter:none!important;transform:none!important;will-change:auto}',
 
       /* Incoming page: subtle lift, scale and motion blur. */
-      'body.' + MOTION + ' .activity.' + ENTER + '{z-index:2!important;opacity:1!important;animation:movily-page-in ' + DURATION + 'ms ' + EASE + ' both;will-change:transform,opacity,filter}',
+      'body.' + MOTION + ' .activity.' + ENTER + '{z-index:2!important;opacity:1!important;animation:movily-page-in ' + DURATION + 'ms ' + EASE + ' both;will-change:transform,opacity}',
       'body.' + MOTION + ' .activity.' + ENTER + '.activity--load{opacity:0!important;animation:none;will-change:auto}',
-      '@keyframes movily-page-in{0%{opacity:0;transform:translate3d(0,18px,0) scale(.985);filter:blur(8px)}48%{opacity:.88;filter:blur(2.5px)}100%{opacity:1;transform:translate3d(0,0,0) scale(1);filter:blur(0)}}',
+      '@keyframes movily-page-in{0%{opacity:0;transform:translate3d(0,14px,0)}100%{opacity:1;transform:translate3d(0,0,0)}}',
 
       /* Outgoing page: stays visible until the incoming page is ready. */
-      'body.' + MOTION + ' .activity.' + EXIT + '{z-index:1!important;opacity:1!important;animation:movily-page-out ' + Math.round(DURATION * .8) + 'ms ' + EASE + ' forwards;will-change:transform,opacity,filter;pointer-events:none}',
-      '@keyframes movily-page-out{0%{opacity:1;transform:translate3d(0,0,0) scale(1);filter:blur(0)}100%{opacity:0;transform:translate3d(0,-8px,0) scale(1.01);filter:blur(4px)}}',
+      'body.' + MOTION + ' .activity.' + EXIT + '{z-index:1!important;opacity:1!important;animation:movily-page-out ' + Math.round(DURATION * .7) + 'ms ' + EASE + ' forwards;will-change:transform,opacity;pointer-events:none}',
+      '@keyframes movily-page-out{0%{opacity:1}100%{opacity:0}}',
 
       /* Blur is restricted to the two moving activity layers, not every glass element. */
       'body.' + MOTION + ' .activity.' + ENTER + ' *,body.' + MOTION + ' .activity.' + EXIT + ' *{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}',
