@@ -14135,8 +14135,11 @@
   };
 
   function css() {
-    if (document.getElementById('movily-bottom-nav-css')) return;
+    var old = document.getElementById('movily-bottom-nav-css');
+    if (old && old.getAttribute('data-v') === '3') return;
+    if (old) old.remove();
     var style = document.createElement('style');
+    style.setAttribute('data-v', '3');
     style.id = 'movily-bottom-nav-css';
     style.textContent = [
       '#'+NAV_ID+'{position:fixed;left:0;right:0;bottom:0;z-index:9990;display:flex;align-items:center;justify-content:space-between;width:100%;box-sizing:border-box;padding:6px 10px calc(env(safe-area-inset-bottom,0px) * .45 + 4px);background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.03)),rgba(32,34,40,.50)!important;-webkit-backdrop-filter:blur(40px) saturate(180%)!important;backdrop-filter:blur(40px) saturate(180%)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.22),inset 0 0 0 1px rgba(255,255,255,.08)!important;border:0!important;transform:translateZ(0);font-family:-apple-system,"SF Pro Text",system-ui,sans-serif}',
@@ -14174,6 +14177,7 @@
     var nav = document.createElement('nav');
     nav.id = NAV_ID;
     nav.setAttribute('aria-label', 'Нижнє меню');
+    nav.setAttribute('data-v', '3');
     nav.innerHTML = '<span class="movily-bottom-pill"></span>' +
       '<button data-action="back" aria-label="Назад">' + ICONS.back + '</button>' +
       '<span class="movily-bottom-sep"></span>' +
