@@ -13914,6 +13914,20 @@
     }
   }
 
+  /* Два YouTube iframe мають окремі буфери, тому одного playVideo недостатньо.
+     Раз на ~1,2 с підтягуємо фоновий плеєр до часу переднього, не чіпаючи його звук. */
+  function syncVideoBackground(c, time, playing) {
+    if (!c || !c.bgFrame || !isFinite(time)) return;
+    var now = Date.now();
+    if (!playing && now - (c.lastBgSync || 0) < 900) return;
+    if (playing && now - (c.lastBgSync || 0) < 1200) return;
+    c.lastBgSync = now;
+    try { c.bgFrame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'seekTo', args: [Math.max(0, time), true] }), '*'); } catch (e) {}
+    if (playing) {
+      try { c.bgFrame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'playVideo', args: [] }), '*'); } catch (e) {}
+    }
+  }
+
   /* ---------- скрол: трейлер їде вгору разом із контентом і плавно гасне ---------- */
   function scrollY(render) {
     var y = 0, list = render.find('.scroll'), i, el, body, m;
@@ -14051,7 +14065,7 @@
     bgBox.appendChild(bgFrame);
     holder.insertBefore(bgBox, box);
 
-    var c = cur = { box: box, frame: frame, bgBox: bgBox, bgFrame: bgFrame, render: render, muted: opt(K.sound) !== true, started: false, btn: null, timer: 0, loop: 0, onMsg: null };
+    var c = cur = { box: box, frame: frame, bgBox: bgBox, bgFrame: bgFrame, render: render, muted: opt(K.sound) !== true, started: false, lastBgSync: 0, btn: null, timer: 0, loop: 0, onMsg: null };
 
     bindScroll(c);
     var btn = document.createElement('div');
@@ -14121,13 +14135,15 @@
       if (!d) return;
       if (d.event === 'onReady' || d.event === 'initialDelivery') { cmd(c, 'playVideo'); }
       if (d.event === 'onStateChange') {
-        if (d.info === YT_STATE.PLAYING) showTrailer();
+        if (d.info === YT_STATE.PLAYING) { showTrailer(); syncVideoBackground(c, 0, true); }
         else if (d.info === YT_STATE.ENDED) replay();
       } else if (d.event === 'infoDelivery' && d.info) {
         ambientSync(c, d.info);
         if (typeof d.info.playerState === 'number') {
-          if (d.info.playerState === YT_STATE.PLAYING) showTrailer();
+          if (d.info.playerState === YT_STATE.PLAYING) { showTrailer(); syncVideoBackground(c, Number(d.info.currentTime) || 0, true); }
           else if (d.info.playerState === YT_STATE.ENDED) replay();
+        } else if (c.started && isFinite(Number(d.info.currentTime))) {
+          syncVideoBackground(c, Number(d.info.currentTime), true);
         }
       } else if (d.event === 'onError') {
         log('помилка плеєра ' + d.info);
