@@ -297,13 +297,14 @@
   function ambientStop(c) {
     if (!c || !c.amb) return;
     clearInterval(c.ambTimer);
+    c.ambLayers = null;
     var a = c.amb; c.amb = null;
     a.classList.remove('on');
     setTimeout(function () { if (a.parentNode) a.parentNode.removeChild(a); }, 1400);
   }
   function ambientStart(c, ytId, holder, beforeEl) {
     if (!c || c.amb || !ytId) return;
-    var urls = ['1', '2', '3', 'mqdefault'].map(function (n) {
+    var urls = ['0', '1', '2', '3'].map(function (n) {
       return 'https://i.ytimg.com/vi/' + encodeURIComponent(ytId) + '/' + (n === 'mqdefault' ? 'mqdefault' : n) + '.jpg';
     });
     var ok = [], pending = urls.length;
@@ -336,15 +337,24 @@
       c.amb = amb;
       var k = 0;
       layers[0].classList.add('on');
+      c.ambLayers = layers;
+      c.ambIndex = 0;
       requestAnimationFrame(function () { amb.classList.add('on'); });
-      if (layers.length > 1) {
-        c.ambTimer = setInterval(function () {
-          layers[k].classList.remove('on');
-          k = (k + 1) % layers.length;
-          layers[k].classList.add('on');
-        }, 4000);
-      }
     }
+  }
+
+  /* YouTube iframe is cross-origin, so we cannot read its pixels directly.
+     We do, however, receive currentTime/duration and use them to select the
+     matching storyboard thumbnail instead of cycling on an unrelated timer. */
+  function ambientSync(c, info) {
+    if (!c || !c.ambLayers || !info) return;
+    var time = Number(info.currentTime), duration = Number(info.duration);
+    if (!isFinite(time) || !isFinite(duration) || duration <= 0) return;
+    var index = Math.max(0, Math.min(c.ambLayers.length - 1, Math.floor(time / duration * c.ambLayers.length)));
+    if (index === c.ambIndex) return;
+    c.ambLayers[c.ambIndex].classList.remove('on');
+    c.ambLayers[index].classList.add('on');
+    c.ambIndex = index;
   }
 
   function play(render, ids, holder, bgEl) {
@@ -435,9 +445,12 @@
       if (d.event === 'onStateChange') {
         if (d.info === YT_STATE.PLAYING) showTrailer();
         else if (d.info === YT_STATE.ENDED) replay();
-      } else if (d.event === 'infoDelivery' && d.info && typeof d.info.playerState === 'number') {
-        if (d.info.playerState === YT_STATE.PLAYING) showTrailer();
-        else if (d.info.playerState === YT_STATE.ENDED) replay();
+      } else if (d.event === 'infoDelivery' && d.info) {
+        ambientSync(c, d.info);
+        if (typeof d.info.playerState === 'number') {
+          if (d.info.playerState === YT_STATE.PLAYING) showTrailer();
+          else if (d.info.playerState === YT_STATE.ENDED) replay();
+        }
       } else if (d.event === 'onError') {
         log('помилка плеєра ' + d.info);
         if (!c.started) next();
