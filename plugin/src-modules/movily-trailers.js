@@ -13,7 +13,7 @@
   window.__movily_trailers = true;
 
   var K = { on: 'movily_trailer', sound: 'movily_trailer_sound', delay: 'movily_trailer_delay', fmt: 'movily_trailer_format' };
-  var DEF = { movily_trailer: true, movily_trailer_sound: false, movily_trailer_delay: '1500', movily_trailer_format: 'bg' };
+  var DEF = { movily_trailer: true, movily_trailer_sound: false, movily_trailer_delay: '1500', movily_trailer_format: 'win' };
   var FADE = 600;
   var DB = 'https://trailerdb.mhadifilms.workers.dev/query';
   var MAX_SEC = 240;            // довші ролики (фічерети, добірки) не беремо
@@ -102,6 +102,10 @@
       '.mvt-bg .mvt-amb{position:fixed;inset:-10%;width:120vw;height:120vh;z-index:-1}',
       '.mvt-bg .mvt-box iframe{width:100%;height:100%}',
       '.mvt-bg .full-start__body,.mvt-bg .full-start-new__body,.mvt-bg .full-start-new__title,.mvt-bg .full-start__buttons{position:relative;z-index:2}',
+      /* У правильній композиції на весь екран розтягується лише ambient.
+         Сам трейлер залишається окремим видимим блоком 16:9 поверх нього. */
+      '.mvt-win .mvt-amb{position:fixed;inset:-10%;width:120vw;height:120vh;z-index:0}',
+      '.mvt-win .mvt-box{z-index:1}',
       /* Геометрія: відео стоїть absolute від top = шапка(4.6em) і має висоту 56.25vw. Тіло картки (flex-колонка)
          починається під відео мінус «запас накладання» (22vw): лого й назва лягають на нижню частину відео. */
       'body.stv .mvt-win .full-start-new__body{min-height:0!important;align-items:flex-start!important;position:relative!important;z-index:2!important;',
@@ -510,10 +514,10 @@
 
   function start() {
     try {
-      var flag = 'movily_defaults_v4';
+      var flag = 'movily_defaults_v5';
       if (!window.localStorage || !window.localStorage.getItem(flag)) {
         Lampa.Storage.set('movily_trailer_sound', false);
-        Lampa.Storage.set('movily_trailer_format', 'bg');
+        Lampa.Storage.set('movily_trailer_format', 'win');
         if (window.localStorage) window.localStorage.setItem(flag, '1');
       }
     } catch (e) {}
