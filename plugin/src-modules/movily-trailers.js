@@ -1,19 +1,19 @@
-/* Movily: фоновий трейлер на сторінці фільму/серіалу.
+/* Movily: трейлер на сторінці фільму/серіалу.
    Джерело: The Trailer Database (trailerdb.org), SQL-API https://trailerdb.mhadifilms.workers.dev/query.
    База віддає YouTube-ID, тому відтворення йде через YouTube iframe (youtube-nocookie), без елементів керування.
    Вибір ролика: тільки повноцінні трейлери (trailer / teaser / red_band / imax / tv_spot), офіційні й доступні,
    мова: українська > оригінальна мова фільму > англійська > будь-яка; всередині мови: за переглядами.
    Каскад: база (SQL з фільтром і сортуванням) > TMDB напряму (включно з відео без мови) > відео з картки. Кандидатів кілька: недоступний ролик пропускається.
    Цикл: затримка > трейлер плавно проявляється (постер згасає) > кінець > постер повертається > пауза > знову.
-   Формат (Налаштування > Інтерфейс > «Формат трейлера»): «На весь фон» (як було) або «Вікно 16:9» (лише портрет/телефон): блок 16:9 у потоці картки одразу ПІД текстовим лого/назвою, розкривається, коли відео реально грає; до того iframe прозорий (без плашок YouTube).
+   Відео показується одним видимим блоком 16:9 без додаткового фонового дубля.
    Вмикається/вимикається в Налаштування > Інтерфейс. Автономний модуль на подіях Lampa (full / complite). */
 (function () {
   'use strict';
   if (window.__movily_trailers) return;
   window.__movily_trailers = true;
 
-  var K = { on: 'movily_trailer', sound: 'movily_trailer_sound', delay: 'movily_trailer_delay', fmt: 'movily_trailer_format' };
-  var DEF = { movily_trailer: true, movily_trailer_sound: false, movily_trailer_delay: '1500', movily_trailer_format: 'win' };
+  var K = { on: 'movily_trailer', sound: 'movily_trailer_sound', delay: 'movily_trailer_delay' };
+  var DEF = { movily_trailer: true, movily_trailer_sound: false, movily_trailer_delay: '1500' };
   var FADE = 600;
   var DB = 'https://trailerdb.mhadifilms.workers.dev/query';
   var MAX_SEC = 240;            // довші ролики (фічерети, добірки) не беремо
@@ -47,8 +47,6 @@
   function syncRowSound(render, muted) {
     try { render.find('.button--movily-sound').toggleClass('mvt-row-sound-muted', !!muted); } catch (e) {}
   }
-
-  function fmt() { return opt(K.fmt) === 'win' && window.innerHeight > window.innerWidth * 1.15 ? 'win' : 'bg'; }   /* вікно 16:9 лише на портретному екрані (телефон) */
 
   /* ---------- CSS ---------- */
   function css() {
@@ -86,32 +84,7 @@
       /* поки грає: постер-фон гасне в чорне */
       '.mvt-win.mvt-on .full-start__background,.mvt-win.mvt-on .stv-own-bg,.mvt-win.mvt-on .stv-scrim{opacity:0!important}',
       '.mvt-win.mvt-on{background:transparent}',
-      /* АМБІЄНТ: розмита кольорова підсвітка за відео (кольори беруться з кадрів ролика) */
-      '.mvt-amb{position:absolute;left:-12%;right:-12%;top:-8%;bottom:-8%;z-index:0;pointer-events:none;opacity:0;overflow:hidden;transition:opacity 1.2s ease-in-out}',
-      '.mvt-amb.on{opacity:1}',
-      '.mvt-amb i{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transform:scale(1.15);',
-      '-webkit-filter:blur(36px) saturate(3.2) brightness(1.12);filter:blur(36px) saturate(3.2) brightness(1.12);transition:opacity 2.4s ease-in-out}',
-      '.mvt-amb i.on{opacity:1}',
-      '.mvt-amb:after{content:"";position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.08),rgba(0,0,0,.34) 70%,rgba(0,0,0,.68))}',
-      '.mvt-win .mvt-amb{top:calc(env(safe-area-inset-top,0px) + 4.6em - 6%);bottom:auto;height:calc(56.25vw + 24vw)}',
       '.mvt-win .mvt-sound{top:calc(env(safe-area-inset-top,0px) + 4.6em + 56.25vw - 3.4em)}',
-      /* ФОРМАТ «НА ВЕСЬ ФОН»: відео й ambient займають увесь viewport картки,
-         а не лише область позаду текстового опису. Підсвітка лишається позаду
-         інтерфейсу, але не обрізається контейнером картки. */
-      '.mvt-bg .mvt-box{position:fixed;inset:0;width:100vw;height:100vh;z-index:0}',
-      '.mvt-bg .mvt-amb{position:fixed;inset:-10%;width:120vw;height:120vh;z-index:-1}',
-      '.mvt-bg .mvt-box iframe{width:100%;height:100%}',
-      '.mvt-bg .full-start__body,.mvt-bg .full-start-new__body,.mvt-bg .full-start-new__title,.mvt-bg .full-start__buttons{position:relative;z-index:2}',
-      /* У правильній композиції на весь екран розтягується лише ambient.
-         Сам трейлер залишається окремим видимим блоком 16:9 поверх нього. */
-      '.mvt-win .mvt-amb{position:fixed;inset:-10%;width:120vw;height:120vh;z-index:0}',
-      '.mvt-win .mvt-box{z-index:1}',
-      /* Дубль трейлера під основним блоком: той самий ролик, але розтягнутий,
-         розмитий і затемнений на весь екран. Керування синхронізує обидва iframe. */
-      '.mvt-video-bg{position:fixed;inset:-8%;width:116vw;height:116vh;z-index:0;overflow:hidden;pointer-events:none;opacity:0;transition:opacity .6s ease}',
-      '.mvt-video-bg iframe{position:absolute;inset:0;width:100%;height:100%;border:0;transform:scale(1.12);filter:blur(34px) saturate(1.8) brightness(.72);opacity:.9}',
-      '.mvt-on .mvt-video-bg{opacity:1}',
-      '.mvt-win .mvt-video-bg{z-index:0}',
       /* Геометрія: відео стоїть absolute від top = шапка(4.6em) і має висоту 56.25vw. Тіло картки (flex-колонка)
          починається під відео мінус «запас накладання» (22vw): лого й назва лягають на нижню частину відео. */
       'body.stv .mvt-win .full-start-new__body{min-height:0!important;align-items:flex-start!important;position:relative!important;z-index:2!important;',
@@ -241,12 +214,7 @@
         };
         if (now) rm(); else { c.box.classList.remove('loaded'); setTimeout(rm, FADE); }
       }
-      if (c.bgBox && c.bgBox.parentNode) {
-        try { c.bgFrame.src = 'about:blank'; } catch (e) {}
-        c.bgBox.parentNode.removeChild(c.bgBox);
-      }
     } catch (e) {}
-    try { ambientStop(c); } catch (e) {}
     try { if (c.unScroll) c.unScroll(); } catch (e) {}
     try { if (c.btn && c.btn.parentNode) c.btn.parentNode.removeChild(c.btn); } catch (e) {}
     try { c.render.removeClass('mvt-on'); c.render.removeClass('mvt-win'); } catch (e) {}
@@ -254,26 +222,6 @@
 
   function cmd(c, func, args) {
     try { c.frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: func, args: args || [] }), '*'); } catch (e) {}
-    /* Гучність змінюємо лише в передньому плеєрі, решта команд — в обох. */
-    if (c.bgFrame && ['mute', 'unMute', 'setVolume'].indexOf(func) < 0) {
-      try { c.bgFrame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: func, args: args || [] }), '*'); } catch (e) {}
-    }
-  }
-
-  /* Два YouTube iframe мають окремі буфери, тому одного playVideo недостатньо.
-     Раз на ~1,2 с підтягуємо фоновий плеєр до часу переднього, не чіпаючи його звук. */
-  function syncVideoBackground(c, time, playing) {
-    if (!c || !c.bgFrame || !isFinite(time)) return;
-    c.lastMainTime = Math.max(0, time);
-    if (!c.bgReady) { c.bgSyncPending = true; return; }
-    var now = Date.now();
-    if (!playing && now - (c.lastBgSync || 0) < 900) return;
-    if (playing && now - (c.lastBgSync || 0) < 1200) return;
-    c.lastBgSync = now;
-    try { c.bgFrame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'seekTo', args: [Math.max(0, time), true] }), '*'); } catch (e) {}
-    if (playing) {
-      try { c.bgFrame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'playVideo', args: [] }), '*'); } catch (e) {}
-    }
   }
 
   /* ---------- скрол: трейлер їде вгору разом із контентом і плавно гасне ---------- */
@@ -323,70 +271,6 @@
     };
   }
 
-  /* ---------- амбієнт-підсвітка за відео ---------- */
-  function ambientStop(c) {
-    if (!c || !c.amb) return;
-    clearInterval(c.ambTimer);
-    c.ambLayers = null;
-    var a = c.amb; c.amb = null;
-    a.classList.remove('on');
-    setTimeout(function () { if (a.parentNode) a.parentNode.removeChild(a); }, 1400);
-  }
-  function ambientStart(c, ytId, holder, beforeEl) {
-    if (!c || c.amb || !ytId) return;
-    var urls = ['0', '1', '2', '3'].map(function (n) {
-      return 'https://i.ytimg.com/vi/' + encodeURIComponent(ytId) + '/' + (n === 'mqdefault' ? 'mqdefault' : n) + '.jpg';
-    });
-    var ok = [], pending = urls.length;
-    urls.forEach(function (u) {
-      var im = new Image();
-      im.onload = function () {
-        /* кадр 120x90 з чорними смугами: відкидаємо майже чорні (початок ролика) */
-        try {
-          var cv = document.createElement('canvas'); cv.width = 8; cv.height = 8;
-          var cx = cv.getContext('2d'); cx.drawImage(im, 0, 0, 8, 8);
-          var d = cx.getImageData(0, 0, 8, 8).data, sum = 0;
-          for (var i = 0; i < d.length; i += 4) sum += d[i] + d[i + 1] + d[i + 2];
-          if (sum / (d.length / 4) / 3 > 14) ok.push(u);
-        } catch (e) { ok.push(u); }
-        if (!--pending) go();
-      };
-      im.onerror = function () { if (!--pending) go(); };
-      im.src = u;
-    });
-    function go() {
-      if (cur !== c || c.amb || !ok.length) return;
-      var amb = document.createElement('div');
-      amb.className = 'mvt-amb';
-      var layers = ok.map(function (u) {
-        var i = document.createElement('i');
-        i.style.backgroundImage = 'url("' + u + '")';
-        amb.appendChild(i); return i;
-      });
-      holder.insertBefore(amb, beforeEl || holder.firstChild);
-      c.amb = amb;
-      var k = 0;
-      layers[0].classList.add('on');
-      c.ambLayers = layers;
-      c.ambIndex = 0;
-      requestAnimationFrame(function () { amb.classList.add('on'); });
-    }
-  }
-
-  /* YouTube iframe is cross-origin, so we cannot read its pixels directly.
-     We do, however, receive currentTime/duration and use them to select the
-     matching storyboard thumbnail instead of cycling on an unrelated timer. */
-  function ambientSync(c, info) {
-    if (!c || !c.ambLayers || !info) return;
-    var time = Number(info.currentTime), duration = Number(info.duration);
-    if (!isFinite(time) || !isFinite(duration) || duration <= 0) return;
-    var index = Math.max(0, Math.min(c.ambLayers.length - 1, Math.floor(time / duration * c.ambLayers.length)));
-    if (index === c.ambIndex) return;
-    c.ambLayers[c.ambIndex].classList.remove('on');
-    c.ambLayers[index].classList.add('on');
-    c.ambIndex = index;
-  }
-
   function play(render, ids, holder, bgEl) {
     ids = (ids instanceof Array) ? ids.slice() : [ids];
     var ytId = ids.shift();
@@ -402,18 +286,7 @@
     box.appendChild(frame);
     holder.insertBefore(box, bgEl ? bgEl.nextSibling : holder.firstChild);
 
-    var bgBox = document.createElement('div');
-    bgBox.className = 'mvt-video-bg';
-    var bgFrame = document.createElement('iframe');
-    bgFrame.setAttribute('allow', 'autoplay; encrypted-media');
-    bgFrame.setAttribute('sandbox', 'allow-scripts allow-same-origin');
-    bgFrame.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
-    bgFrame.setAttribute('tabindex', '-1');
-    bgFrame.setAttribute('aria-hidden', 'true');
-    bgBox.appendChild(bgFrame);
-    holder.insertBefore(bgBox, box);
-
-    var c = cur = { box: box, frame: frame, bgBox: bgBox, bgFrame: bgFrame, render: render, muted: opt(K.sound) !== true, started: false, bgReady: false, bgSyncPending: false, lastMainTime: 0, lastBgSync: 0, btn: null, timer: 0, loop: 0, onMsg: null };
+    var c = cur = { box: box, frame: frame, render: render, muted: opt(K.sound) !== true, started: false, btn: null, timer: 0, loop: 0, onMsg: null };
 
     bindScroll(c);
     var btn = document.createElement('div');
@@ -439,18 +312,13 @@
       c.started = true;
       clearTimeout(c.timer);
       box.classList.add('loaded');
-      if (fmt() === 'win') {
-        render.addClass('mvt-win').removeClass('mvt-bg');
-      } else {
-        render.addClass('mvt-bg').removeClass('mvt-win');
-      }
+      render.addClass('mvt-win').removeClass('mvt-bg');
       render.addClass('mvt-on');
       render.find('.button--movily-sound').removeClass('mvt-row-sound-pending');
       syncRowSound(render, c.muted);
       if (!c.muted) { cmd(c, 'unMute'); cmd(c, 'setVolume', [60]); btn.classList.remove('muted'); }
     }
     function hideTrailer() {            // постер повертається
-      ambientStop(c);
       box.classList.remove('loaded');
       render.removeClass('mvt-on');
       render.removeClass('mvt-win').removeClass('mvt-bg');
@@ -483,15 +351,12 @@
       if (!d) return;
       if (d.event === 'onReady' || d.event === 'initialDelivery') { cmd(c, 'playVideo'); }
       if (d.event === 'onStateChange') {
-        if (d.info === YT_STATE.PLAYING) { showTrailer(); syncVideoBackground(c, 0, true); }
+        if (d.info === YT_STATE.PLAYING) showTrailer();
         else if (d.info === YT_STATE.ENDED) replay();
       } else if (d.event === 'infoDelivery' && d.info) {
-        ambientSync(c, d.info);
         if (typeof d.info.playerState === 'number') {
-          if (d.info.playerState === YT_STATE.PLAYING) { showTrailer(); syncVideoBackground(c, Number(d.info.currentTime) || 0, true); }
+          if (d.info.playerState === YT_STATE.PLAYING) showTrailer();
           else if (d.info.playerState === YT_STATE.ENDED) replay();
-        } else if (c.started && isFinite(Number(d.info.currentTime))) {
-          syncVideoBackground(c, Number(d.info.currentTime), true);
         }
       } else if (d.event === 'onError') {
         log('помилка плеєра ' + d.info);
@@ -507,19 +372,11 @@
       if (cur !== c) return;
       listen(frame);
     });
-    bgFrame.addEventListener('load', function () {
-      if (cur !== c) return;
-      listen(bgFrame);
-      c.bgReady = true;
-      if (c.started || c.bgSyncPending) syncVideoBackground(c, c.lastMainTime || 0, true);
-    });
     c.timer = setTimeout(function () { if (cur === c && !c.started) { log('не стартував'); next(); } }, 12000);
 
     frame.src = 'https://www.youtube-nocookie.com/embed/' + encodeURIComponent(ytId) +
       '?autoplay=1&mute=1&controls=0&disablekb=1&fs=0&iv_load_policy=3&cc_load_policy=0&rel=0&modestbranding=1&showinfo=0&autohide=1&playsinline=1&enablejsapi=1' +
       '&origin=' + encodeURIComponent(location.origin);
-    /* Фон не стартує сам: спочатку чекає PLAYING переднього плеєра. */
-    bgFrame.src = frame.src.replace('autoplay=1', 'autoplay=0');
   }
 
   /* ---------- картка фільму ---------- */
@@ -569,9 +426,6 @@
     api.addParam({ component: 'interface', param: { name: K.on, type: 'trigger', 'default': DEF[K.on] },
       field: { name: tr('on'), description: tr('on_d') },
       onChange: function (v) { if (v === false || v === 'false') { seq++; stop(); } } });
-    api.addParam({ component: 'interface', param: { name: K.fmt, type: 'select', values: { bg: tr('f_bg'), win: tr('f_win') }, 'default': DEF[K.fmt] },
-      field: { name: tr('fmt'), description: tr('fmt_d') },
-      onChange: function () { try { var a = Lampa.Activity.active(); if (a && a.activity) { seq++; stop(true); } } catch (e) {} } });
     api.addParam({ component: 'interface', param: { name: K.sound, type: 'trigger', 'default': DEF[K.sound] },
       field: { name: tr('sound'), description: tr('sound_d') } });
     api.addParam({ component: 'interface', param: { name: K.delay, type: 'select', values: { '1000': tr('d1'), '1500': tr('d15'), '3000': tr('d3'), '5000': tr('d5') }, 'default': DEF[K.delay] },
@@ -580,10 +434,9 @@
 
   function start() {
     try {
-      var flag = 'movily_defaults_v5';
+      var flag = 'movily_defaults_v6';
       if (!window.localStorage || !window.localStorage.getItem(flag)) {
         Lampa.Storage.set('movily_trailer_sound', false);
-        Lampa.Storage.set('movily_trailer_format', 'win');
         if (window.localStorage) window.localStorage.setItem(flag, '1');
       }
     } catch (e) {}
