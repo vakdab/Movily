@@ -106,6 +106,12 @@
          Сам трейлер залишається окремим видимим блоком 16:9 поверх нього. */
       '.mvt-win .mvt-amb{position:fixed;inset:-10%;width:120vw;height:120vh;z-index:0}',
       '.mvt-win .mvt-box{z-index:1}',
+      /* Дубль трейлера під основним блоком: той самий ролик, але розтягнутий,
+         розмитий і затемнений на весь екран. Керування синхронізує обидва iframe. */
+      '.mvt-video-bg{position:fixed;inset:-8%;width:116vw;height:116vh;z-index:0;overflow:hidden;pointer-events:none;opacity:0;transition:opacity .6s ease}',
+      '.mvt-video-bg iframe{position:absolute;inset:0;width:100%;height:100%;border:0;transform:scale(1.12);filter:blur(34px) saturate(1.8) brightness(.72);opacity:.9}',
+      '.mvt-on .mvt-video-bg{opacity:1}',
+      '.mvt-win .mvt-video-bg{z-index:0}',
       /* Геометрія: відео стоїть absolute від top = шапка(4.6em) і має висоту 56.25vw. Тіло картки (flex-колонка)
          починається під відео мінус «запас накладання» (22vw): лого й назва лягають на нижню частину відео. */
       'body.stv .mvt-win .full-start-new__body{min-height:0!important;align-items:flex-start!important;position:relative!important;z-index:2!important;',
@@ -235,6 +241,10 @@
         };
         if (now) rm(); else { c.box.classList.remove('loaded'); setTimeout(rm, FADE); }
       }
+      if (c.bgBox && c.bgBox.parentNode) {
+        try { c.bgFrame.src = 'about:blank'; } catch (e) {}
+        c.bgBox.parentNode.removeChild(c.bgBox);
+      }
     } catch (e) {}
     try { ambientStop(c); } catch (e) {}
     try { if (c.unScroll) c.unScroll(); } catch (e) {}
@@ -244,6 +254,10 @@
 
   function cmd(c, func, args) {
     try { c.frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: func, args: args || [] }), '*'); } catch (e) {}
+    /* Гучність змінюємо лише в передньому плеєрі, решта команд — в обох. */
+    if (c.bgFrame && ['mute', 'unMute', 'setVolume'].indexOf(func) < 0) {
+      try { c.bgFrame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: func, args: args || [] }), '*'); } catch (e) {}
+    }
   }
 
   /* ---------- скрол: трейлер їде вгору разом із контентом і плавно гасне ---------- */
@@ -372,7 +386,18 @@
     box.appendChild(frame);
     holder.insertBefore(box, bgEl ? bgEl.nextSibling : holder.firstChild);
 
-    var c = cur = { box: box, frame: frame, render: render, muted: opt(K.sound) !== true, started: false, btn: null, timer: 0, loop: 0, onMsg: null };
+    var bgBox = document.createElement('div');
+    bgBox.className = 'mvt-video-bg';
+    var bgFrame = document.createElement('iframe');
+    bgFrame.setAttribute('allow', 'autoplay; encrypted-media');
+    bgFrame.setAttribute('sandbox', 'allow-scripts allow-same-origin');
+    bgFrame.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+    bgFrame.setAttribute('tabindex', '-1');
+    bgFrame.setAttribute('aria-hidden', 'true');
+    bgBox.appendChild(bgFrame);
+    holder.insertBefore(bgBox, box);
+
+    var c = cur = { box: box, frame: frame, bgBox: bgBox, bgFrame: bgFrame, render: render, muted: opt(K.sound) !== true, started: false, btn: null, timer: 0, loop: 0, onMsg: null };
 
     bindScroll(c);
     var btn = document.createElement('div');
@@ -398,7 +423,6 @@
       c.started = true;
       clearTimeout(c.timer);
       box.classList.add('loaded');
-      ambientStart(c, ytId, holder, box);
       if (fmt() === 'win') {
         render.addClass('mvt-win').removeClass('mvt-bg');
       } else {
@@ -457,16 +481,24 @@
       }
     };
     window.addEventListener('message', c.onMsg);
+    function listen(f) {
+      try { f.contentWindow.postMessage(JSON.stringify({ event: 'listening', id: 1, channel: 'widget' }), '*'); } catch (e) {}
+      try { f.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'addEventListener', args: ['onStateChange'] }), '*'); } catch (e) {}
+    }
     frame.addEventListener('load', function () {
       if (cur !== c) return;
-      try { frame.contentWindow.postMessage(JSON.stringify({ event: 'listening', id: 1, channel: 'widget' }), '*'); } catch (e) {}
-      cmd(c, 'addEventListener', ['onStateChange']);
+      listen(frame);
+    });
+    bgFrame.addEventListener('load', function () {
+      if (cur !== c) return;
+      listen(bgFrame);
     });
     c.timer = setTimeout(function () { if (cur === c && !c.started) { log('не стартував'); next(); } }, 12000);
 
     frame.src = 'https://www.youtube-nocookie.com/embed/' + encodeURIComponent(ytId) +
       '?autoplay=1&mute=1&controls=0&disablekb=1&fs=0&iv_load_policy=3&cc_load_policy=0&rel=0&modestbranding=1&showinfo=0&autohide=1&playsinline=1&enablejsapi=1' +
       '&origin=' + encodeURIComponent(location.origin);
+    bgFrame.src = frame.src;
   }
 
   /* ---------- картка фільму ---------- */
