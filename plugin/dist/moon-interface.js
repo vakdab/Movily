@@ -13918,6 +13918,8 @@
      Раз на ~1,2 с підтягуємо фоновий плеєр до часу переднього, не чіпаючи його звук. */
   function syncVideoBackground(c, time, playing) {
     if (!c || !c.bgFrame || !isFinite(time)) return;
+    c.lastMainTime = Math.max(0, time);
+    if (!c.bgReady) { c.bgSyncPending = true; return; }
     var now = Date.now();
     if (!playing && now - (c.lastBgSync || 0) < 900) return;
     if (playing && now - (c.lastBgSync || 0) < 1200) return;
@@ -14065,7 +14067,7 @@
     bgBox.appendChild(bgFrame);
     holder.insertBefore(bgBox, box);
 
-    var c = cur = { box: box, frame: frame, bgBox: bgBox, bgFrame: bgFrame, render: render, muted: opt(K.sound) !== true, started: false, lastBgSync: 0, btn: null, timer: 0, loop: 0, onMsg: null };
+    var c = cur = { box: box, frame: frame, bgBox: bgBox, bgFrame: bgFrame, render: render, muted: opt(K.sound) !== true, started: false, bgReady: false, bgSyncPending: false, lastMainTime: 0, lastBgSync: 0, btn: null, timer: 0, loop: 0, onMsg: null };
 
     bindScroll(c);
     var btn = document.createElement('div');
@@ -14162,13 +14164,16 @@
     bgFrame.addEventListener('load', function () {
       if (cur !== c) return;
       listen(bgFrame);
+      c.bgReady = true;
+      if (c.started || c.bgSyncPending) syncVideoBackground(c, c.lastMainTime || 0, true);
     });
     c.timer = setTimeout(function () { if (cur === c && !c.started) { log('не стартував'); next(); } }, 12000);
 
     frame.src = 'https://www.youtube-nocookie.com/embed/' + encodeURIComponent(ytId) +
       '?autoplay=1&mute=1&controls=0&disablekb=1&fs=0&iv_load_policy=3&cc_load_policy=0&rel=0&modestbranding=1&showinfo=0&autohide=1&playsinline=1&enablejsapi=1' +
       '&origin=' + encodeURIComponent(location.origin);
-    bgFrame.src = frame.src;
+    /* Фон не стартує сам: спочатку чекає PLAYING переднього плеєра. */
+    bgFrame.src = frame.src.replace('autoplay=1', 'autoplay=0');
   }
 
   /* ---------- картка фільму ---------- */
