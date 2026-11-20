@@ -4657,7 +4657,10 @@
       '@media (max-width:430px){body.stv{--snack-hdr-l:calc(10px + 36px*var(--snack-hs,1) + 8px);--snack-hdr-r:calc(10px + var(--snack-dock-w,92px)*var(--snack-hs,1) + 8px)}body.stv .navigation-bar .navigation-bar__item{padding:0 8px!important;margin:0 1px!important}body.stv .navigation-bar .navigation-bar__item[data-action=back],body.stv .navigation-bar .navigation-bar__item[data-action=search]{padding:0 7px!important}body.stv .navigation-bar .navigation-bar__label{font-size:calc(14px*var(--snack-hs,1))!important;overflow:visible!important;text-overflow:clip!important}}',
       '@media (max-width:380px){body.stv .navigation-bar .navigation-bar__item{padding:0 6px!important}body.stv .navigation-bar .navigation-bar__item[data-action=back],body.stv .navigation-bar .navigation-bar__item[data-action=search]{padding:0 4px!important}body.stv .navigation-bar .navigation-bar__label{font-size:calc(13px*var(--snack-hs,1))!important}}',
       /* nothing from AgNative's own top bar may show next to Snack TV */
-      'body.stv .agnative-topnav-shell,body.stv .agnative-topnav-rightdock,body.stv #agnative-topnav-clock,body.stv .agnative-control-panel,body.stv .agnative-hero{display:none!important}'
+      'body.stv .agnative-topnav-shell,body.stv .agnative-topnav-rightdock,body.stv #agnative-topnav-clock,body.stv .agnative-control-panel,body.stv .agnative-hero{display:none!important}',
+      /* Movily uses the custom bottom dock; remove the duplicate top pill
+         (back, Home, Settings, Search) from the header. */
+      'body.stv .navigation-bar{display:none!important}'
     ].join('\n');
     (document.head || document.documentElement).appendChild(s);
   }
