@@ -74,8 +74,7 @@
       '<button data-act="back" aria-label="Назад">' + ICONS.back + '</button>' +
       '<button class="on" data-tab="Головна" data-key="main" aria-label="Головна">' + ICONS.main + '</button>' +
       '<button data-tab="Шортс" data-key="shorts" aria-label="Шортс">' + ICONS.shorts + '</button>' +
-      '<button data-tab="Пошук" data-key="search" aria-label="Пошук">' + ICONS.search + '</button>' +
-      '<button data-tab="Налаштування" data-key="settings" aria-label="Налаштування">' + ICONS.settings + '</button>';
+      '<button data-tab="Пошук" data-key="search" aria-label="Пошук">' + ICONS.search + '</button>';
     document.body.appendChild(nav);
 
     nav.querySelectorAll('button').forEach(function (b) {
