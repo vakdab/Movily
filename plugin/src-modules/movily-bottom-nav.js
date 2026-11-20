@@ -17,6 +17,7 @@
     var s = document.createElement('style');
     s.id = 'movily-bottom-nav-css';
     s.textContent = CSS +
+      '\n.navigation-bar{display:none!important}' +
       '\nbody.movily-bottom-nav-visible{padding-bottom:calc(78px + env(safe-area-inset-bottom,0px))}' +
       '\nbody.movily-bottom-nav-hidden #'+NAV_ID+'{display:none!important}' +
       '\n#'+NAV_ID+'{z-index:19;padding-bottom:calc(14px + env(safe-area-inset-bottom,0px) * .5)}';
