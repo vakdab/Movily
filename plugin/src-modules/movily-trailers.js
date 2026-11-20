@@ -13,7 +13,7 @@
   window.__movily_trailers = true;
 
   var K = { on: 'movily_trailer', sound: 'movily_trailer_sound', delay: 'movily_trailer_delay', fmt: 'movily_trailer_format' };
-  var DEF = { movily_trailer: true, movily_trailer_sound: false, movily_trailer_delay: '1500', movily_trailer_format: 'win' };
+  var DEF = { movily_trailer: true, movily_trailer_sound: false, movily_trailer_delay: '1500', movily_trailer_format: 'bg' };
   var FADE = 600;
   var DB = 'https://trailerdb.mhadifilms.workers.dev/query';
   var MAX_SEC = 240;            // довші ролики (фічерети, добірки) не беремо
@@ -95,6 +95,12 @@
       '.mvt-amb:after{content:"";position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.18),rgba(0,0,0,.55) 70%,rgba(0,0,0,.85))}',
       '.mvt-win .mvt-amb{top:calc(env(safe-area-inset-top,0px) + 4.6em - 6%);bottom:auto;height:calc(56.25vw + 24vw)}',
       '.mvt-win .mvt-sound{top:calc(env(safe-area-inset-top,0px) + 4.6em + 56.25vw - 3.4em)}',
+      /* ФОРМАТ «НА ВЕСЬ ФОН»: відео й ambient займають увесь viewport картки,
+         а не лише область позаду текстового опису. Підсвітка лишається позаду
+         інтерфейсу, але не обрізається контейнером картки. */
+      '.mvt-bg .mvt-box{position:fixed;inset:0;width:100vw;height:100vh;z-index:-1}',
+      '.mvt-bg .mvt-amb{position:fixed;inset:-10%;width:120vw;height:120vh;z-index:0}',
+      '.mvt-bg .mvt-box iframe{width:100%;height:100%}',
       /* Геометрія: відео стоїть absolute від top = шапка(4.6em) і має висоту 56.25vw. Тіло картки (flex-колонка)
          починається під відео мінус «запас накладання» (22vw): лого й назва лягають на нижню частину відео. */
       'body.stv .mvt-win .full-start-new__body{min-height:0!important;align-items:flex-start!important;position:relative!important;z-index:2!important;',
@@ -378,7 +384,11 @@
       clearTimeout(c.timer);
       box.classList.add('loaded');
       ambientStart(c, ytId, holder, box);
-      if (fmt() === 'win') render.addClass('mvt-win'); else render.removeClass('mvt-win');
+      if (fmt() === 'win') {
+        render.addClass('mvt-win').removeClass('mvt-bg');
+      } else {
+        render.addClass('mvt-bg').removeClass('mvt-win');
+      }
       render.addClass('mvt-on');
       render.find('.button--movily-sound').removeClass('mvt-row-sound-pending');
       syncRowSound(render, c.muted);
@@ -388,7 +398,7 @@
       ambientStop(c);
       box.classList.remove('loaded');
       render.removeClass('mvt-on');
-      render.removeClass('mvt-win');
+      render.removeClass('mvt-win').removeClass('mvt-bg');
       render.find('.button--movily-sound').addClass('mvt-row-sound-pending');
     }
     function replay() {                 // пауза з постером, потім трейлер знову
@@ -499,10 +509,10 @@
 
   function start() {
     try {
-      var flag = 'movily_defaults_v3';
+      var flag = 'movily_defaults_v4';
       if (!window.localStorage || !window.localStorage.getItem(flag)) {
         Lampa.Storage.set('movily_trailer_sound', false);
-        Lampa.Storage.set('movily_trailer_format', 'win');
+        Lampa.Storage.set('movily_trailer_format', 'bg');
         if (window.localStorage) window.localStorage.setItem(flag, '1');
       }
     } catch (e) {}
