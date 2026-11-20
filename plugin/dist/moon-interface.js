@@ -13752,9 +13752,10 @@
       /* ФОРМАТ «НА ВЕСЬ ФОН»: відео й ambient займають увесь viewport картки,
          а не лише область позаду текстового опису. Підсвітка лишається позаду
          інтерфейсу, але не обрізається контейнером картки. */
-      '.mvt-bg .mvt-box{position:fixed;inset:0;width:100vw;height:100vh;z-index:-1}',
-      '.mvt-bg .mvt-amb{position:fixed;inset:-10%;width:120vw;height:120vh;z-index:0}',
+      '.mvt-bg .mvt-box{position:fixed;inset:0;width:100vw;height:100vh;z-index:0}',
+      '.mvt-bg .mvt-amb{position:fixed;inset:-10%;width:120vw;height:120vh;z-index:-1}',
       '.mvt-bg .mvt-box iframe{width:100%;height:100%}',
+      '.mvt-bg .full-start__body,.mvt-bg .full-start-new__body,.mvt-bg .full-start-new__title,.mvt-bg .full-start__buttons{position:relative;z-index:2}',
       /* Геометрія: відео стоїть absolute від top = шапка(4.6em) і має висоту 56.25vw. Тіло картки (flex-колонка)
          починається під відео мінус «запас накладання» (22vw): лого й назва лягають на нижню частину відео. */
       'body.stv .mvt-win .full-start-new__body{min-height:0!important;align-items:flex-start!important;position:relative!important;z-index:2!important;',
