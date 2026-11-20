@@ -816,7 +816,7 @@
     // posters in a row: Apple's density (iPad ~6, TV ~7 on screen; phones ~3 and the edge of the next)
     // one size for posters everywhere: a row's poster is as wide as a grid's (cols(): phones 3, iPad 6,
     // TVs 7 across the screen between the side margins); a row shows the edge of the next one
-    var RP = R + ' .card:not(.card--wide)';
+    var RP = 'body.stv:not(.stv-agn-cards)' + ' .items-line .card:not(.card--wide)';
     r.push(RP + '{width:' + posterCalc(t, cols()) + ';margin-right:' + px(t.gutter) + '}');
     r.push(PHONE + RP + '{width:' + posterCalc(t, 3) + '}}');
     // (Lampa puts 1em before every card of a row: the gap is the theme's gutter only)
@@ -1017,7 +1017,7 @@
 
   // ---- poster cards (catalogs, grids, search): Apple corners, quiet captions; People tiles
   function cssPosters(c) {
-    var t = c.t, B = c.B, ease = c.ease, tv = c.tv, MOVE = c.MOVE, r = [];
+    var t = c.t, B = 'body.stv:not(.stv-agn-cards)', ease = c.ease, tv = c.tv, MOVE = c.MOVE, r = [];
     var PC = B + ' .card:not(.card--wide)';
     r.push(PC + ' .card__view{border-radius:' + px(t.cardR) + ';background:rgba(255,255,255,.07)}');
     // grids (Releases, History, Favourites, «See all», catalogs) as Home's rows: the same side margin and
@@ -1274,9 +1274,13 @@
   }
 
   // ---------- the theme on / off ----------
+  // AppleTV AGNative draws the posters (its own switch «appletv_agnative_topnav_enabled», on by default)
+  function agnOwnsCards() {
+    try { return Lampa.Storage.get('appletv_agnative_topnav_enabled', 'on') !== 'off'; } catch (e) { return true; }
+  }
   var styleEl = null, styleKey = '', started = false;
   function bodyClasses(on) {
-    var b = document.body.classList, list = ['stv', 'stv--ipad', 'stv--tv', 'stv--lite', 'stv-react', 'stv-tech', 'stv-shots', 'stv-head', 'stv-noplay', 'stv-titles'];
+    var b = document.body.classList, list = ['stv-agn-cards', 'stv', 'stv--ipad', 'stv--tv', 'stv--lite', 'stv-react', 'stv-tech', 'stv-shots', 'stv-head', 'stv-noplay', 'stv-titles'];
     list.forEach(function (c) { b.remove(c); });
     if (!on) return;
     b.add('stv'); b.add('stv--' + M);
@@ -1286,6 +1290,8 @@
     if (!opt(K.shots)) b.add('stv-shots');
     if (opt(K.head)) b.add('stv-head');
     if (opt(K.titles)) b.add('stv-titles');
+    // posters in rows/grids belong to the built-in AppleTV AGNative (its settings: size, landscape/portrait, logo, rating)
+    if (agnOwnsCards()) b.add('stv-agn-cards');
     if (noPlay()) b.add('stv-noplay');
     askServer();
   }
@@ -1339,13 +1345,13 @@
     // «Show reactions» off: no reactions row on the card
     r.push(B + '.stv-react .full-start-new__reactions,' + B + '.stv-react .full-start-new .button--reaction{display:none!important}');
     // «Titles under posters» on: the title under every poster (rows and grids), the row has room for it
-    var T2 = B + '.stv-titles .card:not(.card--wide):not(.card--collection)';
-    r.push(B + '.stv-titles.stv .card:not(.card--wide) .card__title{display:block!important;position:absolute!important;left:0;right:0;top:100%;margin-top:6px;opacity:1!important;visibility:visible!important;' +
+    var T2 = 'body.stv:not(.stv-agn-cards)' + '.stv-titles .card:not(.card--wide):not(.card--collection)';
+    r.push('body.stv:not(.stv-agn-cards)' + '.stv-titles .card:not(.card--wide) .card__title{display:block!important;position:absolute!important;left:0;right:0;top:100%;margin-top:6px;opacity:1!important;visibility:visible!important;' +
       'font-size:12px;font-weight:600;line-height:1.25;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-height:none;-webkit-line-clamp:unset;color:#fff}');
     r.push(T2 + '{margin-bottom:26px}');
     r.push(B + '.stv-titles .items-line .scroll--horizontal,' + B + '.stv-titles .items-line .scroll--horizontal .scroll__content,' + B + '.stv-titles .items-line .scroll--horizontal .scroll__body{overflow:visible}');
-    r.push(B + '.stv-titles .category-full .card:not(.card--wide),' + B + '.stv-titles .mapping--grid > .card:not(.card--wide){padding-bottom:30px!important}');
-    r.push(B + '.stv-titles .category-full .card:not(.card--wide) .card__title,' + B + '.stv-titles .mapping--grid > .card:not(.card--wide) .card__title{top:auto!important;bottom:6px}');
+    r.push('body.stv:not(.stv-agn-cards)' + '.stv-titles .category-full .card:not(.card--wide),' + 'body.stv:not(.stv-agn-cards)' + '.stv-titles .mapping--grid > .card:not(.card--wide){padding-bottom:30px!important}');
+    r.push('body.stv:not(.stv-agn-cards)' + '.stv-titles .category-full .card:not(.card--wide) .card__title,' + 'body.stv:not(.stv-agn-cards)' + '.stv-titles .mapping--grid > .card:not(.card--wide) .card__title{top:auto!important;bottom:6px}');
     el.textContent = r.join('\n');
   }
   function themeOn() { return document.body.classList.contains('stv'); }
