@@ -80,12 +80,20 @@
          Текстове лого й назва лежать ПОВЕРХ нижньої частини відео. Блок абсолютний, під час скролу
          js зсуває його разом із контентом і плавно гасить (див. bindScroll). */
       '.mvt-win .mvt-box{left:0;top:calc(env(safe-area-inset-top,0px) + 4.6em);width:100%;height:auto;aspect-ratio:16/9;z-index:1;',
-      '-webkit-mask-image:none;mask-image:none;background:#000;will-change:transform,opacity;border:0;outline:0;box-shadow:none}',
+      '-webkit-mask-image:none;mask-image:none;background:transparent;will-change:transform,opacity;border:0;outline:0;box-shadow:none}',
       '.mvt-win .mvt-box.mvt-scrolling{transition:none}',
       '.mvt-win .mvt-box iframe{left:0;top:0;width:100%;height:100%;min-width:0;min-height:0;transform:none}',
       /* поки грає: постер-фон гасне в чорне */
       '.mvt-win.mvt-on .full-start__background,.mvt-win.mvt-on .stv-own-bg,.mvt-win.mvt-on .stv-scrim{opacity:0!important}',
-      '.mvt-win.mvt-on{background:#000}',
+      '.mvt-win.mvt-on{background:transparent}',
+      /* АМБІЄНТ: розмита кольорова підсвітка за відео (кольори беруться з кадрів ролика) */
+      '.mvt-amb{position:absolute;left:-12%;right:-12%;top:-8%;bottom:-8%;z-index:0;pointer-events:none;opacity:0;overflow:hidden;transition:opacity 1.2s ease-in-out}',
+      '.mvt-amb.on{opacity:1}',
+      '.mvt-amb i{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transform:scale(1.15);',
+      '-webkit-filter:blur(46px) saturate(2.1) brightness(.85);filter:blur(46px) saturate(2.1) brightness(.85);transition:opacity 2.4s ease-in-out}',
+      '.mvt-amb i.on{opacity:1}',
+      '.mvt-amb:after{content:"";position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.18),rgba(0,0,0,.55) 70%,rgba(0,0,0,.85))}',
+      '.mvt-win .mvt-amb{top:calc(env(safe-area-inset-top,0px) + 4.6em - 6%);bottom:auto;height:calc(56.25vw + 24vw)}',
       '.mvt-win .mvt-sound{top:calc(env(safe-area-inset-top,0px) + 4.6em + 56.25vw - 3.4em)}',
       /* Геометрія: відео стоїть absolute від top = шапка(4.6em) і має висоту 56.25vw. Тіло картки (flex-колонка)
          починається під відео мінус «запас накладання» (22vw): лого й назва лягають на нижню частину відео. */
@@ -217,6 +225,7 @@
         if (now) rm(); else { c.box.classList.remove('loaded'); setTimeout(rm, FADE); }
       }
     } catch (e) {}
+    try { ambientStop(c); } catch (e) {}
     try { if (c.unScroll) c.unScroll(); } catch (e) {}
     try { if (c.btn && c.btn.parentNode) c.btn.parentNode.removeChild(c.btn); } catch (e) {}
     try { c.render.removeClass('mvt-on'); c.render.removeClass('mvt-win'); } catch (e) {}
@@ -251,6 +260,11 @@
       c.box.classList.toggle('mvt-scrolling', y > 0);
       c.box.style.transform = y ? 'translate3d(0,' + (-y) + 'px,0)' : '';
       c.box.style.opacity = y ? String(c.box.classList.contains('loaded') ? (1 - k) : 0) : '';
+      if (c.amb) {
+        c.amb.style.transition = y ? 'none' : '';
+        c.amb.style.transform = y ? 'translate3d(0,' + (-y) + 'px,0)' : '';
+        c.amb.style.opacity = y ? String(1 - k) : '';
+      }
       if (c.btn) c.btn.style.opacity = y ? String(Math.max(0, 1 - k * 2)) : '';
       var gone = k >= 1;
       if (gone && !hidden) { hidden = true; cmd(c, 'pauseVideo'); }
@@ -266,6 +280,60 @@
       document.removeEventListener('wheel', c.onScroll, true);
       if (raf) cancelAnimationFrame(raf);
     };
+  }
+
+  /* ---------- амбієнт-підсвітка за відео ---------- */
+  function ambientStop(c) {
+    if (!c || !c.amb) return;
+    clearInterval(c.ambTimer);
+    var a = c.amb; c.amb = null;
+    a.classList.remove('on');
+    setTimeout(function () { if (a.parentNode) a.parentNode.removeChild(a); }, 1400);
+  }
+  function ambientStart(c, ytId, holder, beforeEl) {
+    if (!c || c.amb || !ytId) return;
+    var urls = ['1', '2', '3', 'mqdefault'].map(function (n) {
+      return 'https://i.ytimg.com/vi/' + encodeURIComponent(ytId) + '/' + (n === 'mqdefault' ? 'mqdefault' : n) + '.jpg';
+    });
+    var ok = [], pending = urls.length;
+    urls.forEach(function (u) {
+      var im = new Image();
+      im.onload = function () {
+        /* кадр 120x90 з чорними смугами: відкидаємо майже чорні (початок ролика) */
+        try {
+          var cv = document.createElement('canvas'); cv.width = 8; cv.height = 8;
+          var cx = cv.getContext('2d'); cx.drawImage(im, 0, 0, 8, 8);
+          var d = cx.getImageData(0, 0, 8, 8).data, sum = 0;
+          for (var i = 0; i < d.length; i += 4) sum += d[i] + d[i + 1] + d[i + 2];
+          if (sum / (d.length / 4) / 3 > 14) ok.push(u);
+        } catch (e) { ok.push(u); }
+        if (!--pending) go();
+      };
+      im.onerror = function () { if (!--pending) go(); };
+      im.src = u;
+    });
+    function go() {
+      if (cur !== c || c.amb || !ok.length) return;
+      var amb = document.createElement('div');
+      amb.className = 'mvt-amb';
+      var layers = ok.map(function (u) {
+        var i = document.createElement('i');
+        i.style.backgroundImage = 'url("' + u + '")';
+        amb.appendChild(i); return i;
+      });
+      holder.insertBefore(amb, beforeEl || holder.firstChild);
+      c.amb = amb;
+      var k = 0;
+      layers[0].classList.add('on');
+      requestAnimationFrame(function () { amb.classList.add('on'); });
+      if (layers.length > 1) {
+        c.ambTimer = setInterval(function () {
+          layers[k].classList.remove('on');
+          k = (k + 1) % layers.length;
+          layers[k].classList.add('on');
+        }, 4000);
+      }
+    }
   }
 
   function play(render, ids, holder, bgEl) {
@@ -309,6 +377,7 @@
       c.started = true;
       clearTimeout(c.timer);
       box.classList.add('loaded');
+      ambientStart(c, ytId, holder, box);
       if (fmt() === 'win') render.addClass('mvt-win'); else render.removeClass('mvt-win');
       render.addClass('mvt-on');
       render.find('.button--movily-sound').removeClass('mvt-row-sound-pending');
@@ -316,6 +385,7 @@
       if (!c.muted) { cmd(c, 'unMute'); cmd(c, 'setVolume', [60]); btn.classList.remove('muted'); }
     }
     function hideTrailer() {            // постер повертається
+      ambientStop(c);
       box.classList.remove('loaded');
       render.removeClass('mvt-on');
       render.removeClass('mvt-win');
