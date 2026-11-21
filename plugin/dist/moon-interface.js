@@ -4719,6 +4719,11 @@
       'body.stv .navigation-bar .navigation-bar__item[data-action=search]:before{left:-3px!important}',
       'body.stv .navigation-bar .navigation-bar__label{font-size:13px!important}',
       '}',
+      /* Reference size: the old menu used width:min(290px, calc(100% - 24px)). Keep the top capsule at that
+         same fixed size instead of shrinking it to the gap between the side controls. */
+      'body.stv .navigation-bar{left:50%!important;right:auto!important;width:min(290px,calc(100vw - 24px))!important;transform:translateX(-50%)!important}',
+      'body.stv .navigation-bar .navigation-bar__body{width:100%!important;max-width:none!important;box-sizing:border-box!important}',
+      '@media (orientation:landscape){body.stv .navigation-bar{left:50%!important;right:auto!important;width:min(290px,calc(100vw - 24px))!important;transform:translateX(-50%)!important}}',
       /* PHONE: take the full strip between the burger and the clock/profile (gaps 6px), so all five items fit */
       '@media (max-width:600px){body.stv{--snack-hdr-l:calc(12px + 36px*var(--snack-hs,1) + 5px);--snack-hdr-r:calc(12px + var(--snack-dock-w,73px)*var(--snack-hs,1) + 5px)}}',
       /* header buttons (burger, clock/profile) at the same vertical centre as the 46px capsule */
