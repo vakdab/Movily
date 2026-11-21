@@ -127,6 +127,25 @@
       'body.stv .navigation-bar{left:50%!important;right:auto!important;width:min(290px,calc(100vw - 24px))!important;transform:translateX(-50%)!important}',
       'body.stv .navigation-bar .navigation-bar__body{width:100%!important;max-width:none!important;box-sizing:border-box!important}',
       '@media (orientation:landscape){body.stv .navigation-bar{left:50%!important;right:auto!important;width:min(290px,calc(100vw - 24px))!important;transform:translateX(-50%)!important}}',
+      /* COMPACT PHONE REFERENCE: the supplied screenshot uses a 205px x 29px capsule. The side buttons stay
+         outside it. Main and Settings are text tabs, Back and Search remain icon-only. */
+      '@media (max-width:600px){body.stv .navigation-bar{width:205px!important;max-width:calc(100vw - 24px)!important}',
+      'body.stv .navigation-bar .navigation-bar__body{height:29px!important;min-height:29px!important;padding:0 4px!important;border-radius:15px!important;gap:1px!important;overflow-x:auto!important;overflow-y:hidden!important}',
+      'body.stv .navigation-bar .navigation-bar__item{height:25px!important;border-radius:13px!important}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=back]{width:27px!important;height:27px!important;flex:0 0 27px!important}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=back] .navigation-bar__icon,body.stv .navigation-bar .navigation-bar__item[data-action=search] .navigation-bar__icon{width:17px!important;height:17px!important;margin:0!important}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=main],body.stv .navigation-bar .navigation-bar__item[data-action=settings]{height:25px!important;padding:0 8px!important;flex:0 0 auto!important;gap:0!important}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=main] .navigation-bar__label,body.stv .navigation-bar .navigation-bar__item[data-action=settings] .navigation-bar__label{display:block!important}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=main]:not(.mv-active) .navigation-bar__label,body.stv .navigation-bar .navigation-bar__item[data-action=settings]:not(.mv-active) .navigation-bar__label{display:block!important}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=main]:not(.mv-active),body.stv .navigation-bar .navigation-bar__item[data-action=settings]:not(.mv-active){width:auto!important;max-width:none!important;padding:0 8px!important;justify-content:center}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=main] .navigation-bar__icon,body.stv .navigation-bar .navigation-bar__item[data-action=settings] .navigation-bar__icon{display:none!important}',
+      'body.stv .navigation-bar .navigation-bar__label{font-size:13px!important;line-height:25px!important}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=shorts]{width:27px!important;padding:0!important;flex:0 0 27px!important;justify-content:center}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=shorts] .navigation-bar__label{display:none!important}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=shorts] .navigation-bar__icon{width:16px!important;height:16px!important;margin:0!important}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=search]{width:27px!important;margin-left:3px!important;padding:0!important;flex:0 0 27px!important;position:sticky!important;right:0!important;z-index:3;background:var(--mv-cap)!important}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=search]:before{left:-2px!important;height:17px!important;margin-top:-8px!important}',
+      '}',
       /* PHONE: take the full strip between the burger and the clock/profile (gaps 6px), so all five items fit */
       '@media (max-width:600px){body.stv{--snack-hdr-l:calc(12px + 36px*var(--snack-hs,1) + 5px);--snack-hdr-r:calc(12px + var(--snack-dock-w,73px)*var(--snack-hs,1) + 5px)}}',
       /* header buttons (burger, clock/profile) at the same vertical centre as the 46px capsule */
