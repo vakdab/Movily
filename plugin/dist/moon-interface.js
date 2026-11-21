@@ -4759,24 +4759,12 @@
       'body.stv .navigation-bar .navigation-bar__item[data-action=search]:before{left:-2px!important;height:17px!important;margin-top:-8px!important}',
       '}',
       /* PHONE: take the full strip between the burger and the clock/profile (gaps 6px), so all five items fit */
-      '@media (max-width:600px){body.stv{--snack-hdr-l:calc(10px + 36px*var(--snack-hs,1) + 8px);--snack-hdr-r:calc(10px + var(--snack-dock-w,92px)*var(--snack-hs,1) + 8px)}}',
+      '@media (max-width:600px){body.stv{--snack-hdr-l:calc(12px + 36px*var(--snack-hs,1) + 5px);--snack-hdr-r:calc(12px + var(--snack-dock-w,73px)*var(--snack-hs,1) + 5px)}}',
       /* header buttons (burger, clock/profile) at the same vertical centre as the 46px capsule */
       'body.stv.true--mobile .head__menu-icon,body.stv .head__menu-icon{top:calc(env(safe-area-inset-top,0px) + 2em - 14px*var(--snack-hs,1))!important}',
       '#' + DOCK_ID + '{top:calc(env(safe-area-inset-top,0px) + 2em - 14px*var(--snack-hs,1))}',
       'body.stv.orientation--landscape .navigation-bar .navigation-bar__body{top:-23px!important}',
       '@media (max-width:430px){body.stv .navigation-bar .navigation-bar__item,body.stv .navigation-bar .navigation-bar__item[data-action=main],body.stv .navigation-bar .navigation-bar__item[data-action=settings]{padding:0 8px!important;gap:5px}body.stv .navigation-bar .navigation-bar__icon,body.stv .navigation-bar .navigation-bar__icon svg{width:17px!important;height:17px!important}body.stv .navigation-bar .navigation-bar__item[data-action=search]{width:32px!important;margin-left:6px!important}body.stv .navigation-bar .navigation-bar__item[data-action=back],body.stv .navigation-bar .navigation-bar__item[data-action=search]{padding:0!important}body.stv .navigation-bar .navigation-bar__label{font-size:13px!important}}',
-      /* Keep the mobile capsule inside the real space between the logo and the measured clock/profile dock. */
-      '@media (max-width:600px){body.stv .navigation-bar{left:var(--snack-hdr-l)!important;right:var(--snack-hdr-r)!important;width:auto!important;max-width:none!important;transform:none!important}',
-      'body.stv .navigation-bar .navigation-bar__body{width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important;gap:2px!important;padding:0 3px!important}',
-      /* Only the selected destination needs a label on phones; the other destinations stay available as clear icons. */
-      'body.stv .navigation-bar .navigation-bar__item[data-action=main]:not(.mv-active) .navigation-bar__label,body.stv .navigation-bar .navigation-bar__item[data-action=settings]:not(.mv-active) .navigation-bar__label{display:none!important}',
-      'body.stv .navigation-bar .navigation-bar__item[data-action=main]:not(.mv-active),body.stv .navigation-bar .navigation-bar__item[data-action=settings]:not(.mv-active){width:27px!important;max-width:27px!important;padding:0!important;flex:0 0 27px!important;justify-content:center!important}',
-      'body.stv .navigation-bar .navigation-bar__item[data-action=main] .navigation-bar__icon,body.stv .navigation-bar .navigation-bar__item[data-action=settings] .navigation-bar__icon{display:block!important;width:17px!important;height:17px!important;margin:0!important}',
-      'body.stv .navigation-bar .navigation-bar__item[data-action=main].mv-active .navigation-bar__icon,body.stv .navigation-bar .navigation-bar__item[data-action=settings].mv-active .navigation-bar__icon{display:none!important}',
-      'body.stv .navigation-bar .navigation-bar__item[data-action=main].mv-active,body.stv .navigation-bar .navigation-bar__item[data-action=settings].mv-active{width:auto!important;max-width:none!important;padding:0 8px!important;flex:0 0 auto!important}',
-      'body.stv .navigation-bar .navigation-bar__item[data-action=search]{width:27px!important;margin-left:4px!important;flex:0 0 27px!important}',
-      'body.stv .navigation-bar .navigation-bar__item[data-action=back]{width:27px!important;flex:0 0 27px!important}',
-      '}',
       ''
     ].join('\n');
     (document.head || document.documentElement).appendChild(s);
