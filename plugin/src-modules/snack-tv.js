@@ -338,10 +338,17 @@
     if (n > 50) el.classList.add('stv-tl-xlong'); else if (n > 26) el.classList.add('stv-tl-long');
   }
   function textTitle(m) { return String((m && (m.title || m.name || m.original_title || m.original_name)) || '').trim(); }
+  function appendTextLogo(box, m) {
+    if (box.textContent.trim()) return;
+    var fallback = document.createElement('span');
+    fallback.className = 'stv-text-logo';
+    fallback.textContent = textTitle(m);
+    if (fallback.textContent) box.appendChild(fallback);
+  }
   // a logo picture; until it loads (or without one) the title text stays — no empty box, no "□□□".
   // wanted(): whether the box still wants it; without it, whether the box is on the page — a box filled
   // before it is put on the page (the banner from cached data) must pass wanted, or it keeps its text
-  function logoInto(box, m, size, cls, mark, wanted) {
+  function logoInto(box, m, size, cls, mark, wanted, posterFallback, logoLoaded) {
     cls = cls || 'stv-logo';
     // Reserve the final logo/title geometry before the remote logo arrives.
     // Without this class the title is first rendered as a large text block and
@@ -351,11 +358,9 @@
       // (two asks in flight for one box — a slide shown, left and shown again — one picture)
       if (!p || (wanted ? !wanted() : !inDoc(box)) || box.querySelector('img.' + cls)) {
         box.classList.remove('stv-logo-pending');
-        if (!p && !(wanted && !wanted()) && !box.textContent.trim()) {
-          var fallback = document.createElement('span');
-          fallback.className = 'stv-text-logo';
-          fallback.textContent = textTitle(m);
-          if (fallback.textContent) box.appendChild(fallback);
+        if (!p && !(wanted && !wanted())) {
+          var fromPoster = posterFallback && posterFallback();
+          if (!fromPoster) appendTextLogo(box, m);
         }
         return;
       }
@@ -366,10 +371,15 @@
         var target = mark || box;
         target.classList.add('stv-has-logo');
         target.classList.remove('stv-logo-pending');
+        if (logoLoaded && !(wanted && !wanted())) logoLoaded(im);
       };
       im.onerror = function () {
         box.classList.remove('stv-logo-pending');
         if (im.parentNode) im.parentNode.removeChild(im);
+        if (!(wanted ? !wanted() : !inDoc(box))) {
+          var fromPoster = posterFallback && posterFallback();
+          if (!fromPoster) appendTextLogo(box, m);
+        }
       };
       im.src = img(p, size);
       box.appendChild(im);
@@ -1575,11 +1585,12 @@
     render.addClass('stv-full');
     // scrim over the backdrop
     var bg = render.find('.full-start__background').first();
+    var ownPosterBg = null;
     // Lampa draws no background picture on screens under 790 px (phones): the theme adds one in the same
     // place, so the page has its picture and «Трейлеры» its spot for the background trailer
     if (!bg.length) {
       var holder0 = start.closest('.scroll').parent();
-      var path = portrait() && movie.poster_path ? cleanPoster(movie) : movie.backdrop_path;
+      var path = portrait() && movie.poster_path ? movie.poster_path : movie.backdrop_path;
       if (holder0.length && path) {
         var own = new Image();
         var isPoster = path !== movie.backdrop_path;
@@ -1588,6 +1599,7 @@
         own.onload = function () { own.classList.add('loaded'); };
         own.src = img(path, isPoster ? tmdbSize('poster', window.innerWidth) : tmdbSize('backdrop', window.innerWidth));
         holder0.prepend(own);
+        if (isPoster) ownPosterBg = own;
         bg = $(own);
       }
     }
@@ -1598,8 +1610,17 @@
     // logo instead of the text title
     var title = start.find('.full-start-new__title').first();
     if (title.length && !title.find('.stv-logo').length) {
+      title[0].style.display = '';
       titleLen(title[0], title.text());
-      logoInto(title[0], movie, tmdbSize('logo', T[M].logoW * k));
+      logoInto(title[0], movie, tmdbSize('logo', T[M].logoW * k), null, null, null, function () {
+        if (!portrait() || !ownPosterBg || !movie.poster_path) return false;
+        title[0].style.display = 'none';
+        return true;
+      }, function () {
+        if (!portrait() || !ownPosterBg || !movie.poster_path) return;
+        var clean = cleanPoster(movie);
+        if (clean && clean !== movie.poster_path) ownPosterBg.src = img(clean, tmdbSize('poster', window.innerWidth));
+      });
     }
     // meta line + description above the rate line
     var right = start.find('.full-start-new__right').first();
@@ -2359,7 +2380,7 @@
   }
   function cardLogo(el) {
     var view = el.querySelector('.card__view'), d = el.card_data || el.stv_data;
-    if (view && d && !view.querySelector('.stv-card-logo')) logoInto(view, d, tmdbSize('logo', view.offsetWidth * 0.58), 'stv-card-logo', el);
+    if (view && d && !view.querySelector('.stv-card-logo')) logoInto(view, d, tmdbSize('logo', view.offsetWidth * 0.58), 'stv-card-logo', el, null, function () { return !!d.poster_path; });
   }
   function watchCard(el) {
     if (!cardIO && window.IntersectionObserver) {
@@ -2610,7 +2631,7 @@
       if (!it.img) {
         var box = document.createElement('div'); box.className = 'stv-hero__slide';
         var im = new Image(); im.alt = '';
-        if (portrait() && it.d.poster_path) { im.src = img(it.full ? cleanPoster(it.full) : it.d.poster_path, tmdbSize('poster', window.innerWidth)); box.classList.add('stv-hero__slide--poster'); }
+        if (portrait() && it.d.poster_path) { im.src = img(it.d.poster_path, tmdbSize('poster', window.innerWidth)); box.classList.add('stv-hero__slide--poster'); }
         else im.src = img(it.d.backdrop_path, tmdbSize('backdrop', window.innerWidth));
         box.appendChild(im); slides.appendChild(box); it.img = box;
       }
@@ -2621,9 +2642,21 @@
         if (item !== cur()) return;
         var t = info.querySelector('.stv-hero__title');
         t.className = 'stv-hero__title';
+        t.style.display = '';
         t.textContent = textTitle(d);
         titleLen(t, t.textContent);
-        logoInto(t, d, tmdbSize('logo', T[M].logoW * k), null, null, function () { return alive && item === cur(); });
+        logoInto(t, d, tmdbSize('logo', T[M].logoW * k), null, null, function () { return alive && item === cur(); }, function () {
+          if (!portrait() || !d.poster_path || !item.img || item !== cur()) return false;
+          var posterImg = item.img.querySelector('img');
+          if (!posterImg) return false;
+          posterImg.src = img(d.poster_path, tmdbSize('poster', window.innerWidth));
+          t.style.display = 'none';
+          return true;
+        }, function () {
+          if (!portrait() || !d.poster_path || !item.img || item !== cur()) return;
+          var posterImg = item.img.querySelector('img'), clean = cleanPoster(d);
+          if (posterImg && clean && clean !== d.poster_path) posterImg.src = img(clean, tmdbSize('poster', window.innerWidth));
+        });
         var meta = [esc(kindLabel(d))];
         (d.genres || []).slice(0, 2).forEach(function (x) { meta.push(esc(capFirst(x.name))); });
         var y = yearOf(d); if (y) meta.push(esc(y));
