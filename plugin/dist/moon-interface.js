@@ -9785,7 +9785,7 @@
         // --- restored from the original AppleTV AGNative: poster / card styles (landscape + portrait, size, logo) ---
         'body.' + BODY_CLASS + ' .items-line--type-default { min-height:auto !important; padding-top:0 !important; padding-bottom:.12em !important; margin-bottom:.32em !important; transition:transform .35s cubic-bezier(.22,.61,.36,1) !important; }',
         'body.' + BODY_CLASS + ' .items-line.layer--visible.layer--render.items-line--type-default { padding-top:0 !important; }',
-        'body.' + BODY_CLASS + ' .items-line--type-default .items-line__head { margin-bottom:1.1em !important; min-height:auto !important; padding-top:0 !important; padding-bottom:.45em !important; padding-left:2.5em !important; padding-right:2.5em !important; font-size:1em !important; }',
+        'body.' + BODY_CLASS + ' .items-line--type-default .items-line__head { margin-bottom:1.1em !important; min-height:auto !important; padding-top:0 !important; padding-bottom:.45em !important;  font-size:1em !important; }',
         'body.' + BODY_CLASS + ' .items-line__more.selector { font-size:.7em !important; padding:.3em .6em !important; opacity:.85 !important; }',
         'body.' + BODY_CLASS + ' .items-line--type-default .items-cards { padding-top:0 !important; padding-left:2.5em !important; padding-right:2.5em !important; font-size:.86em !important; }',
         'body.' + BODY_CLASS + ' .items-cards { padding-left:1.05em !important; padding-right:1.05em !important; gap:.62em !important; }',
