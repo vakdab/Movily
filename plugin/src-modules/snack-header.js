@@ -110,6 +110,12 @@
       'body.stv .navigation-bar .navigation-bar__item[data-action=search].stv-on,body.stv.search--open .navigation-bar .navigation-bar__item[data-action=search]{background:var(--mv-chip)!important}',
       'body.stv .navigation-bar .navigation-bar__item[data-action=main]{margin-left:2px!important}',
       'body.stv .navigation-bar .navigation-bar__item[data-action=settings]{margin-right:6px!important}',
+      /* PHONE: the strip between the burger and the clock is ~250px, so the inactive tabs show only the icon and the
+         active tab also shows its label (Home, Shorts, Settings, Search all fit without overlapping). */
+      '@media (max-width:600px){',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=main]:not(.mv-active) .navigation-bar__label,body.stv .navigation-bar .navigation-bar__item[data-action=settings]:not(.mv-active) .navigation-bar__label,body.stv .navigation-bar .navigation-bar__item[data-action=shorts]:not(.mv-on) .navigation-bar__label{display:none!important}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=main]:not(.mv-active),body.stv .navigation-bar .navigation-bar__item[data-action=settings]:not(.mv-active),body.stv .navigation-bar .navigation-bar__item[data-action=shorts]:not(.mv-on){width:34px;padding:0!important;justify-content:center}',
+      '}',
       /* header buttons (burger, clock/profile) at the same vertical centre as the 46px capsule */
       'body.stv.true--mobile .head__menu-icon,body.stv .head__menu-icon{top:calc(env(safe-area-inset-top,0px) + 2em - 14px*var(--snack-hs,1))!important}',
       '#' + DOCK_ID + '{top:calc(env(safe-area-inset-top,0px) + 2em - 14px*var(--snack-hs,1))}',
