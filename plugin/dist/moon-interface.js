@@ -1380,22 +1380,6 @@
     list.forEach(function (p) { if (!p.iso_639_1 && (!best || (p.vote_average || 0) > (best.vote_average || 0))) best = p; });
     return best ? best.file_path : m.poster_path;
   }
-  // A title-bearing poster for a card when TMDB has no separate logo.
-  function titlePoster(m) {
-    var list = (m.images && m.images.posters) || [], langs = logoLangs(), best = null, i, j;
-    for (i = 0; i < langs.length; i++) {
-      best = null;
-      for (j = 0; j < list.length; j++) {
-        if (list[j].iso_639_1 === langs[i] && list[j].file_path && (!best || (list[j].vote_average || 0) > (best.vote_average || 0))) best = list[j];
-      }
-      if (best) return best.file_path;
-    }
-    if (m.poster_path) return m.poster_path;
-    for (j = 0; j < list.length; j++) {
-      if (list[j].iso_639_1 && list[j].file_path && (!best || (list[j].vote_average || 0) > (best.vote_average || 0))) best = list[j];
-    }
-    return best ? best.file_path : '';
-  }
   function kindLabel(m) { return tr(kindOf(m) === 'tv' ? 'serial' : 'movie'); }
   function yearOf(m) { return String(m.release_date || m.first_air_date || '').slice(0, 4); }
   function runtimeText(min) {
@@ -3500,24 +3484,9 @@
     if (!cardIO) return;
     watched = watched.filter(function (el) { if (!gone(el)) return true; cardIO.unobserve(el); return false; });
   }
-  function cardPosterFallback(view, d) {
-    var path = titlePoster(d), im = view && view.querySelector('.card__img');
-    if (!path || !im) return false;
-    var url = /^(https?:|\/\/|data:)/i.test(path) ? path : img(path, tmdbSize('poster', view.offsetWidth));
-    if (!url) return false;
-    if (im.tagName === 'IMG') {
-      if (im.getAttribute('data-stv-poster-title') !== url) {
-        im.setAttribute('data-stv-poster-title', url);
-        if (im.getAttribute('src') !== url) im.src = url;
-      }
-    } else {
-      im.style.backgroundImage = 'url("' + url.replace(/"/g, '%22') + '")';
-    }
-    return true;
-  }
   function cardLogo(el) {
     var view = el.querySelector('.card__view'), d = el.card_data || el.stv_data;
-    if (view && d && !view.querySelector('.stv-card-logo')) logoInto(view, d, tmdbSize('logo', view.offsetWidth * 0.58), 'stv-card-logo', el, null, function () { return cardPosterFallback(view, d); });
+    if (view && d && !view.querySelector('.stv-card-logo')) logoInto(view, d, tmdbSize('logo', view.offsetWidth * 0.58), 'stv-card-logo', el);
   }
   function watchCard(el) {
     if (!cardIO && window.IntersectionObserver) {
