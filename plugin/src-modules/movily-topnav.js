@@ -53,7 +53,7 @@
     s.textContent = [
       'body.stv .navigation-bar .navigation-bar__item[data-action=shorts]{order:2}',
       'body.stv .navigation-bar .navigation-bar__item[data-action=settings]{order:3}',
-      'body.stv .navigation-bar .navigation-bar__item[data-action=shorts].mv-on{background:transparent!important;color:#fff!important}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=shorts].mv-on{background:var(--mv-chip,rgba(255,255,255,.17))!important;color:#fff!important}',
       /* while Shorts is open, Home is not highlighted */
       'body.stv.mv-at-shorts .navigation-bar .navigation-bar__item[data-action=main]{background:transparent!important;color:var(--mv-dim,rgba(255,255,255,.62))!important}'
     ].join('\n');
