@@ -106,7 +106,7 @@
       'body.stv .navigation-bar .navigation-bar__item[data-action=main] .navigation-bar__icon,body.stv .navigation-bar .navigation-bar__item[data-action=settings] .navigation-bar__icon{margin:0!important}',
       /* the tabs scroll between the pinned Back (left) and Search (right), like the reference rail */
       'body.stv .navigation-bar .navigation-bar__item[data-action=back]{position:sticky!important;left:0;z-index:2;background:var(--mv-cap)!important}',
-      'body.stv .navigation-bar .navigation-bar__item[data-action=search]{position:sticky!important;right:0;z-index:2;background:var(--mv-cap)!important}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=search]{position:relative!important;z-index:2;order:9!important}',
       'body.stv .navigation-bar .navigation-bar__item[data-action=search].stv-on,body.stv.search--open .navigation-bar .navigation-bar__item[data-action=search]{background:var(--mv-chip)!important}',
       'body.stv .navigation-bar .navigation-bar__item[data-action=main]{margin-left:2px!important}',
       'body.stv .navigation-bar .navigation-bar__item[data-action=settings]{margin-right:6px!important}',
@@ -114,13 +114,21 @@
          active tab also shows its label (Home, Shorts, Settings, Search all fit without overlapping). */
       '@media (max-width:600px){',
       'body.stv .navigation-bar .navigation-bar__item[data-action=main]:not(.mv-active) .navigation-bar__label,body.stv .navigation-bar .navigation-bar__item[data-action=settings]:not(.mv-active) .navigation-bar__label,body.stv .navigation-bar .navigation-bar__item[data-action=shorts]:not(.mv-on) .navigation-bar__label{display:none!important}',
-      'body.stv .navigation-bar .navigation-bar__item[data-action=main]:not(.mv-active),body.stv .navigation-bar .navigation-bar__item[data-action=settings]:not(.mv-active),body.stv .navigation-bar .navigation-bar__item[data-action=shorts]:not(.mv-on){width:34px;padding:0!important;justify-content:center}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=main]:not(.mv-active),body.stv .navigation-bar .navigation-bar__item[data-action=settings]:not(.mv-active),body.stv .navigation-bar .navigation-bar__item[data-action=shorts]:not(.mv-on){width:30px;padding:0!important;justify-content:center}',
+      'body.stv .navigation-bar .navigation-bar__body{gap:1px!important;padding:0 3px!important}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=back]{width:30px!important;height:30px!important}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=main].mv-active,body.stv .navigation-bar .navigation-bar__item[data-action=settings].mv-active{padding:0 9px!important;gap:4px}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=search]{margin-left:4px!important;width:30px!important}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=search]:before{left:-3px!important}',
+      'body.stv .navigation-bar .navigation-bar__label{font-size:13px!important}',
       '}',
+      /* PHONE: take the full strip between the burger and the clock/profile (gaps 6px), so all five items fit */
+      '@media (max-width:600px){body.stv{--snack-hdr-l:calc(12px + 36px*var(--snack-hs,1) + 5px);--snack-hdr-r:calc(12px + var(--snack-dock-w,73px)*var(--snack-hs,1) + 5px)}}',
       /* header buttons (burger, clock/profile) at the same vertical centre as the 46px capsule */
       'body.stv.true--mobile .head__menu-icon,body.stv .head__menu-icon{top:calc(env(safe-area-inset-top,0px) + 2em - 14px*var(--snack-hs,1))!important}',
       '#' + DOCK_ID + '{top:calc(env(safe-area-inset-top,0px) + 2em - 14px*var(--snack-hs,1))}',
       'body.stv.orientation--landscape .navigation-bar .navigation-bar__body{top:-23px!important}',
-      '@media (max-width:430px){body.stv .navigation-bar .navigation-bar__item,body.stv .navigation-bar .navigation-bar__item[data-action=main],body.stv .navigation-bar .navigation-bar__item[data-action=settings]{padding:0 8px!important;gap:5px}body.stv .navigation-bar .navigation-bar__icon,body.stv .navigation-bar .navigation-bar__icon svg{width:17px!important;height:17px!important}body.stv .navigation-bar .navigation-bar__item[data-action=search]{width:32px!important;margin-left:7px!important}body.stv .navigation-bar .navigation-bar__item[data-action=back],body.stv .navigation-bar .navigation-bar__item[data-action=search]{padding:0!important}body.stv .navigation-bar .navigation-bar__label{font-size:13px!important}}',
+      '@media (max-width:430px){body.stv .navigation-bar .navigation-bar__item,body.stv .navigation-bar .navigation-bar__item[data-action=main],body.stv .navigation-bar .navigation-bar__item[data-action=settings]{padding:0 8px!important;gap:5px}body.stv .navigation-bar .navigation-bar__icon,body.stv .navigation-bar .navigation-bar__icon svg{width:17px!important;height:17px!important}body.stv .navigation-bar .navigation-bar__item[data-action=search]{width:32px!important;margin-left:6px!important}body.stv .navigation-bar .navigation-bar__item[data-action=back],body.stv .navigation-bar .navigation-bar__item[data-action=search]{padding:0!important}body.stv .navigation-bar .navigation-bar__label{font-size:13px!important}}',
       ''
     ].join('\n');
     (document.head || document.documentElement).appendChild(s);
