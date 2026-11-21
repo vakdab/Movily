@@ -82,7 +82,39 @@
       '@media (max-width:380px){body.stv .navigation-bar .navigation-bar__item{padding:0 6px!important}body.stv .navigation-bar .navigation-bar__item[data-action=back],body.stv .navigation-bar .navigation-bar__item[data-action=search]{padding:0 4px!important}body.stv .navigation-bar .navigation-bar__label{font-size:calc(13px*var(--snack-hs,1))!important}}',
       /* nothing from AgNative's own top bar may show next to Snack TV */
       'body.stv .agnative-topnav-shell,body.stv .agnative-topnav-rightdock,body.stv #agnative-topnav-clock,body.stv .agnative-control-panel,body.stv .agnative-hero{display:none!important}',
-      /* The centered navigation pill is the primary Movily navigation. */
+      /* The centered navigation pill is the primary Movily navigation. Final look = the reference mockup:
+         dark glass capsule 46px high, 32px round items, 14px/600 labels, dim inactive text, white active text on a
+         light chip, a thin divider before the round search button. Declared last so it wins over the rules above. */
+      'body.stv{--mv-cap:rgba(28,28,31,.8);--mv-edge:rgba(255,255,255,.14);--mv-chip:rgba(255,255,255,.17);--mv-dim:rgba(255,255,255,.62)}',
+      'body.stv .navigation-bar{top:calc(env(safe-area-inset-top,0px) + 2em + 5px)!important}',
+      'body.stv .navigation-bar .navigation-bar__body{height:46px!important;padding:0 6px 0 4px!important;gap:4px;border-radius:23px!important;background:var(--mv-cap)!important;border:1.5px solid var(--mv-edge)!important;box-shadow:0 10px 30px rgba(0,0,0,.4)!important;-webkit-backdrop-filter:blur(16px) saturate(1.4)!important;backdrop-filter:blur(16px) saturate(1.4)!important;position:static!important;overflow-x:auto!important;overflow-y:hidden!important;scrollbar-width:none;-webkit-overflow-scrolling:touch;justify-content:flex-start}',
+      'body.stv .navigation-bar .navigation-bar__body::-webkit-scrollbar{display:none}',
+      'body.stv .navigation-bar .navigation-bar__item{height:32px!important;padding:0 13px!important;margin:0!important;border-radius:16px!important;background:transparent!important;color:var(--mv-dim)!important;display:flex!important;align-items:center!important;gap:7px;flex:none!important;font-weight:600}',
+      'body.stv .navigation-bar .navigation-bar__label{font-size:14px!important;font-weight:600!important;margin:0!important;overflow:visible!important;text-overflow:clip!important}',
+      'body.stv .navigation-bar .navigation-bar__icon{display:block!important;width:18px!important;height:18px!important;margin:0!important;flex:none}',
+      'body.stv .navigation-bar .navigation-bar__icon svg{width:18px!important;height:18px!important;fill:currentColor}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=back]{order:-1;width:34px;height:34px!important;padding:0!important;justify-content:center;border-radius:17px!important;color:#fff!important}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=back] .navigation-bar__label,body.stv .navigation-bar .navigation-bar__item[data-action=search] .navigation-bar__label{display:none!important}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=main]{order:1}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=settings]{order:2}',
+      /* divider + round search button, fixed on the right */
+      'body.stv .navigation-bar .navigation-bar__item[data-action=search]{order:4;width:38px;padding:0!important;justify-content:center;margin:0 0 0 9px!important;border-left:0!important;position:relative;color:var(--mv-dim)!important}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=search]:before{content:"";position:absolute;left:-5px;top:50%;width:1px;height:20px;margin-top:-10px;background:var(--mv-edge)}',
+      'body.stv .navigation-bar .navigation-bar__item:active,body.stv .navigation-bar .navigation-bar__item.focus{background:var(--mv-chip)!important;transform:scale(.94)}',
+      'body.stv.stv-at-main:not(.settings--open):not(.search--open) .navigation-bar .navigation-bar__item[data-action=main],body.stv.settings--open .navigation-bar .navigation-bar__item[data-action=settings],body.stv.search--open .navigation-bar .navigation-bar__item[data-action=search]{background:var(--mv-chip)!important;color:#fff!important}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=main],body.stv .navigation-bar .navigation-bar__item[data-action=settings]{padding:0 11px!important}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=main] .navigation-bar__icon,body.stv .navigation-bar .navigation-bar__item[data-action=settings] .navigation-bar__icon{margin:0!important}',
+      /* the tabs scroll between the pinned Back (left) and Search (right), like the reference rail */
+      'body.stv .navigation-bar .navigation-bar__item[data-action=back]{position:sticky!important;left:0;z-index:2;background:var(--mv-cap)!important}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=search]{position:sticky!important;right:0;z-index:2;background:var(--mv-cap)!important}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=search].stv-on,body.stv.search--open .navigation-bar .navigation-bar__item[data-action=search]{background:var(--mv-chip)!important}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=main]{margin-left:2px!important}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=settings]{margin-right:6px!important}',
+      /* header buttons (burger, clock/profile) at the same vertical centre as the 46px capsule */
+      'body.stv.true--mobile .head__menu-icon,body.stv .head__menu-icon{top:calc(env(safe-area-inset-top,0px) + 2em - 14px*var(--snack-hs,1))!important}',
+      '#' + DOCK_ID + '{top:calc(env(safe-area-inset-top,0px) + 2em - 14px*var(--snack-hs,1))}',
+      'body.stv.orientation--landscape .navigation-bar .navigation-bar__body{top:-23px!important}',
+      '@media (max-width:430px){body.stv .navigation-bar .navigation-bar__item,body.stv .navigation-bar .navigation-bar__item[data-action=main],body.stv .navigation-bar .navigation-bar__item[data-action=settings]{padding:0 8px!important;gap:5px}body.stv .navigation-bar .navigation-bar__icon,body.stv .navigation-bar .navigation-bar__icon svg{width:17px!important;height:17px!important}body.stv .navigation-bar .navigation-bar__item[data-action=search]{width:32px!important;margin-left:7px!important}body.stv .navigation-bar .navigation-bar__item[data-action=back],body.stv .navigation-bar .navigation-bar__item[data-action=search]{padding:0!important}body.stv .navigation-bar .navigation-bar__label{font-size:13px!important}}',
       ''
     ].join('\n');
     (document.head || document.documentElement).appendChild(s);
