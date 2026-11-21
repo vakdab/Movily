@@ -337,6 +337,7 @@
     el.classList.remove('stv-tl-long', 'stv-tl-xlong');
     if (n > 50) el.classList.add('stv-tl-xlong'); else if (n > 26) el.classList.add('stv-tl-long');
   }
+  function textTitle(m) { return String((m && (m.title || m.name || m.original_title || m.original_name)) || '').trim(); }
   // a logo picture; until it loads (or without one) the title text stays — no empty box, no "□□□".
   // wanted(): whether the box still wants it; without it, whether the box is on the page — a box filled
   // before it is put on the page (the banner from cached data) must pass wanted, or it keeps its text
@@ -350,6 +351,12 @@
       // (two asks in flight for one box — a slide shown, left and shown again — one picture)
       if (!p || (wanted ? !wanted() : !inDoc(box)) || box.querySelector('img.' + cls)) {
         box.classList.remove('stv-logo-pending');
+        if (!p && !(wanted && !wanted()) && !box.textContent.trim()) {
+          var fallback = document.createElement('span');
+          fallback.className = 'stv-text-logo';
+          fallback.textContent = textTitle(m);
+          if (fallback.textContent) box.appendChild(fallback);
+        }
         return;
       }
       var im = new Image();
@@ -834,6 +841,7 @@
     r.push(C + '.stv-has-logo .card__promo-title{display:none}');
     r.push(C + ' .stv-card-logo{position:absolute;left:' + tp(18, 11) + ';bottom:' + tp(16, 10) + ';max-width:58%;max-height:40%;width:auto;height:auto;' +
       'object-fit:contain;object-position:left bottom;z-index:1;opacity:0;transition:opacity .3s' + (L ? '' : ';filter:drop-shadow(0 1px 6px rgba(0,0,0,.45))') + '}');
+    r.push(C + ' .stv-text-logo{position:absolute;left:' + tp(18, 11) + ';right:' + tp(18, 11) + ';bottom:' + tp(14, 9) + ';z-index:1;color:#fff;font-size:' + tp(30, 17) + ';font-weight:800;line-height:1.1;letter-spacing:-.01em;text-shadow:0 1px 8px rgba(0,0,0,.6);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;text-align:left}');
     r.push(C + '.stv-has-logo .stv-card-logo{opacity:1}');
     r.push(C + ' .card__icons,' + C + ' .card__marker,' + C + ' .card-watched,' + C + ' .card__type,' + C + ' .card__age,' + C + ' .card__title{display:none!important}');
     // rating and UA: small, inside the frame (nothing sticks out at the row edges)
@@ -2613,7 +2621,7 @@
         if (item !== cur()) return;
         var t = info.querySelector('.stv-hero__title');
         t.className = 'stv-hero__title';
-        t.textContent = d.title || d.name || '';
+        t.textContent = textTitle(d);
         titleLen(t, t.textContent);
         logoInto(t, d, tmdbSize('logo', T[M].logoW * k), null, null, function () { return alive && item === cur(); });
         var meta = [esc(kindLabel(d))];
