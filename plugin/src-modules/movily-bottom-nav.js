@@ -54,7 +54,7 @@
     var nav = document.getElementById(NAV_ID);
     if (!nav) return;
     active = tab;
-    nav.querySelectorAll('button[data-tab]').forEach(function (b) { b.classList.toggle('on', b.dataset.tab === tab); });
+    nav.querySelectorAll('button[data-key]').forEach(function (b) { b.classList.toggle('on', b.dataset.key === tab); });
     if (remember && hist[hist.length - 1] !== tab) hist.push(tab);
   }
 
