@@ -77,9 +77,8 @@
       '@media (max-width:380px){body.stv .navigation-bar .navigation-bar__item{padding:0 6px!important}body.stv .navigation-bar .navigation-bar__item[data-action=back],body.stv .navigation-bar .navigation-bar__item[data-action=search]{padding:0 4px!important}body.stv .navigation-bar .navigation-bar__label{font-size:calc(13px*var(--snack-hs,1))!important}}',
       /* nothing from AgNative's own top bar may show next to Snack TV */
       'body.stv .agnative-topnav-shell,body.stv .agnative-topnav-rightdock,body.stv #agnative-topnav-clock,body.stv .agnative-control-panel,body.stv .agnative-hero{display:none!important}',
-      /* Movily uses the custom bottom dock; remove the duplicate top pill
-         (back, Home, Settings, Search) from the header. */
-      'body.stv .navigation-bar{display:none!important}'
+      /* The centered navigation pill is the primary Movily navigation. */
+      ''
     ].join('\n');
     (document.head || document.documentElement).appendChild(s);
   }
