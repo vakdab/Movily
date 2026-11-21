@@ -4922,6 +4922,7 @@
         'body.' + BODY_CLASS + ' .items-line__more.selector { font-size:.7em !important; padding:.3em .6em !important; opacity:.85 !important; }',
         'body.' + BODY_CLASS + ' .items-line--type-default .items-cards { padding:0 1em !important; font-size:.86em !important; }',
         'body.' + BODY_CLASS + ' .items-cards { padding-left:1em !important; padding-right:1em !important; gap:.62em !important; }',
+        'body.' + BODY_CLASS + ' .items-line .scroll--horizontal .scroll__content { padding-left:0 !important; padding-right:0 !important; }',
         'body.' + BODY_CLASS + ' .items-line__body { padding-left:0 !important; }',
         'body.' + BODY_CLASS + ' .items-line__title { font-size:1em !important; line-height:1.2 !important; font-weight:700 !important; }',
         'body.' + BODY_CLASS + ' .scroll__body.mapping--line { display:flex !important; gap:1.5em !important; padding-left:0 !important; padding-right:0 !important; }',
