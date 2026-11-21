@@ -1746,8 +1746,8 @@
       F + ' .full-start-new__title .stv-logo{max-width:78vw;object-position:center bottom;margin:0 auto}' +
       F + ' .stv-meta{order:2;justify-content:center}' +
       // the white button across, the round ones in one even row under it
-      F + ' .full-start-new__buttons{order:3;flex-wrap:wrap!important;justify-content:center;gap:' + px(12) + ';width:100%}' +
-      F + ' .full-start-new__buttons > .full-start__button.stv-primary{flex:1 0 100%;max-width:100%;margin:' + px(6) + ' 0 ' + px(16) + '!important;position:relative;left:' + px(24) + '}' +
+      F + ' .full-start-new__buttons{order:3;flex-wrap:wrap!important;justify-content:center;gap:' + px(12) + ';width:100%;position:relative;left:' + px(24) + '!important}' +
+      F + ' .full-start-new__buttons > .full-start__button.stv-primary{flex:1 0 100%;max-width:100%;margin:' + px(6) + ' 0 ' + px(16) + '!important}' +
       F + ' .full-start-new__buttons > .full-start__button:not(.stv-primary){margin:0 0 ' + px(12) + '!important}' +
       F + ' .stv-desc{order:4;text-align:left;max-width:100%;margin-top:' + px(4) + '}' +
       F + ' .full-start-new__title,' + F + ' .stv-meta,' + F + ' .stv-desc{text-shadow:0 1px 10px rgba(0,0,0,.45)}' +
