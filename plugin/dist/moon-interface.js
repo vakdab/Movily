@@ -2020,8 +2020,8 @@
     r.push(PHONE + H + '__info{left:' + px(t.margin) + '!important;right:' + px(t.margin) + '!important;width:auto!important;text-align:center}' +
       H + '__title .stv-logo{object-position:center bottom;margin:0 auto;max-width:78vw}' +
       H + '__btns{position:relative;width:100%;height:' + px(t.btnH) + ';justify-content:center}' +
-      H + '__btn--play{position:absolute;left:50%;margin-right:0;transform:translateX(-50%)}' +
-      H + '__btn--info{position:absolute;left:calc(50% + ' + px(t.btnH * 1.85) + ');margin-right:0}' +
+      H + '__btn--play{position:absolute!important;left:50%!important;margin-right:0!important;transform:translateX(-50%)!important;z-index:2}' +
+      H + '__btn--info{position:absolute!important;left:calc(50% + ' + px(t.btnH * 1.85) + ')!important;margin-right:0!important;transform:none!important}' +
       H + '__scrim{background:linear-gradient(to top,' + PAGE + ' 0%,' + PAGE + ' 14%,rgba(0,0,0,.78) 34%,rgba(0,0,0,0) 62%),linear-gradient(to bottom,rgba(0,0,0,.45) 0%,rgba(0,0,0,0) 16%)}' +
       H + '__text{text-align:left}' +
       H + '__dots{bottom:' + px(10) + '}' +
