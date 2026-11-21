@@ -1174,8 +1174,8 @@
 
     function getCardSize() {
       try {
-        if (!window.Lampa || !Lampa.Storage) return 'md';
-        return Lampa.Storage.get(CARD_SIZE_KEY, 'md') || 'md';
+        if (!window.Lampa || !Lampa.Storage) return 'xs';
+        return Lampa.Storage.get(CARD_SIZE_KEY, 'xs') || 'xs';
       } catch (e) { return 'md'; }
     }
 
@@ -1235,7 +1235,7 @@
       } catch (e) { return def !== 'off'; }
     }
 
-    function backdropEnabled() { return storageFlagOn(BACKDROP_KEY, 'on'); }
+    function backdropEnabled() { return storageFlagOn(BACKDROP_KEY, 'off'); }
     function badgeEnabled() { return storageFlagOn(BADGE_KEY, 'on'); }
     function ratingEnabled() { return storageFlagOn(RATING_KEY, 'off'); }
     function clockSecondsEnabled() { return storageFlagOn(CLOCK_SECONDS_KEY, 'off'); }
@@ -2986,7 +2986,7 @@
             name: ENABLE_KEY,
             type: 'select',
             values: { on: t('val_on'), off: t('val_off') },
-            default: 'off'
+            default: 'on'
           },
           field: {
             name: t('set_enable_name'),
@@ -3107,7 +3107,7 @@
               lg: t('val_size_lg'),
               xl: t('val_size_xl')
             },
-            default: 'md'
+            default: 'xs'
           },
           field: {
             name: t('set_topnav_size_name'),
@@ -3187,7 +3187,7 @@
             name: BACKDROP_KEY,
             type: 'select',
             values: { on: t('val_on'), off: t('val_off') },
-            default: 'on'
+            default: 'off'
           },
           field: {
             name: t('set_backdrop_name'),
@@ -3238,7 +3238,7 @@
               lg: t('val_size_lg'),
               xl: t('val_size_xl')
             },
-            default: 'md'
+            default: 'xs'
           },
           field: {
             name: t('set_card_size_name'),
@@ -6251,7 +6251,7 @@
     function syncTopnavSize() {
       if (!document.body) return;
       var size = 'md';
-      try { size = Lampa.Storage.get(TOPNAV_SIZE_KEY, 'md'); } catch (e) { }
+      try { size = Lampa.Storage.get(TOPNAV_SIZE_KEY, 'xs'); } catch (e) { }
       if (!/^(xs|sm|md|lg|xl)$/.test(size)) size = 'md';
       document.body.setAttribute(TOPNAV_SIZE_ATTR, size);
     }

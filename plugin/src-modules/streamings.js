@@ -760,7 +760,7 @@
     // built-in AppleTV AGNative styles every «.items-line .card» with a higher specificity: repeat the
     // studio rules under the same prefix so the streaming row keeps its own size and logo
     st.textContent += '\n' + st.textContent.split('\n').filter(function (l) { return l.indexOf(S) === 0; })
-      .map(function (l) { return l.split(S).join('body.appletv-agnative-topnav .items-line .card.card--studio'); }).join('\n');
+      .map(function (l) { return l.split(S).join('body.appletv-agnative-topnav[data-agnative-backdrop][data-agnative-card-size] .items-line .card.card--studio[data-nfx-switched]'); }).join('\n');
     (document.head || document.documentElement).appendChild(st);
   }
 
