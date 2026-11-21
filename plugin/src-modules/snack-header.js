@@ -72,7 +72,6 @@
       'body.stv .navigation-bar .navigation-bar__item:active{transform:scale(.94);background:rgba(255,255,255,.17)!important}',
       'body.stv .navigation-bar .navigation-bar__body{position:relative!important;overflow-x:auto!important;overflow-y:hidden!important;scrollbar-width:none!important;-webkit-overflow-scrolling:touch!important;justify-content:flex-start!important;gap:2px!important}',
       'body.stv .navigation-bar .navigation-bar__body::-webkit-scrollbar{display:none}',
-      'body.stv .navigation-bar .navigation-bar__body:before{content:;position:absolute;left:3px;top:calc(4px*var(--snack-hs,1));height:calc(26px*var(--snack-hs,1));width:var(--movily-pill-w,0);transform:translateX(var(--movily-pill-x,0));border-radius:16px;background:rgba(255,255,255,.17);pointer-events:none;z-index:0;opacity:0;transition:transform .42s cubic-bezier(.3,1.25,.5,1),width .42s cubic-bezier(.3,1.25,.5,1),opacity .2s}',
       'body.stv .navigation-bar .navigation-bar__body.movily-nav-pill-ready:before{opacity:1}',
       'body.stv .navigation-bar .navigation-bar__item{position:relative!important;z-index:1!important;flex:0 0 auto!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:calc(5px*var(--snack-hs,1))!important;padding-left:calc(10px*var(--snack-hs,1))!important;padding-right:calc(10px*var(--snack-hs,1))!important}',
       'body.stv .navigation-bar .navigation-bar__item[data-action=back]{order:0!important;width:calc(30px*var(--snack-hs,1))!important;padding:0!important;margin-right:2px!important}',
@@ -168,18 +167,40 @@
       '#' + DOCK_ID + '{top:calc(env(safe-area-inset-top,0px) + 2em - 14px*var(--snack-hs,1))}',
       'body.stv.orientation--landscape .navigation-bar .navigation-bar__body{top:-23px!important}',
       '@media (max-width:430px){body.stv .navigation-bar .navigation-bar__item,body.stv .navigation-bar .navigation-bar__item[data-action=main],body.stv .navigation-bar .navigation-bar__item[data-action=settings]{padding:0 8px!important;gap:5px}body.stv .navigation-bar .navigation-bar__icon,body.stv .navigation-bar .navigation-bar__icon svg{width:17px!important;height:17px!important}body.stv .navigation-bar .navigation-bar__item[data-action=search]{width:32px!important;margin-left:6px!important}body.stv .navigation-bar .navigation-bar__item[data-action=back],body.stv .navigation-bar .navigation-bar__item[data-action=search]{padding:0!important}body.stv .navigation-bar .navigation-bar__label{font-size:13px!important}}',
-      /* Keep the mobile capsule inside the real space between the logo and the measured clock/profile dock. */
-      '@media (max-width:600px){body.stv .navigation-bar{left:var(--snack-hdr-l)!important;right:var(--snack-hdr-r)!important;width:auto!important;max-width:none!important;transform:none!important}',
-      'body.stv .navigation-bar .navigation-bar__body{width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important;gap:2px!important;padding:0 3px!important}',
-      /* Only the selected destination needs a label on phones; the other destinations stay available as clear icons. */
-      'body.stv .navigation-bar .navigation-bar__item[data-action=main]:not(.mv-active) .navigation-bar__label,body.stv .navigation-bar .navigation-bar__item[data-action=settings]:not(.mv-active) .navigation-bar__label{display:none!important}',
-      'body.stv .navigation-bar .navigation-bar__item[data-action=main]:not(.mv-active),body.stv .navigation-bar .navigation-bar__item[data-action=settings]:not(.mv-active){width:27px!important;max-width:27px!important;padding:0!important;flex:0 0 27px!important;justify-content:center!important}',
-      'body.stv .navigation-bar .navigation-bar__item[data-action=main] .navigation-bar__icon,body.stv .navigation-bar .navigation-bar__item[data-action=settings] .navigation-bar__icon{display:block!important;width:17px!important;height:17px!important;margin:0!important}',
-      'body.stv .navigation-bar .navigation-bar__item[data-action=main].mv-active .navigation-bar__icon,body.stv .navigation-bar .navigation-bar__item[data-action=settings].mv-active .navigation-bar__icon{display:none!important}',
-      'body.stv .navigation-bar .navigation-bar__item[data-action=main].mv-active,body.stv .navigation-bar .navigation-bar__item[data-action=settings].mv-active{width:auto!important;max-width:none!important;padding:0 8px!important;flex:0 0 auto!important}',
-      'body.stv .navigation-bar .navigation-bar__item[data-action=search]{width:27px!important;margin-left:4px!important;flex:0 0 27px!important}',
-      'body.stv .navigation-bar .navigation-bar__item[data-action=back]{width:27px!important;flex:0 0 27px!important}',
-      '}',
+      /* Shared reference treatment: an animated pill travels behind the active tab; search stays docked. */
+      'body.stv .navigation-bar .navigation-bar__body{position:relative!important;overflow-x:auto!important;overflow-y:hidden!important;scrollbar-width:none!important;-webkit-overflow-scrolling:touch!important;scroll-behavior:smooth!important;justify-content:flex-start!important}',
+      'body.stv .navigation-bar .navigation-bar__body::-webkit-scrollbar{display:none!important}',
+      'body.stv .navigation-bar .navigation-bar__body:before{content:""!important;position:absolute!important;left:38px!important;right:47px!important;top:1px!important;bottom:1px!important;z-index:2!important;pointer-events:none!important;background:linear-gradient(90deg,var(--mv-cap) 0,rgba(28,28,31,.38) 8px,transparent 18px,transparent calc(100% - 24px),rgba(28,28,31,.38) calc(100% - 8px),var(--mv-cap) 100%)!important}',
+      'body.stv .navigation-bar .navigation-bar__body .movily-nav-pill{position:absolute!important;left:0!important;top:7px!important;width:var(--movily-pill-w,0)!important;height:32px!important;border-radius:16px!important;background:var(--mv-chip)!important;transform:translateX(var(--movily-pill-x,0))!important;opacity:0;transition:transform .42s cubic-bezier(.3,1.25,.5,1),width .42s cubic-bezier(.3,1.25,.5,1),opacity .2s!important;pointer-events:none!important;z-index:0!important}',
+      'body.stv .navigation-bar .navigation-bar__body.movily-nav-pill-ready .movily-nav-pill{opacity:1}',
+      'body.stv .navigation-bar .navigation-bar__body.movily-nav-search-active .movily-nav-pill{opacity:0}',
+      'body.stv .navigation-bar .navigation-bar__item{position:relative!important;z-index:1!important;flex:0 0 auto!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:7px!important;padding:0 13px!important;height:32px!important;border-radius:16px!important;background:transparent!important;color:var(--mv-dim)!important;font-size:14px!important;font-weight:600!important;white-space:nowrap!important;transition:color .3s,transform .25s cubic-bezier(.3,1.5,.5,1)!important}',
+      'body.stv .navigation-bar .navigation-bar__item.mv-active,body.stv .navigation-bar .navigation-bar__item.mv-on{color:#fff!important;background:transparent!important}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=search].mv-active{background:var(--mv-chip)!important;color:#fff!important}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=back]{position:sticky!important;left:0!important;z-index:3!important;width:34px!important;height:34px!important;flex:0 0 34px!important;padding:0!important;margin-right:2px!important;border-radius:17px!important;color:#fff!important;background:var(--mv-cap)!important}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=search]{position:sticky!important;right:0!important;z-index:3!important;width:38px!important;height:38px!important;flex:0 0 38px!important;padding:0!important;margin:0 0 0 9px!important;border-radius:19px!important;background:rgba(28,28,31,.98)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.12),inset 0 0 0 1px rgba(255,255,255,.05)!important;color:var(--mv-dim)!important}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=search]:before{content:""!important;position:absolute!important;left:-7px!important;top:50%!important;width:1px!important;height:20px!important;margin-top:-10px!important;background:var(--mv-edge)!important}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=main].mv-active,body.stv .navigation-bar .navigation-bar__item[data-action=settings].mv-active{color:#fff!important}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=shorts].mv-on{color:#fff!important}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=main] .navigation-bar__icon,body.stv .navigation-bar .navigation-bar__item[data-action=settings] .navigation-bar__icon{display:block!important;width:18px!important;height:18px!important;margin:0!important;flex:none!important}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=main] .navigation-bar__label,body.stv .navigation-bar .navigation-bar__item[data-action=shorts] .navigation-bar__label,body.stv .navigation-bar .navigation-bar__item[data-action=settings] .navigation-bar__label{display:block!important;margin:0!important;font-size:14px!important;line-height:1!important;font-weight:600!important}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=back] .navigation-bar__label,body.stv .navigation-bar .navigation-bar__item[data-action=search] .navigation-bar__label{display:none!important}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=main].movily-nav-pop svg{animation:movily-nav-hop .5s}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=shorts].movily-nav-pop svg{animation:movily-nav-beat .5s}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=search].movily-nav-pop svg{animation:movily-nav-wig .5s}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=settings].movily-nav-pop svg{animation:movily-nav-tick .55s}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=back].movily-nav-pop svg{animation:movily-nav-nudge .35s}',
+      '@keyframes movily-nav-beat{30%{transform:scale(1.35)}60%{transform:scale(.95)}}',
+      '@keyframes movily-nav-wig{25%{transform:rotate(-18deg) scale(1.15)}60%{transform:rotate(14deg) scale(1.15)}}',
+      '@keyframes movily-nav-tick{40%{transform:rotate(45deg) scale(1.2)}70%{transform:rotate(-8deg)}}',
+      '@keyframes movily-nav-nudge{40%{transform:translateX(-6px)}}',
+      '@media (prefers-reduced-motion:reduce){body.stv .navigation-bar .navigation-bar__body .movily-nav-pill,body.stv .navigation-bar .navigation-bar__item{transition:none!important}body.stv .navigation-bar .navigation-bar__item.movily-nav-pop svg{animation:none!important}}',
+      /* On phones, place the capsule only in the measured gap between the logo and clock/profile dock. */
+      '@media (max-width:600px) and (orientation:portrait){body.stv .navigation-bar{left:var(--snack-hdr-l)!important;right:var(--snack-hdr-r)!important;width:auto!important;max-width:none!important;transform:none!important}',
+      'body.stv .navigation-bar .navigation-bar__body{height:46px!important;min-height:46px!important;max-height:46px!important;padding:0 6px 0 4px!important;gap:4px!important;border-radius:23px!important;box-sizing:border-box!important;width:100%!important;max-width:100%!important;min-width:0!important}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=main] .navigation-bar__label,body.stv .navigation-bar .navigation-bar__item[data-action=shorts] .navigation-bar__label,body.stv .navigation-bar .navigation-bar__item[data-action=settings] .navigation-bar__label{display:block!important;font-size:14px!important;line-height:1!important}',
+      'body.stv .navigation-bar .navigation-bar__item[data-action=main] .navigation-bar__icon,body.stv .navigation-bar .navigation-bar__item[data-action=settings] .navigation-bar__icon,body.stv .navigation-bar .navigation-bar__item[data-action=shorts] .navigation-bar__icon{display:block!important;width:18px!important;height:18px!important;margin:0!important}',
+      '} ',
       ''
     ].join('\n');
     (document.head || document.documentElement).appendChild(s);
@@ -237,7 +258,7 @@
   function navModel() {
     var nav = qs('.navigation-bar'), body = nav && qs('.navigation-bar__body', nav);
     if (!body) return;
-    body.setAttribute('data-movily-model', 'v5');
+    body.setAttribute('data-movily-model', 'v6');
     if (!qs('.movily-nav-pill', body)) {
       var pill = document.createElement('span');
       pill.className = 'movily-nav-pill';
@@ -272,15 +293,23 @@
       items[j].classList.toggle('movily-nav-active', is);
       if (is) active = items[j];
     }
+    body.classList.toggle('movily-nav-search-active', action === 'search');
     if (active) {
       var x = active.offsetLeft - 3, w = active.offsetWidth;
       body.style.setProperty('--movily-pill-x', x + 'px');
       body.style.setProperty('--movily-pill-w', w + 'px');
       body.classList.add('movily-nav-pill-ready');
-      if (active.offsetLeft < body.scrollLeft || active.offsetLeft + w > body.scrollLeft + body.clientWidth) {
-        body.scrollLeft = Math.max(0, active.offsetLeft - (body.clientWidth - w) / 2);
+      if (action !== 'search') {
+        var back = qs('.navigation-bar__item[data-action="back"]', body);
+        var search = qs('.navigation-bar__item[data-action="search"]', body);
+        var leftInset = (back ? back.offsetWidth : 0) + 6;
+        var rightInset = (search ? search.offsetWidth : 0) + 10;
+        var visibleLeft = body.scrollLeft + leftInset;
+        var visibleRight = body.scrollLeft + body.clientWidth - rightInset;
+        if (active.offsetLeft < visibleLeft) body.scrollLeft = Math.max(0, active.offsetLeft - leftInset);
+        else if (active.offsetLeft + w > visibleRight) body.scrollLeft = active.offsetLeft + w - body.clientWidth + rightInset;
       }
-    }
+    } else body.classList.remove('movily-nav-pill-ready');
   }
 
   function ensure() {
