@@ -4,7 +4,7 @@
       які ведуть назад на цей сайт (https), а не на lampa://, якого у веб-версії немає.
    2. Повернення: якщо SenPlayer передав позицію (position / time / currentTime / lastPosition ...), вона
       записується в таймкод Lampa. Усе, що SenPlayer передав, лишається в журналі діагностики
-      (Налаштування > Інтерфейс > SenPlayer > «Що повернув SenPlayer»).
+      (Налаштування > Плеєр > SenPlayer > «Що повернув SenPlayer»).
    3. Запасний ручний запис: коли користувач повертається на сторінку, а позиція не прийшла, показується
       вибір «Скільки переглянуто?» (25 / 50 / 75 / 90 % / до кінця / пропустити), і таймкод пишеться в Lampa.
    Поза iOS/macOS модуль нічого не робить. */
@@ -148,7 +148,7 @@
     if (!rec.duration) rec.duration = guessDuration(data, lk);
     ls(KEY_PENDING, rec);
     resolveDuration(data, lk, rec);
-    // diagnostics: what we are going to write to, visible in Settings > Interface > SenPlayer
+    // diagnostics: what we are going to write to, visible in Settings > Player > SenPlayer
     var log = ls(KEY_LOG) || [];
     log.unshift({ at: new Date().toISOString(), kind: 'start', params: { hash: hash, hasTimeline: !!data.timeline, card: card, duration: rec.duration, pos: pos }, title: rec.title });
     ls(KEY_LOG, log.slice(0, 15));
@@ -368,7 +368,7 @@
 
 
   // No position came back: put the line where the time spent in the player says it should be (like the built-in player's line),
-  // instead of asking every time. Settings > Interface > SenPlayer lets the user switch it off and choose manually.
+  // instead of asking every time. Settings > Player > SenPlayer lets the user switch it off and choose manually.
   function autoEstimate() {
     try {
       if (L().Storage.get('movily_sp_auto', 'true') === 'false') return false;
@@ -407,12 +407,12 @@
       var S = L().SettingsApi;
       if (!S || !S.addParam) return;
       S.addParam({
-        component: 'interface',
+        component: 'player',
         param: { name: 'movily_sp_auto', type: 'select', values: { 'true': tr('Так, автоматично', 'Yes, automatically'), 'false': tr('Ні, питати вручну', 'No, ask me') }, 'default': 'true' },
         field: { name: tr('SenPlayer: лінія перегляду', 'SenPlayer: progress line'), description: tr('Якщо плеєр не повернув позицію, ставити лінію за часом у плеєрі', 'If the player returns no position, set the line by time spent in the player') }
       });
       S.addParam({
-        component: 'interface',
+        component: 'player',
         param: { name: 'movily_sp_show', type: 'static' },
         field: { name: 'SenPlayer', description: tr('Що повернув SenPlayer (для діагностики)', 'What SenPlayer returned (diagnostics)') },
         onRender: function (item) {
