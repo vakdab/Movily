@@ -10026,15 +10026,6 @@
         'body.' + BODY_CLASS + '[' + PERF_ATTR + '="ultra"] .nfx-card-rating,',
         'body.' + BODY_CLASS + '[' + PERF_ATTR + '="ultra"] .nfx-card-overlay { background: transparent !important; }',
 
-        /* Snack TV owns the size of a card; the AgNative settings only steer the picture and its labels. */
-        'body.stv[data-agnative-backdrop="on"] .items-line .card:not(.card--wide):not(.card--collection):not(.card-more) .card__view { padding-bottom:56.25% !important; }',
-        'body.stv[data-agnative-backdrop="on"] .items-line .card:not(.card--wide):not(.card--collection):not(.card-more) { width:calc(var(--stv-agn-w, 20em) * var(--agn-size, 1)) !important; }',
-        'body.stv[data-agnative-card-size="xs"] { --agn-size:.78; }',
-        'body.stv[data-agnative-card-size="sm"] { --agn-size:.89; }',
-        'body.stv[data-agnative-card-size="md"] { --agn-size:1; }',
-        'body.stv[data-agnative-card-size="lg"] { --agn-size:1.14; }',
-        'body.stv[data-agnative-card-size="xl"] { --agn-size:1.3; }',
-        'body.stv .card .card__img { object-fit:cover !important; }',
 
       ].join('\n');
       if (style.textContent !== text) style.textContent = text;
