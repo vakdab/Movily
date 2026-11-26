@@ -2739,8 +2739,9 @@
       titleLen(title[0], title.text());
       logoInto(title[0], movie, tmdbSize('logo', T[M].logoW * k), null, null, null, function () {
         if (!portrait() || !ownPosterBg || !movie.poster_path) return false;
-        // Keep the clean poster as the background, but never hide the title when no logo exists.
-        // The title block is the readable fallback, especially for anime without a TMDB logo.
+        var clean = cleanPoster(movie);
+        if (clean && clean !== movie.poster_path) ownPosterBg.src = img(clean, tmdbSize('poster', window.innerWidth));
+        // Keep the clean poster as the background, but leave the text title visible as a fallback.
         return false;
       }, function () {
         if (!portrait() || !ownPosterBg || !movie.poster_path) return;
