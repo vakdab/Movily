@@ -1607,22 +1607,18 @@
     // the backdrop and the scrim sit at z-index -1: their container gets its own stacking layer, else
     // they go under the page colour of the activity
     if (bg.length) { var holder = bg[0].parentNode; if (window.getComputedStyle(holder).position === 'static') holder.style.position = 'relative'; holder.style.zIndex = '0'; holder.style.overflow = 'hidden'; }
-    // logo instead of the text title
+    // Keep Snack TV's original text-title styling. Use the same title fields as the poster overlay,
+    // rather than replacing the title with a separately fetched TMDB logo.
     var title = start.find('.full-start-new__title').first();
-    if (title.length && !title.find('.stv-logo').length) {
+    if (title.length) {
       title[0].style.display = '';
-      titleLen(title[0], title.text());
-      logoInto(title[0], movie, tmdbSize('logo', T[M].logoW * k), null, null, null, function () {
-        if (!portrait() || !ownPosterBg || !movie.poster_path) return false;
+      var posterTitle = String(movie.title || movie.name || '').trim();
+      if (posterTitle) title[0].textContent = posterTitle;
+      titleLen(title[0], posterTitle || title.text());
+      if (portrait() && ownPosterBg && movie.poster_path) {
         var clean = cleanPoster(movie);
         if (clean && clean !== movie.poster_path) ownPosterBg.src = img(clean, tmdbSize('poster', window.innerWidth));
-        // Keep the clean poster as the background, but leave the text title visible as a fallback.
-        return false;
-      }, function () {
-        if (!portrait() || !ownPosterBg || !movie.poster_path) return;
-        var clean = cleanPoster(movie);
-        if (clean && clean !== movie.poster_path) ownPosterBg.src = img(clean, tmdbSize('poster', window.innerWidth));
-      });
+      }
     }
     // meta line + description above the rate line
     var right = start.find('.full-start-new__right').first();
