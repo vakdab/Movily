@@ -52,9 +52,9 @@
     '.player-info{pointer-events:none;}',
     '.player-info__body{padding:max(1.2em,env(safe-area-inset-top)) max(1.6em,env(safe-area-inset-right)) 0 max(1.6em,env(safe-area-inset-left));}',
     '.player-info .head-backward{display:none!important;}',
-    '.mv-top{position:fixed;z-index:5;top:max(1.2em,env(safe-area-inset-top));left:max(1.6em,env(safe-area-inset-left));display:flex;gap:.6em;align-items:center;transition:opacity .3s,transform .3s;opacity:0;transform:translateY(-1.5em);pointer-events:none;}',
+    '.mv-top{position:fixed;z-index:5;top:max(1.2em,env(safe-area-inset-top));left:max(1.6em,env(safe-area-inset-left));display:flex;gap:.1em;align-items:center;padding:.2em .35em;border-radius:3em;background:rgba(60,60,60,.38);-webkit-backdrop-filter:blur(22px) saturate(1.6);backdrop-filter:blur(22px) saturate(1.6);border:1px solid rgba(255,255,255,.12);box-shadow:0 4px 18px rgba(0,0,0,.25);transition:opacity .3s,transform .3s;opacity:0;transform:translateY(-1.5em);pointer-events:none;}',
     '.player--panel-visible .mv-top{opacity:1;transform:none;pointer-events:auto;}',
-    '.mv-btn{width:3em;height:3em;display:flex;align-items:center;justify-content:center;border-radius:50%;color:#fff;cursor:pointer;}',
+    '.mv-btn{width:2.7em;height:2.7em;display:flex;align-items:center;justify-content:center;border-radius:50%;color:#fff;cursor:pointer;background:transparent;border:0;box-shadow:none;}',
     '.mv-btn svg{width:1.4em;height:1.4em;}',
     '.player-info__title{font-size:1.9em;width:60%;margin-top:2.6em;}',
     '.player-info__name{display:none;}',
@@ -88,6 +88,8 @@
   }
 
   var ICON_BACK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+  var ICON_AIRPLAY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h14a2 2 0 0 1 2 2v9"/><path d="M3 14V5a2 2 0 0 1 2-2"/><path d="M8 21l4-5 4 5H8z"/><path d="M8 13h8"/></svg>';
+  var ICON_SHARE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="m7 8 5-5 5 5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>';
   var ICON_REW = '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 6a10 10 0 1 1-9.5 7"/><path d="M6 6v7h7"/></svg>';
   var ICON_FWD = '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 6a10 10 0 1 0 9.5 7"/><path d="M26 6v7h-7"/></svg>';
   var ICON_VOL = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 4V5L7 9H3z"/><path d="M16 8.5a5 5 0 0 1 0 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
@@ -104,6 +106,26 @@
     // Lampa-фокус (пульт/клавіатура) і тап/клік
     el.addEventListener('click', function (e) { e.stopPropagation(); fn(); });
     try { $(el).on('hover:enter', fn); } catch (e) {}
+  }
+
+  function topButton(icon, label, action) {
+    var button = document.createElement('div');
+    button.className = 'mv-btn selector';
+    button.setAttribute('role', 'button');
+    button.setAttribute('aria-label', label);
+    button.setAttribute('title', label);
+    button.innerHTML = icon;
+    bindTap(button, action);
+    return button;
+  }
+
+  function sharePage() {
+    var data = { title: document.title || 'Movily', url: window.location.href };
+    if (navigator.share) {
+      navigator.share(data).catch(function () {});
+    } else if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(data.url).catch(function () {});
+    }
   }
 
   function build() {
@@ -131,11 +153,19 @@
     // закрити зверху зліва
     var top = document.createElement('div');
     top.className = 'mv-top';
-    var close = document.createElement('div');
-    close.className = 'mv-btn mv-glass selector';
-    close.innerHTML = ICON_BACK;
-    top.appendChild(close);
-    bindTap(close, function () { try { L().Player.close(); } catch (e) {} });
+    top.appendChild(topButton(ICON_BACK, 'Закрити плеєр', function () {
+      try { L().Player.close(); } catch (e) {}
+    }));
+    var currentVideo = video();
+    if (currentVideo && typeof currentVideo.webkitShowPlaybackTargetPicker === 'function') {
+      top.appendChild(topButton(ICON_AIRPLAY, 'AirPlay', function () {
+        var target = video();
+        if (target && typeof target.webkitShowPlaybackTargetPicker === 'function') {
+          target.webkitShowPlaybackTargetPicker();
+        }
+      }));
+    }
+    top.appendChild(topButton(ICON_SHARE, 'Поділитися', sharePage));
     player.appendChild(top);
 
     // гучність зверху справа
