@@ -14674,8 +14674,8 @@
   var css = [
     /* Єдина liquid-glass поверхня для панелей, кнопок і чипів. */
     '.player-panel .player-panel__box-buttons,.player .mv-glass,.player .mv-skip,.player .mv-btn,.player-info__values>div,.player-panel__timenow,.player-panel__timeend,.player-panel__time{background:rgba(255,255,255,.16)!important;-webkit-backdrop-filter:blur(22px) saturate(1.6);backdrop-filter:blur(22px) saturate(1.6);border:1px solid rgba(255,255,255,.22);box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 6px 20px rgba(0,0,0,.25);color:#fff;}',
-    '.player-panel .button{background:transparent;color:#fff;transition:background .15s,transform .15s;} ',
-    '.player-panel .button.focus,.player .mv-btn.focus,.player .mv-skip.focus{background:rgba(255,255,255,.4)!important;color:#fff!important;transform:scale(1.06);}',
+    '.player-panel .button{background:transparent;color:#fff;transition:background .15s;} ',
+    '.player-panel .button.focus,.player .mv-btn.focus,.player .mv-skip.focus{background:rgba(255,255,255,.4)!important;color:#fff!important;transform:none!important;}',
 
     /* Не затемнювати відео під час появи контролів: прибираємо і панель, і штатний Lampa overlay. */
     '.player-panel{top:0;bottom:0;pointer-events:none;background:transparent!important;background-image:none!important;}',
@@ -14696,8 +14696,9 @@
 
     /* Центральний ряд: −10 / play-pause / +10. */
     '.player-panel__line-two{display:block;position:static;font-size:1em!important;}',
-    '.player-panel__center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:auto;display:flex;align-items:center;gap:3em;}',
-    '.player-panel__center .player-panel__playpause{width:4.75em;height:4.75em;border-radius:50%!important;background:rgba(255,255,255,.2)!important;-webkit-backdrop-filter:blur(22px) saturate(1.6);backdrop-filter:blur(22px) saturate(1.6);border:1px solid rgba(255,255,255,.24);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),0 6px 20px rgba(0,0,0,.3);}',
+    '.player-panel__center{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);width:auto;display:flex;align-items:center;gap:3em;}',
+    '.player-panel__center .player-panel__playpause{box-sizing:border-box!important;flex:0 0 4.75em;width:4.75em;height:4.75em;min-width:4.75em;min-height:4.75em;padding:0!important;margin:0!important;font-size:1em!important;line-height:1;transform:none!important;border-radius:50%!important;background:rgba(255,255,255,.2)!important;-webkit-backdrop-filter:blur(22px) saturate(1.6);backdrop-filter:blur(22px) saturate(1.6);border:1px solid rgba(255,255,255,.24);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),0 6px 20px rgba(0,0,0,.3);}',
+    '.player-panel__center .player-panel__playpause.focus{transform:none!important;}',
     '.player-panel__center .player-panel__playpause svg{width:2em;height:2em;}',
     '.mv-skip{width:4em;height:4em;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;position:relative;cursor:pointer;}',
     '.mv-skip svg{width:2.05em;height:2.05em;overflow:visible;}',
@@ -14712,7 +14713,7 @@
     '.player-panel__position{background:#fff;}',
     '.player-panel__line-two{order:4;display:flex!important;align-items:center;justify-content:space-between;}',
     '.player-panel__line-two .player-panel__left,.player-panel__line-two .player-panel__right{width:auto;display:flex!important;align-items:center;gap:.55em;}',
-    '.player-panel__line-two .player-panel__center{position:fixed!important;left:50%;top:50%;}',
+    '.player-panel__line-two .player-panel__center{position:fixed!important;left:50%;top:46%!important;}',
     '.player-panel__line-two>.player-panel__right.player-panel__tv-visible{margin-left:auto;justify-content:flex-end;}',
     '.player-panel__line-two>.player-panel__left{margin-right:auto;}',
     '.player-panel__line-two .player-panel__box-buttons{padding:.12em;border-radius:3em!important;}',
@@ -14749,7 +14750,7 @@
     '.player-panel__next-episode-name{font-size:.8em;max-width:18em;}',
 
     /* У портреті не повертаємо весь плеєр: стискаємо центральні кнопки під екран. */
-    '@media (orientation:portrait){.player-panel__center{gap:1.2em}.player-panel__center .player-panel__playpause{width:4.5em;height:4.5em}.mv-skip{width:3.4em;height:3.4em}.player-panel__apex{max-width:none}.player-panel__apex-left-side{max-width:calc(100vw - 2em)}.player-next__episode{min-width:min(23em,calc(100vw - 2em));max-width:calc(100vw - 2em);min-height:6.4em}.player-next__thumbnail,.player-next__thumbnail-img{width:7em!important;min-width:7em;height:4.2em!important;flex-basis:7em}.player-next__episode-title{max-width:12em}.player-panel__timenow,.player-panel__timeend{font-size:.7em}.player-info__body{padding-left:4.2em;padding-right:4.2em}.player-info__title{width:76vw}}'
+    '@media (orientation:portrait){.player-panel__center{top:44%;gap:1.2em}.player-panel__line-two .player-panel__center{top:44%!important}.player-panel__center .player-panel__playpause{flex-basis:4.5em;width:4.5em;height:4.5em;min-width:4.5em;min-height:4.5em}.mv-skip{width:3.4em;height:3.4em}.player-panel__apex{max-width:none}.player-panel__apex-left-side{max-width:calc(100vw - 2em)}.player-next__episode{min-width:min(23em,calc(100vw - 2em));max-width:calc(100vw - 2em);min-height:6.4em}.player-next__thumbnail,.player-next__thumbnail-img{width:7em!important;min-width:7em;height:4.2em!important;flex-basis:7em}.player-next__episode-title{max-width:12em}.player-panel__timenow,.player-panel__timeend{font-size:.7em}.player-info__body{padding-left:4.2em;padding-right:4.2em}.player-info__title{width:76vw}}'
   ].join('\n');
 
   function addStyle() {
