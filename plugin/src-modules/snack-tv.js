@@ -337,7 +337,15 @@
     el.classList.remove('stv-tl-long', 'stv-tl-xlong');
     if (n > 50) el.classList.add('stv-tl-xlong'); else if (n > 26) el.classList.add('stv-tl-long');
   }
-  function textTitle(m) { return String((m && (m.title || m.name || m.original_title || m.original_name)) || '').trim(); }
+  function textTitle(m) {
+    if (!m) return '';
+    var choices = [m.title, m.name, m.original_title, m.original_name];
+    for (var i = 0; i < choices.length; i++) {
+      var value = String(choices[i] || '').trim();
+      if (value) return value;
+    }
+    return '';
+  }
   function appendTextLogo(box, m) {
     if (box.textContent.trim()) return;
     var fallback = document.createElement('span');
@@ -557,6 +565,7 @@
     // title: the logo art; the text only until (or without) it
     r.push(F + ' .full-start-new__title{font-size:' + tp(76, 40) + ';line-height:1.05;font-weight:800;letter-spacing:-.02em;margin:0 0 ' + tp(18, 12) + ';' +
       'max-width:' + px(t.descW + 100) + ';overflow-wrap:anywhere;display:block;max-height:none;overflow:visible;-webkit-line-clamp:unset}');
+    r.push(F + ' .full-start-new__title .stv-text-logo{position:static;display:block;max-width:100%;font-size:1em;font-weight:800;line-height:1.05;letter-spacing:-.02em;color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.6);overflow-wrap:anywhere;text-align:left}');
     // a long name without a logo (anime): smaller and at most 3 lines, else it pushed the buttons off the screen
     r.push(F + ' .full-start-new__title.stv-tl-long{font-size:' + tp(54, 30) + '}' + F + ' .full-start-new__title.stv-tl-xlong{font-size:' + tp(42, 24) + '}');
     r.push(F + ' .full-start-new__title:not(.stv-has-logo){display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}');
@@ -1612,8 +1621,14 @@
     var title = start.find('.full-start-new__title').first();
     if (title.length) {
       title[0].style.display = '';
-      var posterTitle = String(movie.title || movie.name || '').trim();
-      if (posterTitle) title[0].textContent = posterTitle;
+      var posterTitle = textTitle(movie) || title.text().trim();
+      if (posterTitle) {
+        var textLogo = document.createElement('span');
+        textLogo.className = 'stv-text-logo';
+        textLogo.textContent = posterTitle;
+        title[0].textContent = '';
+        title[0].appendChild(textLogo);
+      }
       titleLen(title[0], posterTitle || title.text());
       if (portrait() && ownPosterBg && movie.poster_path) {
         var clean = cleanPoster(movie);
