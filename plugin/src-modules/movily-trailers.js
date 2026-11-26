@@ -197,9 +197,44 @@
   }
 
   /* ---------- плеєр (YouTube iframe, без елементів керування) ---------- */
-  var cur = null, seq = 0;
+  var cur = null, seq = 0, pendingTrailer = null;
   var PAUSE_BETWEEN = 4000;   // скільки показуємо постер між повторами
   var YT_STATE = { ENDED: 0, PLAYING: 1 };
+
+  function trailerDelayMs() {
+    var value = parseInt(opt(K.delay), 10);
+    return isFinite(value) && value >= 0 ? Math.min(value, 30000) : 1500;
+  }
+
+  function clearPendingTrailer() {
+    if (!pendingTrailer) return;
+    clearTimeout(pendingTrailer.timer);
+    pendingTrailer = null;
+  }
+
+  function schedulePendingTrailer(job) {
+    if (!job || pendingTrailer !== job || job.token !== seq) return;
+    clearTimeout(job.timer);
+    var remaining = job.startedAt + trailerDelayMs() - Date.now();
+    if (remaining > 0) {
+      job.timer = setTimeout(function () { schedulePendingTrailer(job); }, remaining);
+      return;
+    }
+    if (!job.ready) return;
+    pendingTrailer = null;
+    if (!opt(K.on) || !job.ids || !job.ids.length) {
+      if (!job.ids || !job.ids.length) log('трейлера немає');
+      return;
+    }
+    var active = null; try { active = Lampa.Activity.active(); } catch (e) {}
+    if (active && active.activity && active.activity.render()[0] !== job.render[0]) return;
+    if (!document.body.contains(job.render[0])) return;
+    var bg = job.render.find('.full-start__background').first();
+    var holder = bg.length ? bg[0].parentNode : (job.render.find('.full-start-new').first().closest('.scroll').parent()[0] || job.render[0]);
+    if (!holder) return;
+    if (window.getComputedStyle(holder).position === 'static') holder.style.position = 'relative';
+    play(job.render, job.ids, holder, bg.length ? bg[0] : null);
+  }
 
   function stop(now) {
     if (!cur) return;
@@ -382,30 +417,21 @@
   /* ---------- картка фільму ---------- */
   function onFull(e) {
     /* нова картка: попередній трейлер завжди зупиняємо (навіть коли функцію вимкнено) */
-    if (e.type === 'start' || e.type === 'complite') { seq++; stop(true); }
+    if (e.type === 'start' || e.type === 'complite') { seq++; clearPendingTrailer(); stop(true); }
     if (e.type !== 'complite' || !opt(K.on)) return;
     var movie = (e.data && e.data.movie) || (e.object && e.object.card) || null;
     if (!movie || !movie.id || movie.adult) return;
     var render = e.object.activity.render();
     var token = ++seq;
-    var delay = parseInt(opt(K.delay), 10) || 1500;
-    var t0 = Date.now();
+    var job = pendingTrailer = { token: token, render: render, startedAt: Date.now(), ready: false, ids: null, timer: 0 };
+    schedulePendingTrailer(job);
 
-    /* запит до бази йде паралельно із затримкою; показуємо не раніше затримки */
+    /* Відлік стартує від відкриття картки; пошук відео йде паралельно й не скидає затримку. */
     trailerKey(movie, (e.data && e.data.videos) || null, function (ytId) {   /* ytId: список кандидатів */
-      var wait = Math.max(0, delay - (Date.now() - t0));
-      setTimeout(function () {
-        if (token !== seq || !opt(K.on)) return;
-        if (!ytId || !ytId.length) { log('трейлера немає'); return; }
-        var active = null; try { active = Lampa.Activity.active(); } catch (x) {}
-        if (active && active.activity && active.activity.render()[0] !== render[0]) return;   /* уже пішли з картки */
-        if (!document.body.contains(render[0])) return;
-        var bg = render.find('.full-start__background').first();
-        var holder = bg.length ? bg[0].parentNode : (render.find('.full-start-new').first().closest('.scroll').parent()[0] || render[0]);
-        if (!holder) return;
-        if (window.getComputedStyle(holder).position === 'static') holder.style.position = 'relative';
-        play(render, ytId, holder, bg.length ? bg[0] : null);
-      }, wait);
+      if (pendingTrailer !== job || token !== seq) return;
+      job.ids = ytId;
+      job.ready = true;
+      schedulePendingTrailer(job);
     });
   }
 
@@ -425,11 +451,12 @@
     api.addParam({ component: 'interface', param: { name: 'movily_trailers_title', type: 'title' }, field: { name: tr('grp') } });
     api.addParam({ component: 'interface', param: { name: K.on, type: 'trigger', 'default': DEF[K.on] },
       field: { name: tr('on'), description: tr('on_d') },
-      onChange: function (v) { if (v === false || v === 'false') { seq++; stop(); } } });
+      onChange: function (v) { if (v === false || v === 'false') { seq++; clearPendingTrailer(); stop(); } } });
     api.addParam({ component: 'interface', param: { name: K.sound, type: 'trigger', 'default': DEF[K.sound] },
       field: { name: tr('sound'), description: tr('sound_d') } });
     api.addParam({ component: 'interface', param: { name: K.delay, type: 'select', values: { '1000': tr('d1'), '1500': tr('d15'), '3000': tr('d3'), '5000': tr('d5') }, 'default': DEF[K.delay] },
-      field: { name: tr('delay') } });
+      field: { name: tr('delay') },
+      onChange: function () { if (pendingTrailer) schedulePendingTrailer(pendingTrailer); } });
   }
 
   function start() {
@@ -454,7 +481,7 @@
     }
     Lampa.Listener.follow('activity', function (e) { try { if (e.type === 'start' || e.type === 'archive' || e.type === 'destroy') setTimeout(guardActive, 50); } catch (x) {} });
     setInterval(guardActive, 1500);
-    try { Lampa.Player.listener.follow('start', function () { seq++; stop(); }); } catch (x) {}
+    try { Lampa.Player.listener.follow('start', function () { seq++; clearPendingTrailer(); stop(); }); } catch (x) {}
     document.addEventListener('visibilitychange', function () { document.hidden ? pause() : resume(); });
   }
 
