@@ -71,10 +71,12 @@
     '.player-info__values .value--stat,.player-info__values .value--speed,.player-info__values .value--pieces{display:none!important;}',
     '.player-info__values .value--size span{background:transparent!important;padding:0!important;}',
     '.player-info__values .value--name span{font-weight:600;}',
-    '.mv-top{position:fixed;z-index:6;top:max(1.1em,env(safe-area-inset-top));left:max(1.2em,env(safe-area-inset-left));display:flex;gap:.55em;align-items:center;transition:opacity .3s,transform .3s;opacity:0;transform:translateY(-1.2em);pointer-events:none;}',
+    '.mv-top{position:fixed;z-index:6;top:max(1.1em,env(safe-area-inset-top));left:max(1.2em,env(safe-area-inset-left));display:flex;gap:.65em;align-items:center;transition:opacity .3s,transform .3s;opacity:0;transform:translateY(-1.2em);pointer-events:none;}',
     '.player--panel-visible .mv-top{opacity:1;transform:none;pointer-events:auto;}',
-    '.mv-btn{width:2.75em;height:2.75em;display:flex;align-items:center;justify-content:center;border-radius:50%;color:#fff;cursor:pointer;}',
-    '.mv-btn svg{width:1.25em;height:1.25em;}',
+    '.mv-btn{box-sizing:border-box;width:3.05em;height:3.05em;display:flex;align-items:center;justify-content:center;border-radius:50%;color:#fff;cursor:pointer;}',
+    '.mv-btn svg{width:1.4em;height:1.4em;}',
+    '.mv-clock{position:fixed;z-index:6;top:max(1.1em,env(safe-area-inset-top));right:max(1.2em,env(safe-area-inset-right));display:flex;align-items:center;justify-content:center;min-width:3.4em;padding:.72em .95em;border-radius:2em;background:rgba(255,255,255,.16);-webkit-backdrop-filter:blur(22px) saturate(1.6);backdrop-filter:blur(22px) saturate(1.6);border:1px solid rgba(255,255,255,.24);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),0 6px 20px rgba(0,0,0,.3);color:#fff;font-size:1.05em;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:.04em;pointer-events:none;opacity:0;transform:translateY(-1.2em);transition:opacity .3s,transform .3s;}',
+    '.player--panel-visible .mv-clock{opacity:1;transform:none;}',
 
     /* Нижні дії: плейлист і наступна серія зліва; решта штатних дій справа. */
     'body.true--mobile .player-panel .player-panel__tv-visible{display:flex!important;}',
@@ -103,8 +105,74 @@
 
   var ICON_CLOSE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>';
   var ICON_PIP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3.5"/><rect x="12" y="11" width="6" height="5" rx="1" fill="currentColor" stroke="none"/></svg>';
+  var ICON_SIZE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M8 10h3V7m5 7h-3v3M8 14h3v3m5-7h-3V7"/></svg>';
   var ICON_REW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.5-5.8"/><path d="M4 4v4h4"/><text x="12" y="15.5" text-anchor="middle" font-size="8" font-weight="700" fill="#fff" stroke="none">10</text></svg>';
   var ICON_FWD = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.5-5.8"/><path d="M20 4v4h-4"/><text x="12" y="15.5" text-anchor="middle" font-size="8" font-weight="700" fill="#fff" stroke="none">10</text></svg>';
+
+  var SIZE_MODES = [
+    { value: 'default', label: 'За замовчуванням' },
+    { value: 'cover', label: 'Розширити' },
+    { value: 'fill', label: 'Заповнити' },
+    { value: 's115', label: 'Збільшити 115%' },
+    { value: 's130', label: 'Збільшити 130%' },
+    { value: 'v115', label: 'По вертикалі 115%' },
+    { value: 'v130', label: 'По вертикалі 130%' }
+  ];
+  var clockTimer = 0;
+  var clockElement = null;
+
+  function updateClock() {
+    if (!clockElement) return;
+    var now = new Date();
+    clockElement.textContent = ('0' + now.getHours()).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2);
+  }
+
+  function startClock(element) {
+    stopClock();
+    clockElement = element;
+    updateClock();
+    clockTimer = setInterval(updateClock, 15000);
+  }
+
+  function stopClock() {
+    if (clockTimer) clearInterval(clockTimer);
+    clockTimer = 0;
+    clockElement = null;
+  }
+
+  function currentSize() {
+    try { return L().Storage.get('player_size', 'default') || 'default'; }
+    catch (e) { return 'default'; }
+  }
+
+  function setSizeButtonLabel(button, value) {
+    var label = 'Розмір відео';
+    for (var i = 0; i < SIZE_MODES.length; i++) {
+      if (SIZE_MODES[i].value === value) { label += ': ' + SIZE_MODES[i].label; break; }
+    }
+    button.setAttribute('aria-label', label);
+    button.setAttribute('title', label);
+  }
+
+  function cycleVideoSize(button) {
+    var current = currentSize();
+    var index = -1;
+    for (var i = 0; i < SIZE_MODES.length; i++) {
+      if (SIZE_MODES[i].value === current) { index = i; break; }
+    }
+    var next = SIZE_MODES[(index + 1) % SIZE_MODES.length];
+    setSizeButtonLabel(button, next.value);
+    try {
+      if (L().PlayerPanel && L().PlayerPanel.listener) {
+        L().PlayerPanel.listener.send('size', { size: next.value });
+        return;
+      }
+    } catch (e) {}
+    try {
+      L().PlayerVideo.size(next.value);
+      L().Storage.set('player_size', next.value);
+    } catch (e) {}
+  }
 
   function video() {
     try { return L().PlayerVideo.video(); }
@@ -180,7 +248,17 @@
         if (pip) pip.click();
       }
     }));
+    var sizeButton = topButton(ICON_SIZE, 'Розмір відео', function () { cycleVideoSize(sizeButton); });
+    setSizeButtonLabel(sizeButton, currentSize());
+    top.appendChild(sizeButton);
     player.appendChild(top);
+
+    var clock = document.createElement('div');
+    clock.className = 'mv-clock';
+    clock.setAttribute('role', 'timer');
+    clock.setAttribute('aria-label', 'Поточний час');
+    player.appendChild(clock);
+    startClock(clock);
   }
 
   function tick() { try { build(); } catch (e) {} }
@@ -188,6 +266,7 @@
   function start() {
     addStyle();
     try { L().Player.listener.follow('start', function () { setTimeout(tick, 0); setTimeout(tick, 400); }); } catch (e) {}
+    try { L().Player.listener.follow('destroy', stopClock); } catch (e) {}
     tick();
   }
 
