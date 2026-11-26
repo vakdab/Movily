@@ -14677,17 +14677,22 @@
     '.player-panel .button{background:transparent;color:#fff;transition:background .15s,transform .15s;} ',
     '.player-panel .button.focus,.player .mv-btn.focus,.player .mv-skip.focus{background:rgba(255,255,255,.4)!important;color:#fff!important;transform:scale(1.06);}',
 
-    /* Затемнення тільки поверх реального відео — для читабельності контролів. */
-    '.player-panel{top:0;bottom:0;pointer-events:none;background:linear-gradient(to bottom,rgba(0,0,0,.55),rgba(0,0,0,0) 30%,rgba(0,0,0,0) 54%,rgba(0,0,0,.72));}',
+    /* Не затемнювати відео під час появи контролів: прибираємо і панель, і штатний Lampa overlay. */
+    '.player-panel{top:0;bottom:0;pointer-events:none;background:transparent!important;background-image:none!important;}',
+    '.player.player--panel-visible .player-video__overlay{background:transparent!important;animation:none!important;}',
     '.player-panel__body{position:absolute;inset:0;padding:max(1.2em,env(safe-area-inset-top)) max(1.2em,env(safe-area-inset-right)) max(1em,env(safe-area-inset-bottom)) max(1.2em,env(safe-area-inset-left));display:flex;flex-direction:column;justify-content:flex-end;font-size:1em;}',
     '.player-panel .selector,.player-panel .button,.player-panel__timeline,.mv-btn{pointer-events:auto;}',
 
-    /* Наступна серія — скляна картка над таймлайном зліва. */
-    '.player-panel__apex{transform:none;margin-bottom:.45em;max-width:calc(50% - 1em);}',
-    '.player-next__episode{background:rgba(255,255,255,.16)!important;-webkit-backdrop-filter:blur(22px) saturate(1.6);backdrop-filter:blur(22px) saturate(1.6);border:1px solid rgba(255,255,255,.22);border-radius:1.1em!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 6px 20px rgba(0,0,0,.25);padding:.4em .9em .4em .4em;}',
-    '.player-next__thumbnail{width:5.8em!important;min-width:5.8em;border-radius:.75em;overflow:hidden;}',
-    '.player-next__title{font-size:.75em;opacity:.85;}',
-    '.player-next__episode-title{font-size:1em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:13em;}',
+    /* Наступна серія: звільняємо її від 50% обмеження і повертаємо thumbnail до рідного 9:5.4. */
+    '.player-panel__apex{transform:none;margin-bottom:.55em;max-width:none;width:100%;display:flex;align-items:flex-end;}',
+    '.player-panel__apex-left-side{width:auto!important;max-width:min(32em,calc(100vw - 2.4em));flex:0 1 auto;}',
+    '.player-panel__apex-right-side{width:auto!important;flex:0 1 auto;margin-left:auto;}',
+    '.player-next__episode{box-sizing:border-box;width:max-content;min-width:min(25em,calc(100vw - 2.4em));max-width:min(32em,calc(100vw - 2.4em));min-height:7.1em;flex:0 1 auto;gap:.8em;background:rgba(255,255,255,.16)!important;-webkit-backdrop-filter:blur(22px) saturate(1.6);backdrop-filter:blur(22px) saturate(1.6);border:1px solid rgba(255,255,255,.22);border-radius:1.1em!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 6px 20px rgba(0,0,0,.25);padding:.55em 1em .55em .55em;}',
+    '.player-next__thumbnail{width:9em!important;min-width:9em;height:5.4em;flex:0 0 9em;border-radius:.75em;overflow:hidden;}',
+    '.player-next__thumbnail-img{width:9em!important;height:5.4em!important;object-fit:cover;}',
+    '.player-next__body{min-width:0;flex:1 1 auto;}',
+    '.player-next__title{font-size:.9em;opacity:.9;}',
+    '.player-next__episode-title{font-size:1.05em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:18em;}',
 
     /* Центральний ряд: −10 / play-pause / +10. */
     '.player-panel__line-two{display:block;position:static;font-size:1em!important;}',
@@ -14695,8 +14700,7 @@
     '.player-panel__center .player-panel__playpause{width:4.75em;height:4.75em;border-radius:50%!important;background:rgba(255,255,255,.2)!important;-webkit-backdrop-filter:blur(22px) saturate(1.6);backdrop-filter:blur(22px) saturate(1.6);border:1px solid rgba(255,255,255,.24);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),0 6px 20px rgba(0,0,0,.3);}',
     '.player-panel__center .player-panel__playpause svg{width:2em;height:2em;}',
     '.mv-skip{width:4em;height:4em;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;position:relative;cursor:pointer;}',
-    '.mv-skip svg{width:2.05em;height:2.05em;}',
-    '.mv-skip span{position:absolute;font-size:.72em;font-weight:700;top:50%;left:50%;transform:translate(-50%,-44%);}',
+    '.mv-skip svg{width:2.05em;height:2.05em;overflow:visible;}',
 
     /* Поточний час і залишок — скляні чипи над лінією прогресу. */
     '.player-panel__line-one{order:2;display:flex;align-items:center;justify-content:space-between;margin:.15em 0 .55em;}',
@@ -14745,7 +14749,7 @@
     '.player-panel__next-episode-name{font-size:.8em;max-width:18em;}',
 
     /* У портреті не повертаємо весь плеєр: стискаємо центральні кнопки під екран. */
-    '@media (orientation:portrait){.player-panel__center{gap:1.2em}.player-panel__center .player-panel__playpause{width:4.5em;height:4.5em}.mv-skip{width:3.4em;height:3.4em}.player-panel__apex{max-width:100%}.player-next__episode-title{max-width:9em}.player-panel__timenow,.player-panel__timeend{font-size:.7em}.player-info__body{padding-left:4.2em;padding-right:4.2em}.player-info__title{width:76vw}}'
+    '@media (orientation:portrait){.player-panel__center{gap:1.2em}.player-panel__center .player-panel__playpause{width:4.5em;height:4.5em}.mv-skip{width:3.4em;height:3.4em}.player-panel__apex{max-width:none}.player-panel__apex-left-side{max-width:calc(100vw - 2em)}.player-next__episode{min-width:min(23em,calc(100vw - 2em));max-width:calc(100vw - 2em);min-height:6.4em}.player-next__thumbnail,.player-next__thumbnail-img{width:7em!important;min-width:7em;height:4.2em!important;flex-basis:7em}.player-next__episode-title{max-width:12em}.player-panel__timenow,.player-panel__timeend{font-size:.7em}.player-info__body{padding-left:4.2em;padding-right:4.2em}.player-info__title{width:76vw}}'
   ].join('\n');
 
   function addStyle() {
@@ -14758,8 +14762,8 @@
 
   var ICON_CLOSE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>';
   var ICON_PIP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3.5"/><rect x="12" y="11" width="6" height="5" rx="1" fill="currentColor" stroke="none"/></svg>';
-  var ICON_REW = '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 6a10 10 0 1 1-9.5 7"/><path d="M6 6v7h7"/></svg>';
-  var ICON_FWD = '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 6a10 10 0 1 0 9.5 7"/><path d="M26 6v7h-7"/></svg>';
+  var ICON_REW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.5-5.8"/><path d="M4 4v4h4"/><text x="12" y="15.5" text-anchor="middle" font-size="8" font-weight="700" fill="#fff" stroke="none">10</text></svg>';
+  var ICON_FWD = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.5-5.8"/><path d="M20 4v4h-4"/><text x="12" y="15.5" text-anchor="middle" font-size="8" font-weight="700" fill="#fff" stroke="none">10</text></svg>';
 
   function video() {
     try { return L().PlayerVideo.video(); }
@@ -14774,8 +14778,16 @@
   }
 
   function bindTap(el, fn) {
-    el.addEventListener('click', function (e) { e.stopPropagation(); fn(); });
-    try { $(el).on('hover:enter', fn); } catch (e) {}
+    var lastAt = 0;
+    function invoke(e) {
+      var now = Date.now();
+      if (now - lastAt < 280) return;
+      lastAt = now;
+      if (e && e.stopPropagation) e.stopPropagation();
+      fn();
+    }
+    el.addEventListener('click', invoke);
+    try { $(el).on('hover:enter', invoke); } catch (e) {}
   }
 
   function topButton(icon, label, action) {
@@ -14802,12 +14814,12 @@
       back.className = 'mv-skip selector';
       back.setAttribute('role', 'button');
       back.setAttribute('aria-label', 'Назад на 10 секунд');
-      back.innerHTML = ICON_REW + '<span>' + STEP + '</span>';
+      back.innerHTML = ICON_REW;
       var fwd = document.createElement('div');
       fwd.className = 'mv-skip selector';
       fwd.setAttribute('role', 'button');
       fwd.setAttribute('aria-label', 'Вперед на 10 секунд');
-      fwd.innerHTML = ICON_FWD + '<span>' + STEP + '</span>';
+      fwd.innerHTML = ICON_FWD;
       center.insertBefore(back, pp);
       center.appendChild(fwd);
       bindTap(back, function () { seek(-STEP); });
