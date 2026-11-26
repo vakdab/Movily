@@ -37,39 +37,6 @@
         .lp-step, .lp-status { visibility: hidden !important; }
     </style>
     <script>
-        /* Movily: повернення з SenPlayer (?sp=done|cancel|error&position=...). Це нова вкладка Safari: Lampa в ній
-           не вантажимо, лише передаємо дані вкладці, де запускали відео (BroadcastChannel / storage), і показуємо
-           «Готово». Якщо іншої вкладки вже немає, переходимо в застосунок (?spr=...), і він обробить повернення сам */
-        (function () {
-            try {
-                var q = new URLSearchParams(location.search);
-                if (!q.has('sp')) return;
-                var params = {}; q.forEach(function (v, k) { if (k !== 'sp') params[k] = v; });
-                delete params.t;
-                var r = { kind: q.get('sp'), params: params, id: Date.now() + '-' + Math.random().toString(36).slice(2, 7) };
-                window.__movily_stop = true;
-                try { var bc = new BroadcastChannel('movily_sp_channel'); bc.postMessage(r); bc.close(); } catch (e) {}
-                try { localStorage.setItem('movily_sp_channel', JSON.stringify(r)); } catch (e) {}
-                var tp = q.get('t');
-                if (tp && /^[a-z0-9]{8,64}$/i.test(tp) && window.fetch) {
-                    try { fetch('https://ntfy.sh/' + tp, { method: 'POST', body: JSON.stringify(r) }).catch(function () {}); } catch (e) {}
-                }
-                var acked = false;
-                try { var ack = new BroadcastChannel('movily_sp_channel_ack'); ack.onmessage = function () { acked = true; }; } catch (e) {}
-                var uk = /^(uk|ru)/i.test(navigator.language || 'uk');
-                document.addEventListener('DOMContentLoaded', function () {
-                    document.title = 'Movily';
-                    document.body.style.cssText = 'margin:0;background:#000';
-                    document.body.innerHTML = '<div style="position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:24px;color:#fff;font:600 17px -apple-system,Helvetica,Arial,sans-serif"><div style="font-size:44px">&#10003;</div><div>' + (uk ? 'Готово. Поверніться у Movily' : 'Done. Go back to Movily') + '</div><div style="font-weight:400;opacity:.6;font-size:14px">' + (uk ? 'Цю вкладку можна закрити' : 'You can close this tab') + '</div></div>';
-                    setTimeout(function () { try { window.close(); } catch (e) {} }, 500);
-                    setTimeout(function () {
-                        if (acked) return;
-                        window.__movily_stop = false;
-                        location.replace(location.pathname + '?spr=' + encodeURIComponent(JSON.stringify(r)));
-                    }, 2200);
-                });
-            } catch (e) {}
-        })();
         /* Movily: без вибору мови, інтерфейс одразу українською */
         window.lampa_settings = window.lampa_settings || {};
         window.lampa_settings.lang_use = false;
@@ -146,7 +113,6 @@
         }
 
         function putScript(scripts, onload, onerror){
-            if (window.__movily_stop) return
             var add = function(src){
                 console.log('Loader', 'try-load-script', src)
 
