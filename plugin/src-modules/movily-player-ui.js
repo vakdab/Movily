@@ -19,6 +19,7 @@
     /* Не затемнювати відео під час появи контролів: прибираємо і панель, і штатний Lampa overlay. */
     '.player-panel{top:0;bottom:0;pointer-events:none;background:transparent!important;background-image:none!important;}',
     '.player.player--panel-visible .player-video__overlay{background:transparent!important;animation:none!important;}',
+    '.player .player-video__paused{display:none!important;}',
     '.player-panel__body{position:absolute;inset:0;padding:max(1.2em,env(safe-area-inset-top)) max(1.2em,env(safe-area-inset-right)) max(1em,env(safe-area-inset-bottom)) max(1.2em,env(safe-area-inset-left));display:flex;flex-direction:column;justify-content:flex-end;font-size:1em;}',
     '.player-panel .selector,.player-panel .button,.player-panel__timeline,.mv-btn{pointer-events:auto;}',
 
