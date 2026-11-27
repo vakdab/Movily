@@ -14070,10 +14070,9 @@
   var PAUSE_BETWEEN = 4000;   // скільки показуємо постер між повторами
   var YT_STATE = { ENDED: 0, PLAYING: 1 };
 
-  function trailerDelayMs() {
-    var value = parseInt(opt(K.delay), 10);
-    return isFinite(value) && value >= 0 ? Math.min(value, 30000) : 1500;
-  }
+  /* Затримка перед стартом трейлера фіксована: 15 секунд від відкриття картки (пункту в налаштуваннях немає). */
+  var TRAILER_DELAY_MS = 15000;
+  function trailerDelayMs() { return TRAILER_DELAY_MS; }
 
   function clearPendingTrailer() {
     if (!pendingTrailer) return;
@@ -14323,9 +14322,6 @@
       onChange: function (v) { if (v === false || v === 'false') { seq++; clearPendingTrailer(); stop(); } } });
     api.addParam({ component: 'interface', param: { name: K.sound, type: 'trigger', 'default': DEF[K.sound] },
       field: { name: tr('sound'), description: tr('sound_d') } });
-    api.addParam({ component: 'interface', param: { name: K.delay, type: 'select', values: { '1000': tr('d1'), '1500': tr('d15'), '3000': tr('d3'), '5000': tr('d5') }, 'default': DEF[K.delay] },
-      field: { name: tr('delay') },
-      onChange: function () { if (pendingTrailer) schedulePendingTrailer(pendingTrailer); } });
   }
 
   function start() {
