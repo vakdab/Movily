@@ -6066,7 +6066,6 @@
     var storageListenerBound = false;
     var activityListenerBound = false;
     var fullListenerBound = false;
-    var heroSettingsListenerBound = false;
     var topnavSettingsOpen = false;
     var perfModeDirty = false;
     var controlPanelOpen = false;
@@ -6767,11 +6766,7 @@
     }
 
     function heroBannerEnabled() {
-      try {
-        if (!window.Lampa || !Lampa.Storage) return false;
-        var v = Lampa.Storage.get(HERO_KEY, 'false');
-        return v === true || v === 'true' || v === 'on';
-      } catch (e) { return false; }
+      return false;
     }
 
     function getHeroAlign() {
@@ -7724,15 +7719,6 @@
         Lampa.Activity.push({ url: '', title: item.title || item.name || '', component: 'full', id: item.id, method: type, source: src, card: item });
       } catch (e) { }
     }
-
-    // for the «Interface» switch (movily-trailers.js): show or drop the hero banner right now
-    window.__movily_hero_refresh = function (value) {
-      try {
-        var enabled = typeof value === 'undefined' ? heroBannerEnabled() : (value === true || value === 'true' || value === 'on');
-        if (enabled) buildHeroBanner();
-        else removeHeroBanner();
-      } catch (e) { }
-    };
 
     function buildHeroBanner() {
       try {
@@ -8997,36 +8983,12 @@
             schedulePatch();
             try {
               var comp = e.object && e.object.component;
-              if (isHeroComponent(comp)) {
-                if (document.body) document.body.classList.add('agnative-has-hero');
-                if (!document.querySelector('.agnative-hero')) {
-                  setTimeout(buildHeroBanner, 900);
-                }
-              } else {
+              if (!isHeroComponent(comp)) {
                 if (document.body) document.body.classList.remove('agnative-has-hero');
                 removeHeroBanner();
               }
             } catch (err) { }
           }
-        });
-      }
-
-      if (!heroSettingsListenerBound && Lampa.Settings && Lampa.Settings.listener) {
-        heroSettingsListenerBound = true;
-        Lampa.Settings.listener.follow('close', function () {
-          var attempts = 0;
-          function restoreHeroBanner() {
-            if (!heroBannerEnabled()) {
-              removeHeroBanner();
-              return;
-            }
-            if (isOnMainPage()) {
-              buildHeroBanner();
-              if (document.querySelector('.agnative-hero')) return;
-            }
-            if (attempts++ < 5) setTimeout(restoreHeroBanner, 250);
-          }
-          setTimeout(restoreHeroBanner, 150);
         });
       }
 
@@ -12262,6 +12224,7 @@
     function startPlugin() {
       registerSettings();
       bindRuntimeListeners();
+      removeHeroBanner();
       if (!pluginEnabled()) {
         removePluginUi();
         return;
@@ -13920,19 +13883,19 @@
   var MAX_SEC = 240;            // довші ролики (фічерети, добірки) не беремо
 
   var STR = {
-    uk: { grp: 'Трейлери', hero: 'Hero банер', hero_d: 'Великий банер вгорі головної та інших сторінок зі списками',
+    uk: { grp: 'Трейлери',
            on: 'Трейлер у картці фільму', on_d: 'На сторінці фільму трейлер сам запускається фоном. Джерело: The Trailer Database.',
           sound: 'Звук трейлера', sound_d: 'Вмикати звук одразу. Якщо браузер не дозволяє, трейлер стартує без звуку.',
           delay: 'Затримка трейлера', d1: '1 секунда', d15: '1,5 секунди', d3: '3 секунди', d5: '5 секунд',
           mute: 'Звук', unmute: 'Вимкнути звук',
           fmt: 'Формат трейлера', fmt_d: 'Як трейлер виглядає в картці: фоном на весь екран або окремим вікном 16:9 під шапкою, логотип поверх нього.', f_bg: 'На весь фон', f_win: 'Вікно 16:9' },
-    ru: { grp: 'Трейлеры', hero: 'Hero баннер', hero_d: 'Большой баннер вверху главной и других страниц со списками',
+    ru: { grp: 'Трейлеры',
            on: 'Трейлер в карточке фильма', on_d: 'На странице фильма трейлер сам запускается фоном. Источник: The Trailer Database.',
           sound: 'Звук трейлера', sound_d: 'Включать звук сразу. Если браузер не разрешает, трейлер стартует без звука.',
           delay: 'Задержка трейлера', d1: '1 секунда', d15: '1,5 секунды', d3: '3 секунды', d5: '5 секунд',
           mute: 'Звук', unmute: 'Выключить звук',
           fmt: 'Формат трейлера', fmt_d: 'Как трейлер выглядит в карточке: фоном на весь экран или отдельным окном 16:9 под шапкой, логотип поверх него.', f_bg: 'На весь фон', f_win: 'Окно 16:9' },
-    en: { grp: 'Trailers', hero: 'Hero banner', hero_d: 'Large banner at the top of the home screen and other list pages',
+    en: { grp: 'Trailers',
            on: 'Trailer in the movie card', on_d: 'On a movie page the trailer starts by itself in the background. Source: The Trailer Database.',
           sound: 'Trailer sound', sound_d: 'Start with sound. If the browser blocks it, the trailer starts muted.',
           delay: 'Trailer delay', d1: '1 second', d15: '1.5 seconds', d3: '3 seconds', d5: '5 seconds',
@@ -14357,14 +14320,6 @@
       onChange: function (v) { if (v === false || v === 'false') { seq++; clearPendingTrailer(); stop(); } } });
     api.addParam({ component: 'interface', param: { name: K.sound, type: 'trigger', 'default': DEF[K.sound] },
       field: { name: tr('sound'), description: tr('sound_d') } });
-    /* Hero-банер: вмикач у «Інтерфейсі» (той самий ключ, що в розділі AGNative; сам банер малює snack-leftdock) */
-    api.addParam({ component: 'interface', param: { name: 'appletv_agnative_hero_enabled', type: 'trigger', 'default': false },
-      field: { name: tr('hero'), description: tr('hero_d') },
-      onChange: function (value) {
-        try {
-          if (window.__movily_hero_refresh) window.__movily_hero_refresh(value);
-        } catch (e) {}
-      } });
   }
 
   function start() {

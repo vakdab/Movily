@@ -1072,7 +1072,6 @@
     var storageListenerBound = false;
     var activityListenerBound = false;
     var fullListenerBound = false;
-    var heroSettingsListenerBound = false;
     var topnavSettingsOpen = false;
     var perfModeDirty = false;
     var controlPanelOpen = false;
@@ -1773,11 +1772,7 @@
     }
 
     function heroBannerEnabled() {
-      try {
-        if (!window.Lampa || !Lampa.Storage) return false;
-        var v = Lampa.Storage.get(HERO_KEY, 'false');
-        return v === true || v === 'true' || v === 'on';
-      } catch (e) { return false; }
+      return false;
     }
 
     function getHeroAlign() {
@@ -2730,15 +2725,6 @@
         Lampa.Activity.push({ url: '', title: item.title || item.name || '', component: 'full', id: item.id, method: type, source: src, card: item });
       } catch (e) { }
     }
-
-    // for the «Interface» switch (movily-trailers.js): show or drop the hero banner right now
-    window.__movily_hero_refresh = function (value) {
-      try {
-        var enabled = typeof value === 'undefined' ? heroBannerEnabled() : (value === true || value === 'true' || value === 'on');
-        if (enabled) buildHeroBanner();
-        else removeHeroBanner();
-      } catch (e) { }
-    };
 
     function buildHeroBanner() {
       try {
@@ -4003,36 +3989,12 @@
             schedulePatch();
             try {
               var comp = e.object && e.object.component;
-              if (isHeroComponent(comp)) {
-                if (document.body) document.body.classList.add('agnative-has-hero');
-                if (!document.querySelector('.agnative-hero')) {
-                  setTimeout(buildHeroBanner, 900);
-                }
-              } else {
+              if (!isHeroComponent(comp)) {
                 if (document.body) document.body.classList.remove('agnative-has-hero');
                 removeHeroBanner();
               }
             } catch (err) { }
           }
-        });
-      }
-
-      if (!heroSettingsListenerBound && Lampa.Settings && Lampa.Settings.listener) {
-        heroSettingsListenerBound = true;
-        Lampa.Settings.listener.follow('close', function () {
-          var attempts = 0;
-          function restoreHeroBanner() {
-            if (!heroBannerEnabled()) {
-              removeHeroBanner();
-              return;
-            }
-            if (isOnMainPage()) {
-              buildHeroBanner();
-              if (document.querySelector('.agnative-hero')) return;
-            }
-            if (attempts++ < 5) setTimeout(restoreHeroBanner, 250);
-          }
-          setTimeout(restoreHeroBanner, 150);
         });
       }
 
@@ -7268,6 +7230,7 @@
     function startPlugin() {
       registerSettings();
       bindRuntimeListeners();
+      removeHeroBanner();
       if (!pluginEnabled()) {
         removePluginUi();
         return;
