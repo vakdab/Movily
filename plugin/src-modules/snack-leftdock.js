@@ -1072,6 +1072,7 @@
     var storageListenerBound = false;
     var activityListenerBound = false;
     var fullListenerBound = false;
+    var heroSettingsListenerBound = false;
     var topnavSettingsOpen = false;
     var perfModeDirty = false;
     var controlPanelOpen = false;
@@ -2731,8 +2732,12 @@
     }
 
     // for the «Interface» switch (movily-trailers.js): show or drop the hero banner right now
-    window.__movily_hero_refresh = function () {
-      try { if (heroBannerEnabled()) buildHeroBanner(); else removeHeroBanner(); } catch (e) { }
+    window.__movily_hero_refresh = function (value) {
+      try {
+        var enabled = typeof value === 'undefined' ? heroBannerEnabled() : (value === true || value === 'true' || value === 'on');
+        if (enabled) buildHeroBanner();
+        else removeHeroBanner();
+      } catch (e) { }
     };
 
     function buildHeroBanner() {
@@ -4009,6 +4014,25 @@
               }
             } catch (err) { }
           }
+        });
+      }
+
+      if (!heroSettingsListenerBound && Lampa.Settings && Lampa.Settings.listener) {
+        heroSettingsListenerBound = true;
+        Lampa.Settings.listener.follow('close', function () {
+          var attempts = 0;
+          function restoreHeroBanner() {
+            if (!heroBannerEnabled()) {
+              removeHeroBanner();
+              return;
+            }
+            if (isOnMainPage()) {
+              buildHeroBanner();
+              if (document.querySelector('.agnative-hero')) return;
+            }
+            if (attempts++ < 5) setTimeout(restoreHeroBanner, 250);
+          }
+          setTimeout(restoreHeroBanner, 150);
         });
       }
 

@@ -459,7 +459,11 @@
     /* Hero-банер: вмикач у «Інтерфейсі» (той самий ключ, що в розділі AGNative; сам банер малює snack-leftdock) */
     api.addParam({ component: 'interface', param: { name: 'appletv_agnative_hero_enabled', type: 'trigger', 'default': false },
       field: { name: tr('hero'), description: tr('hero_d') },
-      onChange: function () { try { if (window.__movily_hero_refresh) window.__movily_hero_refresh(); } catch (e) {} } });
+      onChange: function (value) {
+        try {
+          if (window.__movily_hero_refresh) window.__movily_hero_refresh(value);
+        } catch (e) {}
+      } });
   }
 
   function start() {
