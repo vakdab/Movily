@@ -14070,8 +14070,8 @@
   var PAUSE_BETWEEN = 4000;   // скільки показуємо постер між повторами
   var YT_STATE = { ENDED: 0, PLAYING: 1 };
 
-  /* Затримка перед стартом трейлера фіксована: 15 секунд від відкриття картки (пункту в налаштуваннях немає). */
-  var TRAILER_DELAY_MS = 15000;
+  /* Затримка перед стартом трейлера фіксована: 8 секунд від відкриття картки (пункту в налаштуваннях немає). */
+  var TRAILER_DELAY_MS = 8000;
   function trailerDelayMs() { return TRAILER_DELAY_MS; }
 
   function clearPendingTrailer() {
