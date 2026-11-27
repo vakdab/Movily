@@ -1758,11 +1758,14 @@
       }).filter(Boolean);
     }
 
+    // pages that may carry the hero banner: the home screen and every other list page with rows
+    // (movies, series, cartoons, categories); never a card, a player, search or settings
+    function isHeroComponent(c) { return c === 'main' || c === 'category' || c === 'category_full'; }
     function isOnMainPage() {
       try {
         if (window.Lampa && Lampa.Activity && typeof Lampa.Activity.active === 'function') {
           var active = Lampa.Activity.active();
-          if (active && active.component) return active.component === 'main';
+          if (active && active.component) return isHeroComponent(active.component);
         }
       } catch (e) {}
       return false;
@@ -2726,6 +2729,11 @@
         Lampa.Activity.push({ url: '', title: item.title || item.name || '', component: 'full', id: item.id, method: type, source: src, card: item });
       } catch (e) { }
     }
+
+    // for the «Interface» switch (movily-trailers.js): show or drop the hero banner right now
+    window.__movily_hero_refresh = function () {
+      try { if (heroBannerEnabled()) buildHeroBanner(); else removeHeroBanner(); } catch (e) { }
+    };
 
     function buildHeroBanner() {
       try {
@@ -3990,7 +3998,7 @@
             schedulePatch();
             try {
               var comp = e.object && e.object.component;
-              if (comp === 'main') {
+              if (isHeroComponent(comp)) {
                 if (document.body) document.body.classList.add('agnative-has-hero');
                 if (!document.querySelector('.agnative-hero')) {
                   setTimeout(buildHeroBanner, 900);
