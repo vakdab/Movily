@@ -1631,18 +1631,25 @@
         title[0].appendChild(textLogo);
       }
       titleLen(title[0], posterTitle || title.text());
-      if (portrait() && ownPosterBg && movie.poster_path) {
-        var clean = cleanPoster(movie);
-        if (clean && clean !== movie.poster_path) ownPosterBg.src = img(clean, tmdbSize('poster', window.innerWidth));
-      }
       if (!title.find('img.stv-logo').length) {
         var tEl = title[0];
         // the same logo the posters in the rows use: always asked from TMDB /images (not the card's own partial data)
         var logoMovie = { id: movie.id, source: movie.source, media_type: movie.media_type, name: movie.name, original_name: movie.original_name, first_air_date: movie.first_air_date, number_of_seasons: movie.number_of_seasons, title: movie.title, original_title: movie.original_title, release_date: movie.release_date };
-        logoInto(tEl, logoMovie, tmdbSize('logo', T[M].logoW * k), null, null, function () { return inDoc(tEl); }, null, function () {
+        logoInto(tEl, logoMovie, tmdbSize('logo', T[M].logoW * k), null, null, function () { return inDoc(tEl); }, function () {
+          // no TMDB text logo: the poster has the title printed on it, so show that poster as is
+          // (not the "clean" one) and drop the text title above it, exactly as the rows do
+          if (!portrait() || !ownPosterBg || !movie.poster_path) return false;
+          ownPosterBg.src = img(movie.poster_path, tmdbSize('poster', window.innerWidth));
+          tEl.style.display = 'none';
+          return true;
+        }, function () {
           // logo loaded: the text title is replaced by the picture
           var spans = tEl.querySelectorAll('.stv-text-logo');
           Array.prototype.forEach.call(spans, function (n) { n.parentNode.removeChild(n); });
+          if (portrait() && ownPosterBg && movie.poster_path) {
+            var clean = cleanPoster(movie);
+            if (clean && clean !== movie.poster_path) ownPosterBg.src = img(clean, tmdbSize('poster', window.innerWidth));
+          }
         });
       }
     }
