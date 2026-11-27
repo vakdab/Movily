@@ -186,9 +186,16 @@
     var mem = {}, timer = 0;
     try { mem = objOf(Lampa.Storage.get(name, '{}')); } catch (e) {}
     return {
-      get: function (key) { return mem[key]; },
+      get: function (key) {
+        var v = mem[key];
+        // an empty answer ('' = no logo found) is only trusted for a day: TMDB gets logos later, a request may have failed
+        if (v === '' && mem['~' + key] && Date.now() - mem['~' + key] > 864e5) { delete mem[key]; delete mem['~' + key]; return undefined; }
+        if (v === '' && !mem['~' + key]) { delete mem[key]; return undefined; }
+        return v;
+      },
       set: function (key, v) {
         mem[key] = v;
+        if (v === '') mem['~' + key] = Date.now(); else delete mem['~' + key];
         if (timer) return;
         timer = setTimeout(function () {
           timer = 0;
@@ -320,7 +327,7 @@
     if (!own && !(m.title || m.name || m.original_title || m.original_name)) return cb('');
     var langs = logoLangs(), key = own ? logoKey(m, langs) : 'x:' + (m.original_title || m.original_name || m.title || m.name) + ':' + yearOf(m) + ':' + langs[0], have = logoCache().get(key);
     if (have !== undefined) return cb(have);
-    if (own && m.images && m.images.logos) { var p = pickLogo(m.images.logos); logoCache().set(key, p); return cb(p); }
+    if (own && m.images && m.images.logos) { var p = pickLogo(m.images.logos); if (p) { logoCache().set(key, p); return cb(p); } }
     if (logoWait[key]) { logoWait[key].push(cb); return; }
     logoWait[key] = [cb];
     function finish(p) { logoCache().set(key, p || ''); var w = logoWait[key]; delete logoWait[key]; w.forEach(function (f) { f(p || ''); }); }
