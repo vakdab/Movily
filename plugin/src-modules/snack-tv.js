@@ -579,8 +579,6 @@
     r.push(F + ' .mvt-row-sound-pending{display:none!important}');
     r.push(F + ' .button--movily-sound .mvt-row-sound-off{display:none}' + F + ' .button--movily-sound.mvt-row-sound-muted .mvt-row-sound-on{display:none}' + F + ' .button--movily-sound.mvt-row-sound-muted .mvt-row-sound-off{display:inline-block}');
     r.push(F + ' .full-start-new__title.stv-has-logo{font-size:0;line-height:0;color:transparent}');
-    // the plain title under the logo picture
-    r.push(F + ' .stv-title-sub{display:block;font-size:' + tp(30, 17) + ';font-weight:600;line-height:1.25;color:rgba(235,235,245,.9);margin:' + tp(4, 2) + ' 0 ' + tp(14, 10) + ';max-width:' + px(t.descW + 100) + ';overflow-wrap:anywhere;text-shadow:0 1px 8px rgba(0,0,0,.6)}');
     r.push(F + ' .full-start-new__title .stv-logo{display:block;max-width:' + px(t.logoW) + ';max-height:' + px(t.logoH) + ';width:auto;height:auto;' +
       'object-fit:contain;object-position:left bottom;opacity:0;transition:opacity .35s}');
     r.push(F + ' .full-start-new__title.stv-has-logo .stv-logo{opacity:1}');
@@ -673,7 +671,6 @@
       F + ' .full-start-new__right{display:flex;flex-direction:column;align-items:center;text-align:center}' +
       F + ' .full-start-new__title{order:1;margin-left:auto;margin-right:auto;max-width:100%}' +
       F + ' .full-start-new__title .stv-logo{max-width:78vw;object-position:center bottom;margin:0 auto}' +
-      F + ' .stv-title-sub{order:2;text-align:center;max-width:100%}' +
       F + ' .stv-meta{order:3;justify-content:center}' +
       // the white button across, the round ones in one even row under it
       F + ' .full-start-new__buttons{order:4;flex-wrap:wrap!important;justify-content:center;gap:' + px(12) + ';width:100%}' +
@@ -693,7 +690,6 @@
         F + ' .full-start-new__title{order:1;margin-left:auto;margin-right:auto;max-width:100%}' +
         F + ' .full-start-new__title .stv-logo{object-position:center bottom;margin:0 auto}' +
         F + ' .full-start-new__title .stv-text-logo{text-align:center}' +
-        F + ' .stv-title-sub{order:2}' +
         F + ' .stv-meta{order:3;justify-content:center}' +
         F + ' .full-start-new__buttons{order:4;justify-content:center}' +
         F + ' .stv-desc{order:5;text-align:center;margin-left:auto;margin-right:auto}' +
@@ -1651,8 +1647,6 @@
       var posterTitle = textTitle(movie) || title.text().trim();
       title[0].classList.remove('stv-has-logo');
       title[0].textContent = '';
-      var oldSub = title[0].parentNode && title[0].parentNode.querySelector('.stv-title-sub');
-      if (oldSub) oldSub.parentNode.removeChild(oldSub);
       if (posterTitle) {
         var textLogo = document.createElement('span');
         textLogo.className = 'stv-text-logo';
@@ -1673,15 +1667,15 @@
           return true;
         }, function () {
           // logo loaded: the text title is replaced by the picture
+          // the big text becomes the small plain title UNDER the logo picture (the class snack-header.js styles),
+          // made here at once so nothing is rebuilt after the logo appears
           var spans = tEl.querySelectorAll('.stv-text-logo');
           Array.prototype.forEach.call(spans, function (n) { n.parentNode.removeChild(n); });
-          // the plain title under the logo picture
-          var sub = tEl.parentNode && tEl.parentNode.querySelector('.stv-title-sub');
-          if (!sub && tEl.parentNode && posterTitle) {
-            sub = document.createElement('div');
-            sub.className = 'stv-title-sub';
-            sub.textContent = posterTitle;
-            tEl.parentNode.insertBefore(sub, tEl.nextSibling);
+          if (posterTitle && !tEl.querySelector('.snack-title-text')) {
+            var plain = document.createElement('div');
+            plain.className = 'snack-title-text';
+            plain.textContent = posterTitle;
+            tEl.appendChild(plain);
           }
           if (portrait() && ownPosterBg && movie.poster_path) {
             var clean = cleanPoster(movie);

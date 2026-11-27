@@ -36,7 +36,7 @@
       /* the header\'s own right-hand items stay out of the way */
       'body.stv .head__actions,body.stv .head__action{display:none!important}',
       /* full card order: logo, then the text title under it, then the reactions in ONE row, then the rest */
-      'body.stv .full-start-new__title.stv-has-logo,body.stv .full-start-new__title.stv-logo-pending{font-size:clamp(16px,4.6vw,22px)!important;line-height:1.2!important;color:#fff!important;font-weight:800!important;text-align:center;display:flex!important;flex-direction:column-reverse;align-items:center;gap:8px;min-height:clamp(92px,14vw,150px)!important;box-sizing:border-box}',
+      'body.stv .full-start-new__title.stv-has-logo,body.stv .full-start-new__title.stv-logo-pending{font-size:clamp(16px,4.6vw,22px)!important;line-height:1.2!important;color:#fff!important;font-weight:800!important;text-align:center;display:flex!important;flex-direction:column-reverse;align-items:center;gap:8px;min-height:0!important;justify-content:flex-end;margin-bottom:10px!important;box-sizing:border-box}',
       'body.stv .full-start-new__title.stv-has-logo .stv-logo{margin:0 auto!important;object-position:center bottom!important}',
       /* the reactions come right after the title block (under logo + text), never above it */
       'body.stv .full-start-new__right{display:flex!important;flex-direction:column}',
