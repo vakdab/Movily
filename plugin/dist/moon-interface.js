@@ -1704,6 +1704,8 @@
     r.push(F + ' .mvt-row-sound-pending{display:none!important}');
     r.push(F + ' .button--movily-sound .mvt-row-sound-off{display:none}' + F + ' .button--movily-sound.mvt-row-sound-muted .mvt-row-sound-on{display:none}' + F + ' .button--movily-sound.mvt-row-sound-muted .mvt-row-sound-off{display:inline-block}');
     r.push(F + ' .full-start-new__title.stv-has-logo{font-size:0;line-height:0;color:transparent}');
+    // the plain title under the logo picture
+    r.push(F + ' .stv-title-sub{display:block;font-size:' + tp(30, 17) + ';font-weight:600;line-height:1.25;color:rgba(235,235,245,.9);margin:' + tp(4, 2) + ' 0 ' + tp(14, 10) + ';max-width:' + px(t.descW + 100) + ';overflow-wrap:anywhere;text-shadow:0 1px 8px rgba(0,0,0,.6)}');
     r.push(F + ' .full-start-new__title .stv-logo{display:block;max-width:' + px(t.logoW) + ';max-height:' + px(t.logoH) + ';width:auto;height:auto;' +
       'object-fit:contain;object-position:left bottom;opacity:0;transition:opacity .35s}');
     r.push(F + ' .full-start-new__title.stv-has-logo .stv-logo{opacity:1}');
@@ -1796,14 +1798,32 @@
       F + ' .full-start-new__right{display:flex;flex-direction:column;align-items:center;text-align:center}' +
       F + ' .full-start-new__title{order:1;margin-left:auto;margin-right:auto;max-width:100%}' +
       F + ' .full-start-new__title .stv-logo{max-width:78vw;object-position:center bottom;margin:0 auto}' +
-      F + ' .stv-meta{order:2;justify-content:center}' +
+      F + ' .stv-title-sub{order:2;text-align:center;max-width:100%}' +
+      F + ' .stv-meta{order:3;justify-content:center}' +
       // the white button across, the round ones in one even row under it
-      F + ' .full-start-new__buttons{order:3;flex-wrap:wrap!important;justify-content:center;gap:' + px(12) + ';width:100%;position:relative;left:' + px(24) + '!important}' +
+      F + ' .full-start-new__buttons{order:4;flex-wrap:wrap!important;justify-content:center;gap:' + px(12) + ';width:100%}' +
       F + ' .full-start-new__buttons > .full-start__button.stv-primary{flex:1 0 100%;max-width:100%;margin:' + px(6) + ' 0 ' + px(16) + '!important}' +
       F + ' .full-start-new__buttons > .full-start__button:not(.stv-primary){margin:0 0 ' + px(12) + '!important}' +
-      F + ' .stv-desc{order:4;text-align:left;max-width:100%;margin-top:' + px(4) + '}' +
+      F + ' .stv-desc{order:5;text-align:center;max-width:100%;margin-top:' + px(4) + '}' +
       F + ' .full-start-new__title,' + F + ' .stv-meta,' + F + ' .stv-desc{text-shadow:0 1px 10px rgba(0,0,0,.45)}' +
       '}');
+    // everything centred in landscape too (phones and tablets turned sideways); TVs keep Apple TV's left layout
+    if (!tv) {
+      var LAND = '@media screen and (min-width:600px){';
+      r.push(LAND +
+        F + ' .stv-scrim{background:linear-gradient(to top,#000 0%,rgba(0,0,0,.7) 30%,rgba(0,0,0,0) 66%);' +
+        'background:linear-gradient(to top,var(--stv-bg,#000) 0%,var(--stv-bg-a6,rgba(0,0,0,.7)) 30%,rgba(0,0,0,0) 66%)}' +
+        F + ' .stv-scrim:after{display:none}' +
+        F + ' .full-start-new__right{display:flex;flex-direction:column;align-items:center;text-align:center}' +
+        F + ' .full-start-new__title{order:1;margin-left:auto;margin-right:auto;max-width:100%}' +
+        F + ' .full-start-new__title .stv-logo{object-position:center bottom;margin:0 auto}' +
+        F + ' .full-start-new__title .stv-text-logo{text-align:center}' +
+        F + ' .stv-title-sub{order:2}' +
+        F + ' .stv-meta{order:3;justify-content:center}' +
+        F + ' .full-start-new__buttons{order:4;justify-content:center}' +
+        F + ' .stv-desc{order:5;text-align:center;margin-left:auto;margin-right:auto}' +
+        '}');
+    }
     return r.join('\n');
   }
   // ---- the episode card: one rounded card, the still (16:9) and a strip under it; the text sits at the
@@ -2756,6 +2776,8 @@
       var posterTitle = textTitle(movie) || title.text().trim();
       title[0].classList.remove('stv-has-logo');
       title[0].textContent = '';
+      var oldSub = title[0].parentNode && title[0].parentNode.querySelector('.stv-title-sub');
+      if (oldSub) oldSub.parentNode.removeChild(oldSub);
       if (posterTitle) {
         var textLogo = document.createElement('span');
         textLogo.className = 'stv-text-logo';
@@ -2778,6 +2800,14 @@
           // logo loaded: the text title is replaced by the picture
           var spans = tEl.querySelectorAll('.stv-text-logo');
           Array.prototype.forEach.call(spans, function (n) { n.parentNode.removeChild(n); });
+          // the plain title under the logo picture
+          var sub = tEl.parentNode && tEl.parentNode.querySelector('.stv-title-sub');
+          if (!sub && tEl.parentNode && posterTitle) {
+            sub = document.createElement('div');
+            sub.className = 'stv-title-sub';
+            sub.textContent = posterTitle;
+            tEl.parentNode.insertBefore(sub, tEl.nextSibling);
+          }
           if (portrait() && ownPosterBg && movie.poster_path) {
             var clean = cleanPoster(movie);
             if (clean && clean !== movie.poster_path) ownPosterBg.src = img(clean, tmdbSize('poster', window.innerWidth));
