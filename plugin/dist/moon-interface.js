@@ -2741,23 +2741,32 @@
     // the backdrop and the scrim sit at z-index -1: their container gets its own stacking layer, else
     // they go under the page colour of the activity
     if (bg.length) { var holder = bg[0].parentNode; if (window.getComputedStyle(holder).position === 'static') holder.style.position = 'relative'; holder.style.zIndex = '0'; holder.style.overflow = 'hidden'; }
-    // Keep Snack TV's original text-title styling. Use the same title fields as the poster overlay,
-    // rather than replacing the title with a separately fetched TMDB logo.
+    // The card shows the TMDB text logo (from the posters/images). While it loads, or when the title has none,
+    // the text stays: title -> name -> original_title -> original_name.
     var title = start.find('.full-start-new__title').first();
     if (title.length) {
       title[0].style.display = '';
       var posterTitle = textTitle(movie) || title.text().trim();
+      title[0].classList.remove('stv-has-logo');
+      title[0].textContent = '';
       if (posterTitle) {
         var textLogo = document.createElement('span');
         textLogo.className = 'stv-text-logo';
         textLogo.textContent = posterTitle;
-        title[0].textContent = '';
         title[0].appendChild(textLogo);
       }
       titleLen(title[0], posterTitle || title.text());
       if (portrait() && ownPosterBg && movie.poster_path) {
         var clean = cleanPoster(movie);
         if (clean && clean !== movie.poster_path) ownPosterBg.src = img(clean, tmdbSize('poster', window.innerWidth));
+      }
+      if (!title.find('img.stv-logo').length) {
+        var tEl = title[0];
+        logoInto(tEl, movie, tmdbSize('logo', T[M].logoW * k), null, null, function () { return inDoc(tEl); }, null, function () {
+          // logo loaded: the text title is replaced by the picture
+          var spans = tEl.querySelectorAll('.stv-text-logo');
+          Array.prototype.forEach.call(spans, function (n) { n.parentNode.removeChild(n); });
+        });
       }
     }
     // meta line + description above the rate line
