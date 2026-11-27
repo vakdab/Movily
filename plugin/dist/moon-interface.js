@@ -4698,8 +4698,6 @@
   window.snack_tv = { version: 2, trailers: function () { try { return themeOn() ? !lite() : true; } catch (e) { return true; } },
     imgSize: function (kind, cssW) { return tmdbSize(kind, cssW); },
     plainText: function (t) { return plainText(t); } };
-  addHeroRow();
-  genreHero();
   function startSafe() { try { start(); } catch (x) { log(x && x.message); } }
   if (window.appready) startSafe();
   else Lampa.Listener.follow('app', function (e) { if (e.type === 'ready') startSafe(); });
