@@ -13671,6 +13671,8 @@
       'body.movily-shell .head:before{display:none!important;}',
       'body.movily-shell.movily-topbar-hidden .movily-shell-header{display:none!important;}',
       'body.movily-shell.movily-topbar-hidden .wrap__content{padding-top:0!important;}',
+      'body.movily-shell.movily-header-collapsed .wrap__content{padding-top:0!important;}',
+      'body.movily-shell.movily-header-collapsed .wrap__content>.activity{min-height:calc(100vh - env(safe-area-inset-top,0px))!important;}',
       'body.movily-shell .wrap__content{padding-top:var(--movily-bar-height)!important;padding-top:calc(var(--movily-bar-height) + env(safe-area-inset-top,0px))!important;}',
       'body.movily-shell .wrap__content>.activity{min-height:calc(100vh - var(--movily-bar-height));min-height:calc(100vh - var(--movily-bar-height) - env(safe-area-inset-top,0px));}',
       'body.movily-shell .scroll:not(.scroll--horizontal)>.scroll__content{padding-bottom:86px!important;padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))!important;}',
@@ -13715,6 +13717,7 @@
     if (!header || !dock) return;
     header.classList.toggle('is-hidden', !visible);
     dock.classList.toggle('is-hidden', !visible);
+    if (document.body) document.body.classList.toggle('movily-header-collapsed', !visible);
     if (!visible) closeSheet();
   }
   function bindScroll() {
