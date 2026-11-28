@@ -13671,6 +13671,11 @@
       'body.movily-shell .head:before{display:none!important;}',
       'body.movily-shell.movily-topbar-hidden .movily-shell-header{display:none!important;}',
       'body.movily-shell.movily-topbar-hidden .wrap__content{padding-top:0!important;}',
+      'body.movily-shell.search--open .movily-shell-header,body.movily-shell.movily-search-open .movily-shell-header{display:none!important;}',
+      'body.movily-shell.search--open .movily-shell-dock,body.movily-shell.movily-search-open .movily-shell-dock{display:none!important;}',
+      'body.movily-shell.settings--open .movily-shell-dock,body.movily-shell.movily-settings-open .movily-shell-dock{display:none!important;}',
+      'body.movily-shell.search--open .wrap__content,body.movily-shell.movily-search-open .wrap__content{padding-top:0!important;}',
+      'body.movily-shell.search--open .wrap__content>.activity,body.movily-shell.movily-search-open .wrap__content>.activity{min-height:calc(100vh - env(safe-area-inset-top,0px))!important;}',
       'body.movily-shell.movily-header-collapsed .wrap__content{padding-top:0!important;}',
       'body.movily-shell.movily-header-collapsed .wrap__content>.activity{min-height:calc(100vh - env(safe-area-inset-top,0px))!important;}',
       'body.movily-shell .wrap__content{padding-top:var(--movily-bar-height)!important;padding-top:calc(var(--movily-bar-height) + env(safe-area-inset-top,0px))!important;}',
@@ -13706,6 +13711,11 @@
       '.movily-shell-sheet__items{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}',
       '.movily-shell-sheet__item{min-height:46px;padding:10px 13px;text-align:left;border:1px solid rgba(255,255,255,.13);border-radius:14px;background:rgba(25,25,29,.72);-webkit-backdrop-filter:blur(16px) saturate(1.2);backdrop-filter:blur(16px) saturate(1.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.1);color:#fff;font-family:inherit;font-size:14px;font-weight:500;line-height:1.25;cursor:pointer;-webkit-tap-highlight-color:transparent;}',
       '.movily-shell-sheet__item:active,.movily-shell-sheet__item.focus,.movily-shell-sheet__item.hover{background:rgba(56,56,62,.88);border-color:rgba(255,255,255,.28);}',
+      'body.movily-shell.search--open .search__input,body.movily-shell.movily-search-open .search__input,body.movily-shell.search--open .simple-keyboard-input,body.movily-shell.movily-search-open .simple-keyboard-input{background-color:rgba(48,48,50,.96)!important;border-radius:28px!important;color:#fff!important;}',
+      'body.movily-shell.search--open .simple-keyboard-input::placeholder,body.movily-shell.movily-search-open .simple-keyboard-input::placeholder{color:rgba(235,235,245,.6)!important;}',
+      'body.movily-shell.search--open .search-history-key,body.movily-shell.movily-search-open .search-history-key{display:flex!important;align-items:center;width:100%;min-height:64px;box-sizing:border-box;padding:0 24px!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;color:#f5f5f7!important;font-size:18px!important;}',
+      'body.movily-shell.search--open .search-history-key>div,body.movily-shell.movily-search-open .search-history-key>div{font-size:1.05em!important;padding:0 .1em!important;}',
+      'body.movily-shell.search--open .search-history-key.focus,body.movily-shell.movily-search-open .search-history-key.focus{background:rgba(255,255,255,.1)!important;border-radius:14px!important;}',
       '@media (min-width:700px){.movily-shell-header{padding-left:15px;padding-right:15px;padding-left:max(15px,calc((100vw - 980px)/2));padding-right:max(15px,calc((100vw - 980px)/2));}.movily-shell-tabs{padding-left:0;padding-right:0;}.movily-shell-dock{left:50%;right:auto;width:calc(100vw - 24px);max-width:460px;transform:translateX(-50%);}.movily-shell-dock.is-hidden{transform:translate(-50%,12px);}}',
       '@media (max-width:360px){.movily-shell-tabs{gap:14px;padding-left:12px;padding-right:12px;}.movily-shell-tab{font-size:13px;}.movily-shell-brand{font-size:19px;}}',
       '@media (prefers-reduced-motion:reduce){.movily-shell-header,.movily-shell-dock,.movily-shell-sheet,.movily-shell-backdrop{transition:none!important;}}'
@@ -13763,13 +13773,24 @@
     try {
       var activity = window.Lampa && Lampa.Activity && Lampa.Activity.active && Lampa.Activity.active();
       if (!activity) {
-        if (document.body) document.body.classList.remove('movily-topbar-hidden');
+        if (document.body) {
+          document.body.classList.remove('movily-topbar-hidden');
+          document.body.classList.toggle('movily-search-open', document.body.classList.contains('search--open'));
+          document.body.classList.toggle('movily-settings-open', document.body.classList.contains('settings--open'));
+        }
         return;
       }
       var component = String(activity.component || '').toLowerCase();
-      var topbarHidden = component === 'full' || component === 'player' || component === 'trailer';
-      if (document.body) document.body.classList.toggle('movily-topbar-hidden', topbarHidden);
-      if (topbarHidden) return;
+      var body = document.body;
+      var searchOpen = component === 'search' || (body && body.classList.contains('search--open'));
+      var settingsOpen = component === 'settings' || (body && body.classList.contains('settings--open'));
+      var topbarHidden = component === 'full' || component === 'player' || component === 'trailer' || searchOpen;
+      if (body) {
+        body.classList.toggle('movily-topbar-hidden', topbarHidden);
+        body.classList.toggle('movily-search-open', searchOpen);
+        body.classList.toggle('movily-settings-open', settingsOpen);
+      }
+      if (topbarHidden || settingsOpen) return;
       if (activity.component === 'main') { setActive('main'); return; }
       if (activity.component !== 'category') return;
       var url = String(activity.url || '').toLowerCase();
@@ -13786,7 +13807,12 @@
       try {
         Lampa.Listener.follow('activity', function (event) {
           populateMore();
-          if (event && event.type === 'init' && ['full', 'player', 'trailer'].indexOf(String(event.component || '').toLowerCase()) >= 0 && document.body) document.body.classList.add('movily-topbar-hidden');
+          if (event && event.type === 'init' && document.body) {
+            var component = String(event.component || '').toLowerCase();
+            if (['full', 'player', 'trailer', 'search'].indexOf(component) >= 0) document.body.classList.add('movily-topbar-hidden');
+            document.body.classList.toggle('movily-search-open', component === 'search');
+            document.body.classList.toggle('movily-settings-open', component === 'settings');
+          }
           if (event && (event.type === 'start' || event.type === 'archive' || event.type === 'destroy')) window.setTimeout(syncActiveFromActivity, 60);
         });
       } catch (e) {}
