@@ -167,6 +167,9 @@
             /* Movily: джерела (кнопки в ряду картки замість «Дивитись»): UAFresh і L-vid */
             putScript('https://uakino.ofreshofresh.workers.dev/uakino.js?v=' + cache_version, function () {}, function () {})
             putScript('https://beta.l-vid.online/on.js?v=' + cache_version, function () {}, function () {})
+            /* Movily: ефекти погоди. Дощ (зі звуком) має власні налаштування; сніг вмикається перемикачем в Інтерфейс */
+            putScript('https://weritos666.github.io/rain_realistic_sound.js', function () {}, function () {})
+            putScript('plugin/dist/movily-snow.js?v=' + cache_version, function () {}, function () {})
         }
 
         function loadCurrentLampa() {
