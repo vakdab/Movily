@@ -13463,8 +13463,10 @@
       var Storage = Lampa.Storage, Lang = Lampa.Lang, Activity = Lampa.Activity;
       var source = Storage && (Storage.field('source') || 'tmdb');
       if (action === 'search') {
-        if (Lampa.Search && typeof Lampa.Search.open === 'function') { Lampa.Search.open({}); return true; }
-        return activate(nativeNav('search'));
+        try {
+          if (Lampa.Search && typeof Lampa.Search.open === 'function') { Lampa.Search.open({}); return true; }
+        } catch (e) {}
+        return activate(nativeAction('search')) || activate(nativeNav('search'));
       }
       if (action === 'settings') {
         if (Lampa.Settings && typeof Lampa.Settings.open === 'function') { Lampa.Settings.open(); return true; }
@@ -13497,11 +13499,12 @@
     closeSheet();
     if (['main', 'movie', 'cartoon', 'tv', 'anime', 'favorite', 'settings'].indexOf(action) >= 0) setActive(action);
     if (action === 'back') {
-      if (activate(nativeNav('back'))) return true;
       try { if (window.Lampa && Lampa.Activity && typeof Lampa.Activity.backward === 'function') { Lampa.Activity.backward(); return true; } } catch (e) {}
+      if (activate(nativeNav('back'))) return true;
       try { history.back(); return true; } catch (e2) { return false; }
     }
-    if (action === 'favorite' || action === 'search' || action === 'settings') {
+    if (action === 'search') return directAction(action);
+    if (action === 'favorite' || action === 'settings') {
       if (activate(nativeAction(action)) || activate(nativeNav(action))) return true;
     } else {
       var native = nativeAction(action);
@@ -13686,21 +13689,21 @@
       '.movily-shell-tab{position:relative;flex:0 0 auto;appearance:none;-webkit-appearance:none;border:0;padding:0 1px 7px;background:none;color:rgba(235,235,245,.65);font-family:inherit;font-size:14px;font-weight:500;line-height:1.2;white-space:nowrap;cursor:pointer;-webkit-tap-highlight-color:transparent;}',
       '.movily-shell-tab.is-active{color:#fff;font-weight:650;}',
       '.movily-shell-tab.is-active:after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;border-radius:2px;background:#fff;}',
-      '.movily-shell-dock{position:fixed;z-index:52;left:12px;right:12px;bottom:5px;bottom:calc(env(safe-area-inset-bottom,0px) + 5px);height:52px;padding:4px;display:flex;align-items:center;justify-content:space-between;border:1px solid rgba(255,255,255,.22);border-radius:28px;background:rgba(255,255,255,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 6px 20px rgba(0,0,0,.25);-webkit-backdrop-filter:blur(22px) saturate(1.6);backdrop-filter:blur(22px) saturate(1.6);transition:opacity .32s ease,transform .32s ease,filter .32s ease;}',
-      '.movily-shell-dock .movily-shell-button{flex:1;height:42px;border-radius:22px;background:rgba(255,255,255,.11);-webkit-backdrop-filter:blur(22px) saturate(1.6);backdrop-filter:blur(22px) saturate(1.6);border:1px solid rgba(255,255,255,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 4px 14px rgba(0,0,0,.16);transition:background .15s,box-shadow .15s;}',
+      '.movily-shell-dock{position:fixed;z-index:52;left:14px;right:14px;bottom:5px;bottom:calc(env(safe-area-inset-bottom,0px) + 5px);height:46px;padding:4px;display:flex;align-items:center;justify-content:space-between;gap:4px;border:1px solid rgba(255,255,255,.18);border-radius:24px;background:rgba(8,8,11,.76);box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 8px 22px rgba(0,0,0,.42);-webkit-backdrop-filter:blur(22px) saturate(1.35);backdrop-filter:blur(22px) saturate(1.35);transition:opacity .32s ease,transform .32s ease,filter .32s ease;}',
+      '.movily-shell-dock .movily-shell-button{flex:1;min-width:0;height:34px;border-radius:18px;background:rgba(26,26,30,.72);-webkit-backdrop-filter:blur(18px) saturate(1.2);backdrop-filter:blur(18px) saturate(1.2);border:1px solid rgba(255,255,255,.15);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 3px 10px rgba(0,0,0,.28);transition:background .15s,border-color .15s,box-shadow .15s;}',
       '.movily-shell-dock .movily-shell-button svg{width:22px;height:22px;}',
-      '.movily-shell-dock .movily-shell-button.is-active,.movily-shell-dock .movily-shell-button:active,.movily-shell-dock .movily-shell-button.focus,.movily-shell-dock .movily-shell-button.hover{background:rgba(255,255,255,.4);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),0 6px 20px rgba(0,0,0,.25);}',
+      '.movily-shell-dock .movily-shell-button.is-active,.movily-shell-dock .movily-shell-button:active,.movily-shell-dock .movily-shell-button.focus,.movily-shell-dock .movily-shell-button.hover{background:rgba(58,58,64,.88);border-color:rgba(255,255,255,.3);box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 5px 14px rgba(0,0,0,.36);}',
       '.movily-shell-header.is-hidden{opacity:0;visibility:hidden;transform:translateY(-100%);filter:none;background:transparent;border-color:transparent;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;pointer-events:none;}',
       '.movily-shell-dock.is-hidden{opacity:0;transform:translateY(12px);filter:blur(6px);pointer-events:none;}',
-      '.movily-shell-backdrop{position:fixed;z-index:53;inset:0;background:rgba(0,0,0,.12);opacity:0;visibility:hidden;transition:opacity .2s ease,visibility .2s ease;}',
+      '.movily-shell-backdrop{position:fixed;z-index:53;inset:0;background:rgba(0,0,0,.3);opacity:0;visibility:hidden;transition:opacity .2s ease,visibility .2s ease;}',
       '.movily-shell-backdrop.is-open{opacity:1;visibility:visible;}',
-      '.movily-shell-sheet{position:fixed;z-index:54;left:12px;right:12px;bottom:64px;bottom:calc(64px + env(safe-area-inset-bottom,0px));max-height:56vh;max-height:min(56vh,440px);overflow-y:auto;padding:9px 11px 12px;border:1px solid var(--movily-border);border-radius:23px;background:rgba(35,35,40,.9);box-shadow:0 10px 32px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.08);-webkit-backdrop-filter:blur(28px) saturate(160%);backdrop-filter:blur(28px) saturate(160%);opacity:0;visibility:hidden;transform:translateY(8px);transition:opacity .2s ease,transform .2s ease,visibility .2s ease;}',
+      '.movily-shell-sheet{position:fixed;z-index:54;left:12px;right:12px;bottom:60px;bottom:calc(60px + env(safe-area-inset-bottom,0px));max-height:56vh;max-height:min(56vh,440px);overflow-y:auto;padding:9px 11px 12px;border:1px solid rgba(255,255,255,.18);border-radius:23px;background:rgba(7,7,10,.88);box-shadow:0 12px 34px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.13);-webkit-backdrop-filter:blur(28px) saturate(1.35);backdrop-filter:blur(28px) saturate(1.35);opacity:0;visibility:hidden;transform:translateY(8px);transition:opacity .2s ease,transform .2s ease,visibility .2s ease;}',
       '.movily-shell-sheet.is-open{opacity:1;visibility:visible;transform:translateY(0);}',
       '.movily-shell-sheet__handle{width:34px;height:4px;margin:0 auto 9px;border-radius:4px;background:rgba(255,255,255,.35);}',
       '.movily-shell-sheet__title{font-size:16px;font-weight:700;padding:2px 4px 9px;}',
       '.movily-shell-sheet__items{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}',
-      '.movily-shell-sheet__item{min-height:46px;padding:10px 13px;text-align:left;border:0;border-radius:14px;background:rgba(255,255,255,.09);color:#fff;font-family:inherit;font-size:14px;font-weight:500;line-height:1.25;cursor:pointer;-webkit-tap-highlight-color:transparent;}',
-      '.movily-shell-sheet__item:active,.movily-shell-sheet__item.focus,.movily-shell-sheet__item.hover{background:rgba(255,255,255,.2);}',
+      '.movily-shell-sheet__item{min-height:46px;padding:10px 13px;text-align:left;border:1px solid rgba(255,255,255,.13);border-radius:14px;background:rgba(25,25,29,.72);-webkit-backdrop-filter:blur(16px) saturate(1.2);backdrop-filter:blur(16px) saturate(1.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.1);color:#fff;font-family:inherit;font-size:14px;font-weight:500;line-height:1.25;cursor:pointer;-webkit-tap-highlight-color:transparent;}',
+      '.movily-shell-sheet__item:active,.movily-shell-sheet__item.focus,.movily-shell-sheet__item.hover{background:rgba(56,56,62,.88);border-color:rgba(255,255,255,.28);}',
       '@media (min-width:700px){.movily-shell-header{padding-left:15px;padding-right:15px;padding-left:max(15px,calc((100vw - 980px)/2));padding-right:max(15px,calc((100vw - 980px)/2));}.movily-shell-tabs{padding-left:0;padding-right:0;}.movily-shell-dock{left:50%;right:auto;width:calc(100vw - 24px);max-width:460px;transform:translateX(-50%);}.movily-shell-dock.is-hidden{transform:translate(-50%,12px);}}',
       '@media (max-width:360px){.movily-shell-tabs{gap:14px;padding-left:12px;padding-right:12px;}.movily-shell-tab{font-size:13px;}.movily-shell-brand{font-size:19px;}}',
       '@media (prefers-reduced-motion:reduce){.movily-shell-header,.movily-shell-dock,.movily-shell-sheet,.movily-shell-backdrop{transition:none!important;}}'
