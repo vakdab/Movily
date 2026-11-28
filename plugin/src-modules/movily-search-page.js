@@ -6,8 +6,7 @@
   window.__movily_search_page = true;
 
   var STYLE_ID = 'movily-search-page-style';
-  var OPEN = 'body.search--open';
-
+  
   function qs(sel, root) { return (root || document).querySelector(sel); }
   function qsa(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
 
@@ -16,7 +15,7 @@
 
   function addCss() {
     if (document.getElementById(STYLE_ID)) return;
-    var S = 'body.search--open';
+    var S = 'body.movily-new-search.search--open';
     var css = [
       /* прибрати кнопку-сітку (Меню) на сторінці пошуку */
       S + ' .movily-search-menu-button{display:none!important;}',
@@ -82,8 +81,10 @@
     document.head.appendChild(st);
   }
 
+  function enabled() { return document.body.classList.contains('movily-new-search'); }
+
   function decorateHistory() {
-    if (!document.body.classList.contains('search--open')) return;
+    if (!document.body.classList.contains('search--open') || !enabled()) return;
     qsa('.search-history-key').forEach(function (key) {
       if (key.__mspDone) return;
       key.__mspDone = true;
@@ -123,7 +124,7 @@
       timer = 0;
       var open = document.body.classList.contains('search--open');
       if (open) decorateHistory();
-      if (open && !wasOpen) setTimeout(focusInput, 250);
+      if (open && enabled() && !wasOpen) setTimeout(focusInput, 250);
       wasOpen = open;
     }
     var mo = new MutationObserver(function () { if (!timer) timer = setTimeout(tick, 60); });

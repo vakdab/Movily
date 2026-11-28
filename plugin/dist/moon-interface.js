@@ -13384,6 +13384,41 @@
   var BACKDROP_ID = 'movily-mobile-more-backdrop';
   var LAST_Y = 0;
   var STARTED = false;
+  var UI_KEY = 'movily_new_ui';
+  var UI_STR = {
+    uk: { t: 'Вигляд Movily', n: 'Новий інтерфейс', d: 'Нова шапка з вкладками, нижня панель, нова сторінка пошуку. Вимкнено: класичний інтерфейс.' },
+    ru: { t: 'Вид Movily', n: 'Новый интерфейс', d: 'Новая шапка с вкладками, нижняя панель, новая страница поиска. Выключено: классический интерфейс.' },
+    en: { t: 'Movily look', n: 'New interface', d: 'New header with tabs, bottom dock, new search page. Off: classic interface.' }
+  };
+  function uiTr(k) {
+    var l = 'uk';
+    try { l = String(Lampa.Storage.get('language', 'uk') || 'uk'); } catch (e) {}
+    return (UI_STR[l] || UI_STR.en)[k];
+  }
+  function newUiOn() {
+    try { var v = Lampa.Storage.get(UI_KEY, false); return v === true || v === 'true'; } catch (e) { return false; }
+  }
+  function applyUiFlag() {
+    var on = newUiOn();
+    if (!document.body) return;
+    document.body.classList.toggle('movily-shell', on);
+    document.body.classList.toggle('movily-new-search', on);
+    var root = document.getElementById(ROOT_ID);
+    if (root) root.style.display = on ? '' : 'none';
+    if (!on) {
+      ['movily-topbar-hidden', 'movily-search-open', 'movily-settings-open', 'movily-header-collapsed'].forEach(function (c) { document.body.classList.remove(c); });
+    }
+  }
+  window.__movily_apply_ui = applyUiFlag;
+  function registerUiSetting() {
+    var api = window.Lampa && Lampa.SettingsApi;
+    if (!api || window.__movily_ui_setting) return;
+    window.__movily_ui_setting = true;
+    api.addParam({ component: 'interface', param: { name: 'movily_ui_title', type: 'title' }, field: { name: uiTr('t') } });
+    api.addParam({ component: 'interface', param: { name: UI_KEY, type: 'trigger', 'default': false },
+      field: { name: uiTr('n'), description: uiTr('d') },
+      onChange: function () { applyUiFlag(); try { syncActiveFromActivity(); } catch (e) {} } });
+  }
   var SEARCH_UI_OBSERVER = null;
   var ACTIONS = [
     { action: 'main', label: 'Головна' },
@@ -13545,10 +13580,18 @@
     }
   }
   function ensureSearchMenu(root) {
-    /* Movily: кнопку-сітку («Меню») на сторінці пошуку прибрано; стилі пошуку в movily-search-page.js */
     root = root || qs('.search');
-    var old = root && qs('.movily-search-menu-button', root);
-    if (old && old.parentNode) old.parentNode.removeChild(old);
+    if (!root) return;
+    var head = qs('.head-backward', root), back = qs('.head-backward__button', head);
+    if (document.body.classList.contains('movily-new-search')) {
+      var oldBtn = qs('.movily-search-menu-button', root);
+      if (oldBtn && oldBtn.parentNode) oldBtn.parentNode.removeChild(oldBtn);
+      return;
+    }
+    if (!head || !back || qs('.movily-search-menu-button', head)) return;
+    var button = makeButton('Меню', SVG.more, 'more', 'movily-search-menu-button');
+    bindAction(button, 'more');
+    back.parentNode.insertBefore(button, back.nextSibling);
   }
   function queueSearchFallback(root) {
     if (!root || root.__movilySearchFallbackTimer) return;
@@ -13661,7 +13704,6 @@
   function build() {
     if (!document.body || document.getElementById(ROOT_ID)) return;
     addCss();
-    document.body.classList.add('movily-shell');
 
     var shell = document.createElement('div');
     shell.id = ROOT_ID;
@@ -13768,6 +13810,15 @@
       '.movily-shell-sheet__items{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}',
       '.movily-shell-sheet__item{min-height:46px;padding:10px 13px;text-align:left;border:1px solid rgba(255,255,255,.13);border-radius:14px;background:rgba(25,25,29,.72);-webkit-backdrop-filter:blur(16px) saturate(1.2);backdrop-filter:blur(16px) saturate(1.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.1);color:#fff;font-family:inherit;font-size:14px;font-weight:500;line-height:1.25;cursor:pointer;-webkit-tap-highlight-color:transparent;}',
       '.movily-shell-sheet__item:active,.movily-shell-sheet__item.focus,.movily-shell-sheet__item.hover{background:rgba(56,56,62,.88);border-color:rgba(255,255,255,.28);}',
+      'body.movily-shell:not(.movily-new-search).search--open .search__input,body.movily-shell:not(.movily-new-search).movily-search-open .search__input,body.movily-shell:not(.movily-new-search).search--open .simple-keyboard-input,body.movily-shell:not(.movily-new-search).movily-search-open .simple-keyboard-input{background-color:rgba(48,48,50,.96)!important;border-radius:28px!important;color:#fff!important;}',
+      'body.movily-shell:not(.movily-new-search).search--open .simple-keyboard-input::placeholder,body.movily-shell:not(.movily-new-search).movily-search-open .simple-keyboard-input::placeholder{color:rgba(235,235,245,.6)!important;}',
+      'body.movily-shell:not(.movily-new-search).search--open .search-history-key,body.movily-shell:not(.movily-new-search).movily-search-open .search-history-key{display:flex!important;align-items:center;width:100%;min-height:64px;box-sizing:border-box;padding:0 24px!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;color:#f5f5f7!important;font-size:18px!important;}',
+      'body.movily-shell:not(.movily-new-search).search--open .search-history-key>div,body.movily-shell:not(.movily-new-search).movily-search-open .search-history-key>div{font-size:1.05em!important;padding:0 .1em!important;}',
+      'body.movily-shell:not(.movily-new-search).search--open .search-history-key.focus,body.movily-shell:not(.movily-new-search).movily-search-open .search-history-key.focus{background:rgba(255,255,255,.1)!important;border-radius:14px!important;}',
+      '@media(max-width:599px){body.movily-shell:not(.movily-new-search).search--open .search .head-backward__title,body.movily-shell:not(.movily-new-search).movily-search-open .search .head-backward__title{display:none!important;}}',
+      '@media(max-width:599px){body.movily-shell:not(.movily-new-search).search--open .search__sources,body.movily-shell:not(.movily-new-search).movily-search-open .search__sources{display:none!important;}}',
+      'body.movily-shell:not(.movily-new-search).search--open .movily-search-menu-button,body.movily-shell:not(.movily-new-search).movily-search-open .movily-search-menu-button{display:none;width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);}',
+      '@media(max-width:599px){body.movily-shell:not(.movily-new-search).search--open .search .scroll__body,body.movily-shell:not(.movily-new-search).movily-search-open .search .scroll__body{display:grid!important;grid-template-columns:38px 38px minmax(0,1fr);column-gap:8px;row-gap:10px;align-items:center;box-sizing:border-box;width:100%;padding:calc(8px + env(safe-area-inset-top,0px)) 12px 0!important;}body.movily-shell:not(.movily-new-search).search--open .search .head-backward,body.movily-shell:not(.movily-new-search).movily-search-open .search .head-backward,body.movily-shell:not(.movily-new-search).search--open .search__body,body.movily-shell:not(.movily-new-search).movily-search-open .search__body{display:contents!important;}body.movily-shell:not(.movily-new-search).search--open .search .head-backward__button,body.movily-shell:not(.movily-new-search).movily-search-open .search .head-backward__button{position:relative!important;inset:auto!important;grid-column:1;grid-row:1;width:38px;height:38px;margin:0!important;padding:0!important;display:flex!important;align-items:center;justify-content:center;border-radius:50%;}body.movily-shell:not(.movily-new-search).search--open .movily-search-menu-button,body.movily-shell:not(.movily-new-search).movily-search-open .movily-search-menu-button{display:inline-flex;grid-column:2;grid-row:1;width:38px;height:38px;padding:0;}body.movily-shell:not(.movily-new-search).search--open .search__keypad,body.movily-shell:not(.movily-new-search).movily-search-open .search__keypad{grid-column:3;grid-row:1;min-width:0;width:auto!important;margin:0!important;padding:0!important;}body.movily-shell:not(.movily-new-search).search--open .search__keypad .simple-keyboard-input,body.movily-shell:not(.movily-new-search).movily-search-open .search__keypad .simple-keyboard-input{box-sizing:border-box;width:100%!important;height:44px!important;line-height:44px!important;margin:0!important;padding-top:0!important;padding-bottom:0!important;font-size:16px!important;}body.movily-shell:not(.movily-new-search).search--open .search__history,body.movily-shell:not(.movily-new-search).movily-search-open .search__history{grid-column:1/-1;grid-row:2;min-width:0;margin:0 0 8px!important;}body.movily-shell:not(.movily-new-search).search--open .search__results,body.movily-shell:not(.movily-new-search).movily-search-open .search__results{grid-column:1/-1;grid-row:3;min-width:0;}}',
       '@media (min-width:700px){.movily-shell-header{padding-left:15px;padding-right:15px;padding-left:max(15px,calc((100vw - 980px)/2));padding-right:max(15px,calc((100vw - 980px)/2));}.movily-shell-tabs{padding-left:0;padding-right:0;}.movily-shell-dock{left:50%;right:auto;width:calc(100vw - 24px);max-width:460px;transform:translateX(-50%);}.movily-shell-dock.is-hidden{transform:translate(-50%,12px);}}',
       '@media (max-width:360px){.movily-shell-tabs{gap:14px;padding-left:12px;padding-right:12px;}.movily-shell-tab{font-size:13px;}.movily-shell-brand{font-size:19px;}}',
       '@media (prefers-reduced-motion:reduce){.movily-shell-header,.movily-shell-dock,.movily-shell-sheet,.movily-shell-backdrop{transition:none!important;}}'
@@ -13822,6 +13873,7 @@
     }
   }
   function syncActiveFromActivity() {
+    if (!newUiOn()) return;
     try {
       var activity = window.Lampa && Lampa.Activity && Lampa.Activity.active && Lampa.Activity.active();
       if (!activity) {
@@ -13853,12 +13905,15 @@
   function start() {
     if (STARTED) return;
     STARTED = true;
+    registerUiSetting();
     build();
+    applyUiFlag();
     watchSearchUi();
     syncActiveFromActivity();
     if (window.Lampa && Lampa.Listener && typeof Lampa.Listener.follow === 'function') {
       try {
         Lampa.Listener.follow('activity', function (event) {
+          if (!newUiOn()) return;
           populateMore();
           if (event && event.type === 'init' && document.body) {
             var component = String(event.component || '').toLowerCase();
@@ -13901,8 +13956,7 @@
   window.__movily_search_page = true;
 
   var STYLE_ID = 'movily-search-page-style';
-  var OPEN = 'body.search--open';
-
+  
   function qs(sel, root) { return (root || document).querySelector(sel); }
   function qsa(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
 
@@ -13911,7 +13965,7 @@
 
   function addCss() {
     if (document.getElementById(STYLE_ID)) return;
-    var S = 'body.search--open';
+    var S = 'body.movily-new-search.search--open';
     var css = [
       /* прибрати кнопку-сітку (Меню) на сторінці пошуку */
       S + ' .movily-search-menu-button{display:none!important;}',
@@ -13977,8 +14031,10 @@
     document.head.appendChild(st);
   }
 
+  function enabled() { return document.body.classList.contains('movily-new-search'); }
+
   function decorateHistory() {
-    if (!document.body.classList.contains('search--open')) return;
+    if (!document.body.classList.contains('search--open') || !enabled()) return;
     qsa('.search-history-key').forEach(function (key) {
       if (key.__mspDone) return;
       key.__mspDone = true;
@@ -14018,7 +14074,7 @@
       timer = 0;
       var open = document.body.classList.contains('search--open');
       if (open) decorateHistory();
-      if (open && !wasOpen) setTimeout(focusInput, 250);
+      if (open && enabled() && !wasOpen) setTimeout(focusInput, 250);
       wasOpen = open;
     }
     var mo = new MutationObserver(function () { if (!timer) timer = setTimeout(tick, 60); });
