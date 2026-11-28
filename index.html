@@ -103,6 +103,7 @@
     <script>
         var lampa_url     = '';
         var cache_version = 'movily-no-hero-v1-' + Math.floor((new Date()).getTime() / 9e5); // Версія коміту + нове значення кожні 15 хвилин
+        var interface_cache_version = 'search-624d49d-' + Math.floor((new Date()).getTime() / 9e5);
             
         function urlJoin(base, add) {
             if (base.charAt(base.length - 1) !== '/') {
@@ -160,7 +161,7 @@
         function loadMovilyInterface() {
             if (window.__movily_interface_loaded) return
             window.__movily_interface_loaded = true
-            putScript('plugin/dist/moon-interface.js?v=' + cache_version, function () {}, function () {})
+            putScript('plugin/dist/moon-interface.js?v=' + interface_cache_version, function () {}, function () {})
             /* Movily: картинка в картинці (pipfs), плаваюче вікно як на iPhone */
             putScript('plugin/dist/pipfs.js?v=' + cache_version, function () {}, function () {})
             /* Movily: джерела (кнопки в ряду картки замість «Дивитись»): UAFresh і L-vid */
