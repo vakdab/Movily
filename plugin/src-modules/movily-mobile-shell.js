@@ -10,6 +10,7 @@
   var BACKDROP_ID = 'movily-mobile-more-backdrop';
   var LAST_Y = 0;
   var STARTED = false;
+  var SEARCH_UI_OBSERVER = null;
   var ACTIONS = [
     { action: 'main', label: 'Головна' },
     { action: 'movie', label: 'Фільми' },
@@ -168,6 +169,65 @@
     if (window.$) {
       try { $(button).on('hover:enter', run); } catch (e) {}
     }
+  }
+  function ensureSearchMenu(root) {
+    root = root || qs('.search');
+    if (!root) return;
+    var head = qs('.head-backward', root), back = qs('.head-backward__button', head);
+    if (!head || !back || qs('.movily-search-menu-button', head)) return;
+    var button = makeButton('Меню', SVG.more, 'more', 'movily-search-menu-button');
+    bindAction(button, 'more');
+    back.parentNode.insertBefore(button, back.nextSibling);
+  }
+  function queueSearchFallback(root) {
+    if (!root || root.__movilySearchFallbackTimer) return;
+    root.__movilySearchFallbackTimer = window.setTimeout(function () {
+      root.__movilySearchFallbackTimer = 0;
+      if (!document.body || !document.body.classList.contains('search--open')) return;
+      var input = qs('.search__keypad .simple-keyboard-input', root);
+      if (!input || !String(input.value || '').trim()) return;
+      var tabs = qsa('.search-source', root), active = null, fallback = null, pending = false;
+      function count(tab) {
+        var node = qs('.search-source__count', tab);
+        return node ? (parseInt(node.textContent, 10) || 0) : 0;
+      }
+      tabs.forEach(function (tab) {
+        if (tab.classList.contains('active')) active = tab;
+        if (qs('.search-source__count', tab) && tab.classList.contains('search-source--loading')) pending = true;
+      });
+      if (pending || !active || count(active) > 0) return;
+      for (var i = 0; i < tabs.length; i++) {
+        if (tabs[i] !== active && count(tabs[i]) > 0) { fallback = tabs[i]; break; }
+      }
+      if (fallback) {
+        if (window.$) { try { $(fallback).trigger('hover:enter'); return; } catch (e) {} }
+        activate(fallback);
+      }
+    }, 180);
+  }
+  function observeSearch(root) {
+    if (!root || root.__movilySearchObserved) return;
+    root.__movilySearchObserved = true;
+    var sources = qs('.search__sources', root);
+    var input = qs('.search__keypad .simple-keyboard-input', root);
+    if (input) input.addEventListener('input', function () { queueSearchFallback(root); }, true);
+    if (sources && typeof MutationObserver === 'function') {
+      var observer = new MutationObserver(function () { queueSearchFallback(root); });
+      observer.observe(sources, { attributes: true, childList: true, subtree: true, characterData: true });
+    }
+  }
+  function watchSearchUi() {
+    if (SEARCH_UI_OBSERVER || !document.body || typeof MutationObserver !== 'function') return;
+    function sync() {
+      if (!document.body.classList.contains('search--open')) return;
+      var root = qs('.search');
+      if (!root) return;
+      ensureSearchMenu(root);
+      observeSearch(root);
+    }
+    SEARCH_UI_OBSERVER = new MutationObserver(sync);
+    SEARCH_UI_OBSERVER.observe(document.body, { attributes: true, attributeFilter: ['class'], childList: true, subtree: true });
+    sync();
   }
   function findMenuLabel(item, fallback) {
     var node = qs('.menu__text, .menu__item-name, .menu__item-text', item);
@@ -342,6 +402,10 @@
       'body.movily-shell.search--open .search-history-key,body.movily-shell.movily-search-open .search-history-key{display:flex!important;align-items:center;width:100%;min-height:64px;box-sizing:border-box;padding:0 24px!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;color:#f5f5f7!important;font-size:18px!important;}',
       'body.movily-shell.search--open .search-history-key>div,body.movily-shell.movily-search-open .search-history-key>div{font-size:1.05em!important;padding:0 .1em!important;}',
       'body.movily-shell.search--open .search-history-key.focus,body.movily-shell.movily-search-open .search-history-key.focus{background:rgba(255,255,255,.1)!important;border-radius:14px!important;}',
+      '@media(max-width:599px){body.movily-shell.search--open .search .head-backward__title,body.movily-shell.movily-search-open .search .head-backward__title{display:none!important;}}',
+      '@media(max-width:599px){body.movily-shell.search--open .search__sources,body.movily-shell.movily-search-open .search__sources{display:none!important;}}',
+      'body.movily-shell.search--open .movily-search-menu-button,body.movily-shell.movily-search-open .movily-search-menu-button{display:none;width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);}',
+      '@media(max-width:599px){body.movily-shell.search--open .search .scroll__body,body.movily-shell.movily-search-open .search .scroll__body{display:grid!important;grid-template-columns:38px 38px minmax(0,1fr);column-gap:8px;row-gap:10px;align-items:center;box-sizing:border-box;width:100%;padding:calc(8px + env(safe-area-inset-top,0px)) 12px 0!important;}body.movily-shell.search--open .search .head-backward,body.movily-shell.movily-search-open .search .head-backward,body.movily-shell.search--open .search__body,body.movily-shell.movily-search-open .search__body{display:contents!important;}body.movily-shell.search--open .search .head-backward__button,body.movily-shell.movily-search-open .search .head-backward__button{position:relative!important;inset:auto!important;grid-column:1;grid-row:1;width:38px;height:38px;margin:0!important;padding:0!important;display:flex!important;align-items:center;justify-content:center;border-radius:50%;}body.movily-shell.search--open .movily-search-menu-button,body.movily-shell.movily-search-open .movily-search-menu-button{display:inline-flex;grid-column:2;grid-row:1;width:38px;height:38px;padding:0;}body.movily-shell.search--open .search__keypad,body.movily-shell.movily-search-open .search__keypad{grid-column:3;grid-row:1;min-width:0;width:auto!important;margin:0!important;padding:0!important;}body.movily-shell.search--open .search__keypad .simple-keyboard-input,body.movily-shell.movily-search-open .search__keypad .simple-keyboard-input{box-sizing:border-box;width:100%!important;height:44px!important;line-height:44px!important;margin:0!important;padding-top:0!important;padding-bottom:0!important;font-size:16px!important;}body.movily-shell.search--open .search__history,body.movily-shell.movily-search-open .search__history{grid-column:1/-1;grid-row:2;min-width:0;margin:0 0 8px!important;}body.movily-shell.search--open .search__results,body.movily-shell.movily-search-open .search__results{grid-column:1/-1;grid-row:3;min-width:0;}}',
       '@media (min-width:700px){.movily-shell-header{padding-left:15px;padding-right:15px;padding-left:max(15px,calc((100vw - 980px)/2));padding-right:max(15px,calc((100vw - 980px)/2));}.movily-shell-tabs{padding-left:0;padding-right:0;}.movily-shell-dock{left:50%;right:auto;width:calc(100vw - 24px);max-width:460px;transform:translateX(-50%);}.movily-shell-dock.is-hidden{transform:translate(-50%,12px);}}',
       '@media (max-width:360px){.movily-shell-tabs{gap:14px;padding-left:12px;padding-right:12px;}.movily-shell-tab{font-size:13px;}.movily-shell-brand{font-size:19px;}}',
       '@media (prefers-reduced-motion:reduce){.movily-shell-header,.movily-shell-dock,.movily-shell-sheet,.movily-shell-backdrop{transition:none!important;}}'
@@ -428,6 +492,7 @@
     if (STARTED) return;
     STARTED = true;
     build();
+    watchSearchUi();
     syncActiveFromActivity();
     if (window.Lampa && Lampa.Listener && typeof Lampa.Listener.follow === 'function') {
       try {
