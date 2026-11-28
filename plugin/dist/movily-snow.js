@@ -18,22 +18,38 @@
   function on() {
     try { var v = Lampa.Storage.get(KEY, false); return v === true || v === 'true'; } catch (e) { return false; }
   }
+  var LAYER = 'movily-snow-layer';
+  function layer() {
+    var el = document.getElementById(LAYER);
+    if (!el) {
+      el = document.createElement('div');
+      el.id = LAYER;
+      /* .background у Lampa має розмір 0x0, тому власний шар на весь екран, поверх усього, без кліків */
+      el.style.cssText = 'position:fixed;left:0;top:0;width:100%;height:100%;overflow:hidden;pointer-events:none;z-index:2147483000;';
+      document.body.appendChild(el);
+    }
+    return el;
+  }
+  function startFall() {
+    if (!window.jQuery || !jQuery.fn.snowfall) return;
+    var el = layer();
+    jQuery(el).snowfall('clear');
+    jQuery(el).snowfall({ deviceorientation: true, round: true, minSize: 5, maxSize: 8, flakeCount: 60 });
+  }
   var loaded = false;
   function load() {
-    if (loaded) return;
+    if (loaded) { try { startFall(); } catch (e) {} return; }
     loaded = true;
     var s = document.createElement('script');
     s.src = SRC;
     s.onload = function () {
       /* snow.js чекає подію app:ready, яка вже минула: запускаємо снігопад вручну */
-      try {
-        if (window.jQuery && jQuery.fn.snowfall) jQuery('.background').snowfall({ deviceorientation: true, round: true, minSize: 5, maxSize: 8 });
-      } catch (e) {}
+      try { startFall(); } catch (e) {}
     };
     document.head.appendChild(s);
   }
   function clearSnow() {
-    try { if (window.jQuery && jQuery.fn.snowfall) jQuery('.background').snowfall('clear'); } catch (e) {}
+    try { var el = document.getElementById(LAYER); if (el) { jQuery(el).snowfall('clear'); el.parentNode.removeChild(el); } } catch (e) {}
     try { jQuery('.snowfall-flakes, .snowfall-canvas').remove(); } catch (e) {}
     window.snow = false;
   }
